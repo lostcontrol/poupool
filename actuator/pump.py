@@ -1,12 +1,15 @@
 import asyncio
+import logging
+
+log = logging.getLogger("poupool.%s" % __name__)
 
 class Pump(object):
     
     @asyncio.coroutine
     def start(self):
-        print("Pump started")
+        log.info("Pump started")
 
     @asyncio.coroutine
     def stop(self):
-        print("Pump stopped")
+        log.info("Pump stopped")
 
