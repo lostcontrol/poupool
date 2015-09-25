@@ -4,6 +4,21 @@ from controller.fsm import Fsm, FsmState, FsmTask
 
 log = logging.getLogger("poupool.%s" % __name__)
 
+class Stopping(FsmState):
+
+    def __init__(self, fsm):
+        super().__init__(fsm)
+
+    @asyncio.coroutine
+    def run(self):
+        print("Stopping")
+        self.get_fsm().get_heating_fsm().add_event("stop")
+
+    def transition(self, event):
+        if event == "heating_stopped":
+            return "stop"
+        return None
+
 class Stop(FsmState):
 
     def __init__(self, fsm):
@@ -16,10 +31,10 @@ class Stop(FsmState):
 
     def transition(self, event):
         if event == "economy":
-            return self.get_state("economy")
+            return "economy"
         if event == "overflow":
-            return self.get_state("overflow")
-        return self
+            return "overflow"
+        return None
 
 class Economy(FsmState):
 
@@ -33,10 +48,10 @@ class Economy(FsmState):
 
     def transition(self, event):
         if event == "stop":
-            return self.get_state("stop")
+            return "stop"
         if event == "overflow":
-            return self.get_state("overflow")
-        return self
+            return "overflow"
+        return None
 
 class Overflow(FsmState):
 
@@ -50,10 +65,10 @@ class Overflow(FsmState):
 
     def transition(self, event):
         if event == "stop":
-            return self.get_state("stop")
+            return "stop"
         if event == "economy":
-            return self.get_state("economy")
-        return self
+            return "economy"
+        return None
 
 
 class Filtration(Fsm):
@@ -61,9 +76,14 @@ class Filtration(Fsm):
     def __init__(self, system, heating):
         super().__init__()
         self.add_state("stop", Stop(self))
+        self.add_state("stopping", Stopping(self))
         self.add_state("economy", Economy(self))
         self.add_state("overflow", Overflow(self))
         self.__system = system
+        self.__heating = heating
+
+    def get_heating_fsm(self):
+        return self.__heating
 
     def getActuator(self, name):
         return self.__system.getActuator(name)
