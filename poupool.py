@@ -11,21 +11,23 @@ from controller.system import System
 from mqtt.mqtt import Mqtt
 
 logging.getLogger("poupool").setLevel(logging.DEBUG)
+#logging.getLogger().setLevel(logging.DEBUG)
 logging.basicConfig(format="%(asctime)-15s %(levelname)-5s %(message)s")
 
 mqtt = Mqtt()    
 
 system = System()
+system.addFsm("filtration", Filtration(system))
+system.addFsm("heating", Heating(system))
+
 system.addActuator("pump-main", Pump())
 system.addActuator("valve-1", Valve())
 system.addSensor("pressure-main", PressureSensor(mqtt))
-system.addConfiguration("settings", Settings(mqtt))
-
-heating = Heating(system)
-filtration = Filtration(system, heating)
+system.addConfiguration("settings", Settings(mqtt, system))
 
 loop = asyncio.get_event_loop()
-asyncio.async(filtration.process_event())
-asyncio.async(heating.process_event())
+loop.set_debug(True)
+asyncio.async(system.getFsm("filtration").process_event())
+asyncio.async(system.getFsm("heating").process_event())
 asyncio.async(mqtt.main())
 loop.run_forever()

@@ -14,20 +14,18 @@ class PressureSensor(object):
             raise Exception("Too old value")
         return self.__value
 
-    def setValue(self, value):
+    async def setValue(self, value):
         if not isinstance(value, float):
             raise Exception("float is expected")
         self.__value = value
         self.__timestamp = time.time()
 
-    @asyncio.coroutine
-    def below(self, value):
+    async def below(self, value):
         while self.getValue() >= value:
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
         return True
 
-    @asyncio.coroutine
-    def above(self, value):
+    async def above(self, value):
         while self.getValue() <= value:
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
         return True

@@ -9,10 +9,9 @@ class Stopping(FsmState):
     def __init__(self, fsm):
         super().__init__(fsm)
 
-    @asyncio.coroutine
-    def run(self):
-        print("Stopping")
-        self.get_fsm().get_heating_fsm().add_event("stop")
+    async def run(self):
+        print("Stopping filtration")
+        await self.get_fsm().get_heating_fsm().add_event("stop")
 
     def transition(self, event):
         if event == "heating_stopped":
@@ -24,10 +23,9 @@ class Stop(FsmState):
     def __init__(self, fsm):
         super().__init__(fsm)
         
-    @asyncio.coroutine
-    def run(self):
-        print("Stop")
-        yield from asyncio.sleep(1)
+    async def run(self):
+        print("Filtration stopped")
+        await asyncio.sleep(1)
 
     def transition(self, event):
         if event == "economy":
@@ -41,14 +39,16 @@ class Economy(FsmState):
     def __init__(self, fsm):
         super().__init__(fsm)
         
-    @asyncio.coroutine
-    def run(self):
+    async def run(self):
         print("Economy")
-        yield from asyncio.sleep(1)
+        while True:
+            if (await self.get_fsm().getSensor("pressure-main").above(3.0)):
+                print("Backwash")
+            await asyncio.sleep(1)
 
     def transition(self, event):
         if event == "stop":
-            return "stop"
+            return "stopping"
         if event == "overflow":
             return "overflow"
         return None
@@ -58,14 +58,13 @@ class Overflow(FsmState):
     def __init__(self, fsm):
         super().__init__(fsm)
         
-    @asyncio.coroutine
-    def run(self):
+    async def run(self):
         print("Overflow")
-        yield from asyncio.sleep(1)
+        await asyncio.sleep(1)
 
     def transition(self, event):
         if event == "stop":
-            return "stop"
+            return "stopping"
         if event == "economy":
             return "economy"
         return None
@@ -73,17 +72,16 @@ class Overflow(FsmState):
 
 class Filtration(Fsm):
 
-    def __init__(self, system, heating):
+    def __init__(self, system):
         super().__init__()
         self.add_state("stop", Stop(self))
         self.add_state("stopping", Stopping(self))
         self.add_state("economy", Economy(self))
         self.add_state("overflow", Overflow(self))
         self.__system = system
-        self.__heating = heating
 
     def get_heating_fsm(self):
-        return self.__heating
+        return self.__system.getFsm("heating")
 
     def getActuator(self, name):
         return self.__system.getActuator(name)
@@ -94,108 +92,100 @@ class Filtration(Fsm):
     def getConfiguration(self, name):
         return self.__system.getConfiguration(name)
 
-    @asyncio.coroutine
-    def do_backwash(self):
+    async def do_backwash(self):
         log.info("Do Backwash")
         pump = self.getActuator("pump-main")
         valve = self.getActuator("valve-1")
-        yield from pump.stop()
-        yield from asyncio.sleep(1)
-        yield from valve.close()
-        yield from asyncio.sleep(1)
-        yield from pump.start()
+        await pump.stop()
+        await asyncio.sleep(1)
+        await valve.close()
+        await asyncio.sleep(1)
+        await pump.start()
         try:
-            yield from asyncio.wait_for(self.getSensor("pressure-main").below(2.0), 20)
+            await asyncio.wait_for(self.getSensor("pressure-main").below(2.0), 20)
         except asyncio.TimeoutError:
             log.warning("Washing takes too long, interrupting...")
-        yield from pump.stop()
-        yield from asyncio.sleep(1)
+        await pump.stop()
+        await asyncio.sleep(1)
         log.info("Backwash done")
-        yield from self.do_economy()
+        await self.do_economy()
 
-    @asyncio.coroutine
-    def do_overflow(self):
+    async def do_overflow(self):
         log.info("Do Overflow")
         pump = self.getActuator("pump-main")
         valve = self.getActuator("valve-1")
-        yield from valve.open()
-        yield from pump.start()
-        yield from self.overflow()
+        await valve.open()
+        await pump.start()
+        await self.overflow()
     
-    @asyncio.coroutine
-    def overflow(self):
+    async def overflow(self):
         log.info("Overflow")
         settings = self.getConfiguration("settings")
         if not settings.getRunning():
-            yield from self.do_standby()
+            await self.do_standby()
         if settings.getFiltration() is "economy":
-            yield from self.do_economy()
-        yield from asyncio.sleep(1)
-        yield from self.overflow()
+            await self.do_economy()
+        await asyncio.sleep(1)
+        await self.overflow()
 
-    @asyncio.coroutine
-    def do_economy(self):
+    async def do_economy(self):
         log.info("Do Economy")
         pump = self.getActuator("pump-main")
         valve = self.getActuator("valve-1")
-        yield from valve.close()
-        yield from pump.start()
-        yield from self.economy()
+        await valve.close()
+        await pump.start()
+        await self.economy()
 
-    @asyncio.coroutine
-    def economy(self):
+    async def economy(self):
         log.info("Economy")
         settings = self.getConfiguration("settings")
         if not settings.getRunning():
-            yield from self.do_standby()
+            await self.do_standby()
         if settings.getFiltration() is "overflow":
-            yield from self.do_overflow()
-        if (yield from self.getSensor("pressure-main").above(3.0)):
-            yield from self.do_backwash()
-        yield from asyncio.sleep(1)
-        yield from self.economy()
+            await self.do_overflow()
+        if await self.getSensor("pressure-main").above(3.0):
+            await self.do_backwash()
+        await asyncio.sleep(1)
+        await self.economy()
 
-    @asyncio.coroutine
-    def do_standby(self):
+    async def do_standby(self):
         log.info("Do Standby")
         pump = self.getActuator("pump-main")
         valve = self.getActuator("valve-1")
-        yield from pump.stop()
-        yield from self.standby()
+        await pump.stop()
+        await self.standby()
 
-    @asyncio.coroutine
-    def standby(self):
+    async def standby(self):
         log.info("Standby")
         settings = self.getConfiguration("settings")
         if settings.getRunning():
             if settings.getFiltration() is "overflow":
-                yield from self.do_overflow()
+                await self.do_overflow()
             else:
-                yield from self.do_economy()
+                await self.do_economy()
 
-    @asyncio.coroutine
-    def main(self, loop):
-        yield from self.do_standby()
+    async def main(self, loop):
+        #await self.do_standby()
         return
     
         settings = self.getConfiguration("settings")
         while True:
             if settings.getRunning():
                 if settings.getFiltration() is "overflow":
-                    yield from self.overflow()
+                    await self.overflow()
                 else:
-                    yield from self.economy()
+                    await self.economy()
             else:
-                yield from self.standby()
+                await self.standby()
         
             continue
             try:
-                if (yield from self.getSensor("pressure-main").above(3.0)):
-                    yield from self.backwash()
+                if (await self.getSensor("pressure-main").above(3.0)):
+                    await self.backwash()
                 else:
-                    yield from asyncio.sleep(1)
+                    await asyncio.sleep(1)
             except Exception as exception:
                 log.error(exception)
-                yield from self.getActuator("pump-main").stop()
-                yield from asyncio.sleep(1)
+                await self.getActuator("pump-main").stop()
+                await asyncio.sleep(1)
 

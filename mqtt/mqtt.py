@@ -12,26 +12,26 @@ class Mqtt(object):
     def register(self, topic, function, type):
         self.__registry[topic] = (function, type)        
 
-    def update(self, topic, value):
+    async def update(self, topic, value):
         function, type = self.__registry[topic]
-        function(type(value))
+        await function(type(value))
 
-    @asyncio.coroutine
-    def main(self):
+    async def main(self):
         client = MQTTClient()
-        yield from client.connect('mqtt://localhost:1883/')
+        await client.connect('mqtt://localhost:1883/')
         for key in self.__registry.keys():
-            yield from client.subscribe([{'filter': key, 'qos': 0x00}])
+            #yield from client.subscribe([{'filter': key, 'qos': 0x00}])
+            await client.subscribe([(key, 0)])
         while True:
-            packet = yield from client.deliver_message()
-            log.debug("%s : %s" % (packet.variable_header.topic_name, str(packet.payload.data)))
+            packet = await client.deliver_message()
+            log.debug("%s : %s" % (packet.topic, str(packet.data)))
             try:
                 #yield from self.getSensor("pressure-main").setValue(float(packet.payload.data))
-                self.update(packet.variable_header.topic_name, packet.payload.data)
+                data = packet.data.decode("utf-8")
+                await self.update(packet.topic, data)
             except Exception as exception:
                 log.exception(exception)
-            yield from client.acknowledge_delivery(packet.variable_header.packet_id)
         for key in self.__registry.keys():
-            yield from client.unsubscribe([key])
-        yield from client.disconnect()
+            await client.unsubscribe([key])
+        await client.disconnect()
 

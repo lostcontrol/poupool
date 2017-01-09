@@ -5,6 +5,7 @@ class System(object):
         self.__actuators = {}
         self.__sensors = {}
         self.__configuration = {}
+        self.__fsm = {}
 
     def addActuator(self, name, actuator):
         self.__actuators[name] = actuator
@@ -23,3 +24,9 @@ class System(object):
 
     def getConfiguration(self, name):
         return self.__configuration[name]
+
+    def addFsm(self, name, fsm):
+        self.__fsm[name] = fsm
+
+    def getFsm(self, name):
+        return self.__fsm[name]

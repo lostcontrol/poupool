@@ -1,11 +1,14 @@
 import asyncio
+import logging
+
+log = logging.getLogger("poupool.%s" % __name__)
 
 class Fsm(object):
 
     def __init__(self):
         self.__queue = asyncio.Queue()
         self.__state = {}
-        self.__current_state = (None, None)
+        self.__current_state = None
         
     def add_state(self, name, state):
         if not self.__current_state:
@@ -15,21 +18,17 @@ class Fsm(object):
     def get_state(self, name):
         return self.__state[name]
     
-    @asyncio.coroutine
-    def add_event(self, event):
-        yield from self.__queue.put(event)
+    async def add_event(self, event):
+        await self.__queue.put(event)
     
-    @asyncio.coroutine
-    def process_event(self):
-        item = yield from self.__queue.get()
-        print("<- Got %d" % item)
-        self.do_transition(item)
-    
-    def do_transition(self, event):
-        new_state_name = self.__current_state.do_transition(event)
-        if new_state_name:
+    async def process_event(self):
+        while True:
+            item = await self.__queue.get()
             (current_state_name, current_state) = self.__current_state
-            if current_state_name != new_state_name:
+            new_state_name = current_state.transition(item)
+            log.debug("Process from %s (%s) to %s" % (current_state_name, current_state, new_state_name))
+            if new_state_name:
+                #if current_state_name != new_state_name:
                 new_state = self.get_state(new_state_name)
                 current_state.cancel()
                 new_state.do_run()
@@ -46,11 +45,10 @@ class FsmTask(object):
     def do_run(self):
         if self.__task:
             raise Exception("Task already running")
-        self.__task = asyncio.ensure_future(self.run())
+        self.__task = asyncio.async(self.run())
         self.__task.add_done_callback(self._done)
 
-    @asyncio.coroutine
-    def run(self):
+    async def run(self):
         raise NotImplementedError()
 
     def cancel(self):
@@ -70,10 +68,9 @@ class FsmState(FsmTask):
     def get_state(self, name):
         return self.__fsm.get_state(name)
 
-    @asyncio.coroutine
-    def add_event(self, event):
-        yield from self.__fsm.add_event(event)
+    async def add_event(self, event):
+        await self.__fsm.add_event(event)
 
-    def do_transition(self, event):
+    def transition(self, event):
         raise NotImplementedError()
 

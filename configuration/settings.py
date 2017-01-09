@@ -1,7 +1,9 @@
+import asyncio
 
 class Settings:
 
-    def __init__(self, mqtt):
+    def __init__(self, mqtt, system):
+        self.__system = system
         self.__running = False
         self.__filtration = "stop"
         mqtt.register("/settings/running", self.setRunning, bool)
@@ -10,15 +12,19 @@ class Settings:
     def getRunning(self):
         return self.__running
 
-    def setRunning(self, value):
+    async def setRunning(self, value):
         if not isinstance(value, bool):
             raise Exception("bool is expected")
+        if value:
+            await self.__system.getFsm("filtration").add_event("running")
         self.__running = value
 
     def getFiltration(self):
         return self.__filtration
 
-    def setFiltration(self, value):
+    async def setFiltration(self, value):
         if not isinstance(value, str):
             raise Exception("string is expected")
+        if self.__filtration != value:
+            await self.__system.getFsm("filtration").add_event(str(value))
         self.__filtration = value
