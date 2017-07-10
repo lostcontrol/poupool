@@ -1,191 +1,147 @@
-import asyncio
+import pykka
+import datetime
 import logging
-from controller.fsm import Fsm, FsmState, FsmTask
+#from transitions.extensions import GraphMachine as Machine
+from .actor import PoupoolModel
+from .actor import PoupoolActor
 
-log = logging.getLogger("poupool.%s" % __name__)
+logger = logging.getLogger("filtration")
 
-class Stopping(FsmState):
+class Duration(object):
 
-    def __init__(self, fsm):
-        super().__init__(fsm)
+    def __init__(self):
+        self.__duration = datetime.timedelta()
+        self.__start = None
+        self.__last = None
+        self.daily = datetime.timedelta()
+        self.hour = 0
 
-    async def run(self):
-        print("Stopping filtration")
-        await self.get_fsm().get_heating_fsm().add_event("stop")
+    def clear(self):
+        self.__last = None
 
-    def transition(self, event):
-        if event == "heating_stopped":
-            return "stop"
-        return None
+    def update(self, now, factor=1.0):
+        if self.__last:
+            diff = now - self.__last
+            self.__duration += factor * diff
+            if now - self.__start > datetime.timedelta(days=1):
+                # reset
+                self.__reset()
+        if not self.__start:
+            self.__start = now
+        self.__last = now
+        remaining = max(datetime.timedelta(), self.daily - self.__duration)
+        logger.debug("Duration since last reset: %s Remaining: %s" % (self.__duration, remaining))
 
-class Stop(FsmState):
+    def __reset(self):
+        tm = datetime.datetime.now()
+        self.__start = tm.replace(hour=self.hour, minute=0, second=0, microsecond=0)
+        logger.info("Duration reset: %s Duration done: %s" % (self.__start, self.__duration))
+        self.__duration = datetime.timedelta()
 
-    def __init__(self, fsm):
-        super().__init__(fsm)
+    def elapsed(self):
+        return self.__duration >= self.daily
+
+
+class Filtration(PoupoolActor):
+
+    STATE_REFRESH_DELAY = 10
+
+    states = ["stop", "waiting", "eco", "overflow_start", "overflow"]
+
+    def __init__(self, devices):
+        super(Filtration, self).__init__()
+        self.__devices = devices
+        self.__duration = Duration()
+        # Initialize the state machine
+        self.__machine = PoupoolModel(model=self, states=Filtration.states, initial="stop")
         
-    async def run(self):
-        print("Filtration stopped")
-        await asyncio.sleep(1)
+        self.__machine.add_transition("eco", "stop", "eco")
+        self.__machine.add_transition("eco", "waiting", "eco")
+        self.__machine.add_transition("eco", "eco", "eco")
+        self.__machine.add_transition("eco", "overflow_start", "eco")
+        self.__machine.add_transition("eco", "overflow", "eco")
+        self.__machine.add_transition("waiting", "eco", "waiting")
+        self.__machine.add_transition("waiting", "waiting", "waiting")
+        self.__machine.add_transition("overflow", "stop", "overflow_start")
+        self.__machine.add_transition("overflow", "overflow", "overflow")
+        self.__machine.add_transition("overflow", "eco", "overflow_start")
+        self.__machine.add_transition("overflow", "waiting", "overflow_start")
+        self.__machine.add_transition("overflow_start_done", "overflow_start", "overflow")
+        self.__machine.add_transition("stop", "*", "stop")
 
-    def transition(self, event):
-        if event == "economy":
-            return "economy"
-        if event == "overflow":
-            return "overflow"
-        return None
-
-class Economy(FsmState):
-
-    def __init__(self, fsm):
-        super().__init__(fsm)
-        
-    async def run(self):
-        print("Economy")
-        while True:
-            if (await self.get_fsm().getSensor("pressure-main").above(3.0)):
-                print("Backwash")
-            await asyncio.sleep(1)
-
-    def transition(self, event):
-        if event == "stop":
-            return "stopping"
-        if event == "overflow":
-            return "overflow"
-        return None
-
-class Overflow(FsmState):
-
-    def __init__(self, fsm):
-        super().__init__(fsm)
-        
-    async def run(self):
-        print("Overflow")
-        await asyncio.sleep(1)
-
-    def transition(self, event):
-        if event == "stop":
-            return "stopping"
-        if event == "economy":
-            return "economy"
-        return None
-
-
-class Filtration(Fsm):
-
-    def __init__(self, system):
-        super().__init__()
-        self.add_state("stop", Stop(self))
-        self.add_state("stopping", Stopping(self))
-        self.add_state("economy", Economy(self))
-        self.add_state("overflow", Overflow(self))
-        self.__system = system
-
-    def get_heating_fsm(self):
-        return self.__system.getFsm("heating")
-
-    def getActuator(self, name):
-        return self.__system.getActuator(name)
-        
-    def getSensor(self, name):
-        return self.__system.getSensor(name)
+    def duration(self, value):
+        self.__duration.daily = datetime.timedelta(seconds=value)
+        logger.info("Duration for daily filtration set to: %s" % self.__duration.daily)
     
-    def getConfiguration(self, name):
-        return self.__system.getConfiguration(name)
-
-    async def do_backwash(self):
-        log.info("Do Backwash")
-        pump = self.getActuator("pump-main")
-        valve = self.getActuator("valve-1")
-        await pump.stop()
-        await asyncio.sleep(1)
-        await valve.close()
-        await asyncio.sleep(1)
-        await pump.start()
-        try:
-            await asyncio.wait_for(self.getSensor("pressure-main").below(2.0), 20)
-        except asyncio.TimeoutError:
-            log.warning("Washing takes too long, interrupting...")
-        await pump.stop()
-        await asyncio.sleep(1)
-        log.info("Backwash done")
-        await self.do_economy()
-
-    async def do_overflow(self):
-        log.info("Do Overflow")
-        pump = self.getActuator("pump-main")
-        valve = self.getActuator("valve-1")
-        await valve.open()
-        await pump.start()
-        await self.overflow()
+    def hour_of_reset(self, value):
+        self.__duration.hour = value
+        logger.info("Hour for daily filtration reset set to: %s" % self.__duration.hour)
     
-    async def overflow(self):
-        log.info("Overflow")
-        settings = self.getConfiguration("settings")
-        if not settings.getRunning():
-            await self.do_standby()
-        if settings.getFiltration() is "economy":
-            await self.do_economy()
-        await asyncio.sleep(1)
-        await self.overflow()
+    def on_enter_stop(self):
+        logger.info("Entering stop state")
+        self.__duration.clear()
+        tank = self.get_fsm("Tank")
+        if tank:
+            tank.stop()
+        self.__devices.get_pump("variable").off()
+        self.__devices.get_pump("boost").off()
+        self.__devices.get_valve("gravity").off()
+        self.__devices.get_valve("backwash").off()
+        self.__devices.get_valve("tank").off()
+        self.__devices.get_valve("drain").off()
 
-    async def do_economy(self):
-        log.info("Do Economy")
-        pump = self.getActuator("pump-main")
-        valve = self.getActuator("valve-1")
-        await valve.close()
-        await pump.start()
-        await self.economy()
+    def on_exit_stop(self):
+        logger.info("Exiting stop state")
+        tank = self.get_fsm("Tank")
+        if tank:
+            tank.normal()
 
-    async def economy(self):
-        log.info("Economy")
-        settings = self.getConfiguration("settings")
-        if not settings.getRunning():
-            await self.do_standby()
-        if settings.getFiltration() is "overflow":
-            await self.do_overflow()
-        if await self.getSensor("pressure-main").above(3.0):
-            await self.do_backwash()
-        await asyncio.sleep(1)
-        await self.economy()
+    def on_enter_waiting(self):
+        logger.info("Entering waiting state")
+        self.__duration.clear()
+        if self.__duration.elapsed():
+            self.__devices.get_pump("variable").off()
+            self.__devices.get_pump("boost").off()
+        self.do_state_waiting()
 
-    async def do_standby(self):
-        log.info("Do Standby")
-        pump = self.getActuator("pump-main")
-        valve = self.getActuator("valve-1")
-        await pump.stop()
-        await self.standby()
+    def do_state_waiting(self):
+        if not self.__duration.elapsed():
+            self._proxy.eco()
+        else:
+            self._proxy.do_delay(Filtration.STATE_REFRESH_DELAY, "do_state_waiting")
 
-    async def standby(self):
-        log.info("Standby")
-        settings = self.getConfiguration("settings")
-        if settings.getRunning():
-            if settings.getFiltration() is "overflow":
-                await self.do_overflow()
-            else:
-                await self.do_economy()
+    def on_enter_eco(self):
+        logger.info("Entering eco state")
+        if not self.__duration.elapsed():
+            self.__devices.get_pump("boost").off()
+            self.__devices.get_pump("variable").speed(1)
+            self.__devices.get_valve("gravity").on()
+            self.__devices.get_valve("tank").off()
+        self.do_state_eco()
 
-    async def main(self, loop):
-        #await self.do_standby()
-        return
+    def do_state_eco(self):
+        self.__duration.update(datetime.datetime.now())
+        if self.__duration.elapsed():
+            self._proxy.waiting()
+        else:
+            self._proxy.do_delay(Filtration.STATE_REFRESH_DELAY, "do_state_eco")
     
-        settings = self.getConfiguration("settings")
-        while True:
-            if settings.getRunning():
-                if settings.getFiltration() is "overflow":
-                    await self.overflow()
-                else:
-                    await self.economy()
-            else:
-                await self.standby()
-        
-            continue
-            try:
-                if (await self.getSensor("pressure-main").above(3.0)):
-                    await self.backwash()
-                else:
-                    await asyncio.sleep(1)
-            except Exception as exception:
-                log.error(exception)
-                await self.getActuator("pump-main").stop()
-                await asyncio.sleep(1)
+    def on_enter_overflow_start(self):
+        logger.info("Entering overflow_start state")
+        self.__duration.update(datetime.datetime.now())
+        self.__devices.get_valve("gravity").off()
+        self.__devices.get_valve("tank").on()
+        self.__devices.get_pump("variable").speed(1)
+        self.__devices.get_pump("boost").off()
+        self._proxy.do_delay(30, "overflow_start_done")
+    
+    def on_enter_overflow(self):
+        logger.info("Entering overflow state")
+        self.__devices.get_pump("variable").speed(3)
+        self.__devices.get_pump("boost").on()
+        self.do_state_overflow()
+
+    def do_state_overflow(self):
+        self.__duration.update(datetime.datetime.now(), 2)        
+        self._proxy.do_delay(Filtration.STATE_REFRESH_DELAY, "do_state_overflow")
 
