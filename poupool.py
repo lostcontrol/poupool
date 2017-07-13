@@ -29,7 +29,6 @@ def main():
     devices = DeviceRegistry()
     setup_gpio(devices)
 
-    from unittest.mock import MagicMock
     filtration = Filtration.start(devices).proxy()
     tank = Tank.start(devices).proxy()
 
