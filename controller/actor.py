@@ -13,6 +13,7 @@ class StopRepeatException(Exception):
 
 
 def repeat(delay=10):
+    assert delay >= 0
     def wrap(func):
         @functools.wraps(func)
         def wrapped_func(self, *args, **kwargs):
@@ -21,7 +22,11 @@ def repeat(delay=10):
             except StopRepeatException:
                 pass
             else:
-                self._proxy.do_delay(delay, func.__name__)
+                if delay > 0:
+                    self._proxy.do_delay(delay, func.__name__)
+                else:
+                    function = getattr(self._proxy, func.__name__)
+                    function(*args, **kwargs)
         return wrapped_func
     return wrap
 
