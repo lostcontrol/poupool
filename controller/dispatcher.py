@@ -1,7 +1,7 @@
 
 
 class Dispatcher(object):
-    
+
     def __init__(self, filtration):
         self.__mapping = {
             "/settings/mode": (filtration, lambda x: x in ("stop", "eco", "overflow"), lambda x: x, None),
@@ -11,7 +11,7 @@ class Dispatcher(object):
 
     def topics(self):
         return self.__mapping.keys()
-        
+
     def dispatch(self, topic, payload):
         entry = self.__mapping.get(topic)
         if entry:
@@ -21,4 +21,3 @@ class Dispatcher(object):
                 func = getattr(fsm, method(data))
                 param = value(data) if value else None
                 func(param) if param else func()
-        

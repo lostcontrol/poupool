@@ -3,6 +3,7 @@ import paho.mqtt.client as mqtt
 import pykka
 from .actor import PoupoolActor
 
+
 class Mqtt(PoupoolActor):
 
     def __init__(self, dispatcher):
@@ -28,4 +29,3 @@ class Mqtt(PoupoolActor):
 
     def do_stop(self):
         self.__run = False
-

@@ -1,5 +1,6 @@
 import pykka
 
+
 class PlainActor(pykka.ThreadingActor):
 
     def __init__(self):

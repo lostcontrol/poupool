@@ -9,6 +9,7 @@ except RuntimeError:
 
 logger = logging.getLogger("device")
 
+
 class DeviceRegistry(object):
 
     def __init__(self):
@@ -47,10 +48,10 @@ class SwitchDevice(Device):
         super(SwitchDevice, self).__init__(name)
         self.pin = pin
         GPIO.setup(self.pin, GPIO.OUT)
-    
+
     def on(self):
         GPIO.output(self.pin, True)
-    
+
     def off(self):
         GPIO.output(self.pin, False)
 
@@ -65,7 +66,7 @@ class PumpDevice(Device):
 
     def on(self):
         self.speed(3)
-    
+
     def off(self):
         self.speed(0)
 
@@ -84,4 +85,3 @@ class SensorDevice(Device):
     @property
     def value(self):
         return 50
-
