@@ -4,8 +4,10 @@ import logging
 #from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolModel
 from .actor import PoupoolActor
+from .actor import StopRepeatException, repeat, do_repeat
 
 logger = logging.getLogger("filtration")
+
 
 class Duration(object):
 
@@ -54,7 +56,7 @@ class Filtration(PoupoolActor):
         self.__duration = Duration()
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Filtration.states, initial="stop")
-        
+
         self.__machine.add_transition("eco", "stop", "eco")
         self.__machine.add_transition("eco", "waiting", "eco")
         self.__machine.add_transition("eco", "eco", "eco")
@@ -72,11 +74,11 @@ class Filtration(PoupoolActor):
     def duration(self, value):
         self.__duration.daily = datetime.timedelta(seconds=value)
         logger.info("Duration for daily filtration set to: %s" % self.__duration.daily)
-    
+
     def hour_of_reset(self, value):
         self.__duration.hour = value
         logger.info("Hour for daily filtration reset set to: %s" % self.__duration.hour)
-    
+
     def on_enter_stop(self):
         logger.info("Entering stop state")
         self.__duration.clear()
@@ -96,20 +98,21 @@ class Filtration(PoupoolActor):
         if tank:
             tank.normal()
 
+    @do_repeat()
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
         self.__duration.clear()
         if self.__duration.elapsed():
             self.__devices.get_pump("variable").off()
             self.__devices.get_pump("boost").off()
-        self.do_state_waiting()
 
-    def do_state_waiting(self):
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_waiting(self):
         if not self.__duration.elapsed():
             self._proxy.eco()
-        else:
-            self._proxy.do_delay(Filtration.STATE_REFRESH_DELAY, "do_state_waiting")
+            raise StopRepeatException
 
+    @do_repeat()
     def on_enter_eco(self):
         logger.info("Entering eco state")
         if not self.__duration.elapsed():
@@ -117,15 +120,14 @@ class Filtration(PoupoolActor):
             self.__devices.get_pump("variable").speed(1)
             self.__devices.get_valve("gravity").on()
             self.__devices.get_valve("tank").off()
-        self.do_state_eco()
 
-    def do_state_eco(self):
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_eco(self):
         self.__duration.update(datetime.datetime.now())
         if self.__duration.elapsed():
             self._proxy.waiting()
-        else:
-            self._proxy.do_delay(Filtration.STATE_REFRESH_DELAY, "do_state_eco")
-    
+            raise StopRepeatException
+
     def on_enter_overflow_start(self):
         logger.info("Entering overflow_start state")
         self.__duration.update(datetime.datetime.now())
@@ -134,14 +136,13 @@ class Filtration(PoupoolActor):
         self.__devices.get_pump("variable").speed(1)
         self.__devices.get_pump("boost").off()
         self._proxy.do_delay(30, "overflow_start_done")
-    
+
+    @do_repeat()
     def on_enter_overflow(self):
         logger.info("Entering overflow state")
         self.__devices.get_pump("variable").speed(3)
         self.__devices.get_pump("boost").on()
-        self.do_state_overflow()
 
-    def do_state_overflow(self):
-        self.__duration.update(datetime.datetime.now(), 2)        
-        self._proxy.do_delay(Filtration.STATE_REFRESH_DELAY, "do_state_overflow")
-
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_overflow(self):
+        self.__duration.update(datetime.datetime.now(), 2)

@@ -4,8 +4,10 @@ import logging
 #from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor
 from .actor import PoupoolModel
+from .actor import StopRepeatException, repeat, do_repeat
 
 logger = logging.getLogger("tank")
+
 
 class Tank(PoupoolActor):
 
@@ -18,42 +20,42 @@ class Tank(PoupoolActor):
         self.__devices = devices
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Tank.states, initial="stop")
-        
+
         self.__machine.add_transition("low", "*", "low")
         self.__machine.add_transition("normal", "*", "normal")
         self.__machine.add_transition("stop", "*", "stop")
-    
+
     def on_enter_stop(self):
         logger.info("Entering stop state")
         self.__devices.get_valve("main").off()
-    
+
+    @do_repeat()
     def on_enter_low(self):
         logger.info("Entering low state")
         self.__devices.get_valve("main").on()
-        self.do_state_low()
 
-    def do_state_low(self):
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_low(self):
         height = self.__devices.get_sensor("tank").value
         if height >= 25:
             self._proxy.normal()
+            raise StopRepeatException
         elif height < 5:
             logger.warning("Tank TOO LOW, stopping: %d" % height)
             filtration = self.get_fsm("Filtration")
             if filtration:
                 filtration.stop()
-        else:
-            self._proxy.do_delay(Tank.STATE_REFRESH_DELAY, "do_state_low")
+            raise StopRepeatException
 
+    @do_repeat()
     def on_enter_normal(self):
         logger.info("Entering normal state")
         self.__devices.get_valve("main").off()
-        self.do_state_normal()
 
-    def do_state_normal(self):
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_normal(self):
         height = self.__devices.get_sensor("tank").value
         logger.debug("Tank level: %d" % height)
         if height < 10:
             self._proxy.low()
-        else:
-            self._proxy.do_delay(Tank.STATE_REFRESH_DELAY, "do_state_normal")
-
+            raise StopRepeatException

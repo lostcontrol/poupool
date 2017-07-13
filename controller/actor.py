@@ -2,8 +2,45 @@ import pykka
 import transitions
 import time
 import logging
+import functools
+import re
 
 logger = logging.getLogger("actor")
+
+
+class StopRepeatException(Exception):
+    pass
+
+
+def repeat(delay=10):
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapped_func(self, *args, **kwargs):
+            try:
+                func(self, *args, **kwargs)
+            except StopRepeatException:
+                pass
+            else:
+                self._proxy.do_delay(delay, func.__name__)
+        return wrapped_func
+    return wrap
+
+
+def do_repeat():
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapped_func(self, *args, **kwargs):
+            try:
+                func(self, *args, **kwargs)
+            except StopRepeatException:
+                pass
+            else:
+                method = re.sub("on_enter_", "do_repeat_", func.__name__)
+                function = getattr(self, method)
+                function()
+        return wrapped_func
+    return wrap
+
 
 class PoupoolModel(transitions.Machine):
 
@@ -48,4 +85,3 @@ class PoupoolActor(pykka.ThreadingActor):
             self.__delay_running = False
             func = getattr(self._proxy, method)
             func(*args, **kwargs)
-
