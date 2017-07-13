@@ -135,7 +135,7 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("tank").on()
         self.__devices.get_pump("variable").speed(1)
         self.__devices.get_pump("boost").off()
-        self._proxy.do_delay(30, "overflow_start_done")
+        self._proxy.do_delay(20, "overflow_start_done")
 
     @do_repeat()
     def on_enter_overflow(self):
