@@ -12,6 +12,8 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)-15s %(levelname)-6s %(name)-15s %(message)s"
 )
+logging.getLogger("pykka").setLevel(logging.INFO)
+logging.getLogger("transitions").setLevel(logging.INFO)
 
 def setup_gpio(registry):
     registry.add_pump(PumpDevice("variable", [1, 2, 3, 4]))

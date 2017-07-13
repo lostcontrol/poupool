@@ -5,7 +5,7 @@ import pykka
 from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat
 
-logger = logging.getLogger("mqtt")
+logger = logging.getLogger(__name__)
 
 
 class Mqtt(PoupoolActor):

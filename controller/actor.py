@@ -5,7 +5,7 @@ import logging
 import functools
 import re
 
-logger = logging.getLogger("actor")
+logger = logging.getLogger(__name__)
 
 
 class StopRepeatException(Exception):

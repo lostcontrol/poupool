@@ -6,7 +6,7 @@ from .actor import PoupoolModel
 from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat, do_repeat
 
-logger = logging.getLogger("filtration")
+logger = logging.getLogger(__name__)
 
 
 class Duration(object):

@@ -6,7 +6,7 @@ from .actor import PoupoolActor
 from .actor import PoupoolModel
 from .actor import StopRepeatException, repeat, do_repeat
 
-logger = logging.getLogger("tank")
+logger = logging.getLogger(__name__)
 
 
 class Tank(PoupoolActor):
