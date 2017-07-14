@@ -42,7 +42,7 @@ class Tank(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY / 2)
     def do_repeat_low(self):
         # Security feature: stop if we stay too long in this state
-        if self.__machine.get_time_in_state() > datetime.timedelta(hours=1):
+        if self.__machine.get_time_in_state() > datetime.timedelta(hours=6):
             logger.warning("Tank TOO LONG in low state, stopping")
             filtration = self.get_actor("Filtration")
             if filtration:
