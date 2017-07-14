@@ -23,10 +23,22 @@ class Tank(PoupoolActor):
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Tank.states, initial="stop")
 
-        self.__machine.add_transition("low", "*", "low")
-        self.__machine.add_transition("normal", "*", "normal")
-        self.__machine.add_transition("high", "*", "high")
-        self.__machine.add_transition("stop", "*", "stop")
+        self.__machine.add_transition("low", "stop", "low")
+        self.__machine.add_transition("low", "normal", "low")
+        self.__machine.add_transition("normal", "stop", "normal")
+        self.__machine.add_transition("normal", "low", "normal")
+        self.__machine.add_transition("normal", "high", "normal")
+        self.__machine.add_transition("high", "stop", "high")
+        self.__machine.add_transition("high", "normal", "high")
+        self.__machine.add_transition("stop", "low", "stop")
+        self.__machine.add_transition("stop", "normal", "stop")
+        self.__machine.add_transition("stop", "high", "stop")
+
+    def __get_tank_height(self):
+        height = self.__devices.get_sensor("tank").value
+        logger.debug("Tank level: %d" % height)
+        self.__encoder.tank_height(height)
+        return height
 
     def on_enter_stop(self):
         logger.info("Entering stop state")
@@ -48,8 +60,7 @@ class Tank(PoupoolActor):
             if filtration:
                 filtration.stop()
             raise StopRepeatException
-        height = self.__devices.get_sensor("tank").value
-        logger.debug("Tank level: %d" % height)
+        height = self.__get_tank_height()
         if height >= 25:
             self._proxy.normal()
             raise StopRepeatException
@@ -68,8 +79,7 @@ class Tank(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_normal(self):
-        height = self.__devices.get_sensor("tank").value
-        logger.debug("Tank level: %d" % height)
+        height = self.__get_tank_height()
         if height < 10:
             self._proxy.low()
             raise StopRepeatException
@@ -85,8 +95,7 @@ class Tank(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY * 2)
     def do_repeat_high(self):
-        height = self.__devices.get_sensor("tank").value
-        logger.debug("Tank level: %d" % height)
+        height = self.__get_tank_height()
         if height < 60:
             self._proxy.normal()
             raise StopRepeatException
