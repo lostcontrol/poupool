@@ -5,6 +5,12 @@ from controller.encoder import Encoder
 from controller.mqtt import Mqtt
 from controller.device import DeviceRegistry, SwitchDevice, PumpDevice, SensorDevice
 
+try:
+    import RPi.GPIO as GPIO
+except RuntimeError:
+    from unittest.mock import MagicMock
+    GPIO = MagicMock()
+
 import time
 import pykka
 import logging
@@ -17,6 +23,8 @@ logging.getLogger("pykka").setLevel(logging.INFO)
 logging.getLogger("transitions").setLevel(logging.INFO)
 
 def setup_gpio(registry):
+    GPIO.setmode(GPIO.BOARD)
+
     registry.add_pump(PumpDevice("variable", [1, 2, 3, 4]))
     registry.add_pump(SwitchDevice("boost", 4))
     
