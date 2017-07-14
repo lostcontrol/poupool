@@ -1,6 +1,7 @@
 import pykka
 import transitions
 import time
+import datetime
 import logging
 import functools
 import re
@@ -51,11 +52,18 @@ class PoupoolModel(transitions.Machine):
 
     def __init__(self, *args, **kwargs):
         super(PoupoolModel, self).__init__(
-            before_state_change="do_cancel",
+            before_state_change=["do_cancel", self.__update_state_time],
             auto_transitions=False,
             *args,
             **kwargs
         )
+        self.__state_time = None
+
+    def __update_state_time(self):
+        self.__state_time = datetime.datetime.now()
+
+    def get_time_in_state(self):
+        return datetime.datetime.now() - self.__state_time
 
 
 class PoupoolActor(pykka.ThreadingActor):
