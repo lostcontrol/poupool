@@ -20,6 +20,7 @@ class Mqtt(PoupoolActor):
         self.__client.on_disconnect = self.__on_disconnect
 
     def __on_connect(self, client, userdata, flags, rc):
+        logger.info("MQTT client connected to broker")
         for topic in self.__dispatcher.topics():
             self.__client.subscribe(topic)
 
@@ -27,6 +28,7 @@ class Mqtt(PoupoolActor):
         self.__dispatcher.dispatch(message.topic, message.payload)
 
     def __on_disconnect(self, client, userdata, rc):
+        logger.warn("MQTT client disconnected: %d" % rc)
         if rc != 0:
             self.do_connect()
 
@@ -51,3 +53,11 @@ class Mqtt(PoupoolActor):
 
     def do_stop(self):
         self.__run = False
+
+    def publish(topic, payload, qos=0, retain=False):
+        result, mid = self.__client.publish(topic, payload, qos, retain)
+        if result != 0:
+            logger.error("Unable to publish topic '%s':'%s'" % (topic, str(payload)))
+            return False
+        return True
+
