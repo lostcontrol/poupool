@@ -57,18 +57,16 @@ class Filtration(PoupoolActor):
         self.__duration = Duration()
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Filtration.states, initial="stop")
-
+        # Transitions
         self.__machine.add_transition("eco", "stop", "eco")
         self.__machine.add_transition("eco", "waiting", "eco")
-        self.__machine.add_transition("eco", "eco", "eco")
         self.__machine.add_transition("eco", "overflow", "eco")
         self.__machine.add_transition("waiting", "eco", "waiting")
-        self.__machine.add_transition("waiting", "waiting", "waiting")
-        self.__machine.add_transition("overflow", "stop", "overflow")
-        self.__machine.add_transition("overflow", "overflow", "overflow")
-        self.__machine.add_transition("overflow", "eco", "overflow")
-        self.__machine.add_transition("overflow", "waiting", "overflow")
-        self.__machine.add_transition("stop", "*", "stop")
+        self.__machine.add_transition("overflow", "eco", "overflow", unless="tank_is_low")
+        self.__machine.add_transition("overflow", "waiting", "overflow", unless="tank_is_low")
+        self.__machine.add_transition("stop", "eco", "stop")
+        self.__machine.add_transition("stop", "waiting", "stop")
+        self.__machine.add_transition("stop", "overflow", "stop")
 
     def duration(self, value):
         self.__duration.daily = datetime.timedelta(seconds=value)
@@ -77,6 +75,12 @@ class Filtration(PoupoolActor):
     def hour_of_reset(self, value):
         self.__duration.hour = value
         logger.info("Hour for daily filtration reset set to: %s" % self.__duration.hour)
+
+    def tank_is_low(self):
+        tank = self.get_actor("Tank")
+        if tank:
+            return tank.is_low().get()
+        return False
 
     def on_enter_stop(self):
         logger.info("Entering stop state")

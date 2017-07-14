@@ -54,6 +54,7 @@ class PoupoolModel(transitions.Machine):
         super(PoupoolModel, self).__init__(
             before_state_change=["do_cancel", self.__update_state_time],
             auto_transitions=False,
+            ignore_invalid_triggers=True,
             *args,
             **kwargs
         )
