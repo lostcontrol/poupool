@@ -82,7 +82,7 @@ class Filtration(PoupoolActor):
     def on_enter_stop(self):
         logger.info("Entering stop state")
         self.__duration.clear()
-        tank = self.get_fsm("Tank")
+        tank = self.get_actor("Tank")
         if tank:
             tank.stop()
         self.__devices.get_pump("variable").off()
@@ -94,7 +94,7 @@ class Filtration(PoupoolActor):
 
     def on_exit_stop(self):
         logger.info("Exiting stop state")
-        tank = self.get_fsm("Tank")
+        tank = self.get_actor("Tank")
         if tank:
             tank.normal()
 

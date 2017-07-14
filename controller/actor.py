@@ -74,11 +74,11 @@ class PoupoolActor(pykka.ThreadingActor):
         self.__delay_cancelled = False
         self.__delay_running = False
 
-    def get_fsm(self, name):
+    def get_actor(self, name):
         fsm = pykka.ActorRegistry.get_by_class_name(name)
         if fsm:
             return fsm[0].proxy()
-        logging.critical("Fsm %s not found!!!" % name)
+        logging.critical("Actor %s not found!!!" % name)
         return None
 
     def do_cancel(self):
