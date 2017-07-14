@@ -1,6 +1,7 @@
 import pykka
 import time
 import logging
+import datetime
 #from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor
 from .actor import PoupoolModel
@@ -36,6 +37,13 @@ class Tank(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_low(self):
+        # Security feature: stop if we stay too long in this state
+        if self.__machine.get_time_in_state() > datetime.timedelta(hours=1):
+            logger.warning("Tank TOO LONG in low state, stopping")
+            filtration = self.get_fsm("Filtration")
+            if filtration:
+                filtration.stop()
+            raise StopRepeatException
         height = self.__devices.get_sensor("tank").value
         if height >= 25:
             self._proxy.normal()
