@@ -72,7 +72,6 @@ class PumpDevice(Device):
 
     def speed(self, value):
         assert 0 <= value <= 3
-        print("pump=%d" % value)
         for i, pin in enumerate(self.pins):
             GPIO.output(pin, True if pin == value else False)
 
