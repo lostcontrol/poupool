@@ -19,8 +19,8 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)-15s %(levelname)-6s %(name)-15s %(message)s"
 )
-logging.getLogger("pykka").setLevel(logging.INFO)
-logging.getLogger("transitions").setLevel(logging.INFO)
+logging.getLogger("pykka").setLevel(logging.WARN)
+logging.getLogger("transitions").setLevel(logging.WARN)
 
 def setup_gpio(registry):
     GPIO.setmode(GPIO.BOARD)
