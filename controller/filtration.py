@@ -48,7 +48,7 @@ class Filtration(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
 
-    states = ["stop", "waiting", "eco", "overflow_start", "overflow"]
+    states = ["stop", "waiting", "eco", "overflow"]
 
     def __init__(self, encoder, devices):
         super(Filtration, self).__init__()
@@ -61,15 +61,13 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("eco", "stop", "eco")
         self.__machine.add_transition("eco", "waiting", "eco")
         self.__machine.add_transition("eco", "eco", "eco")
-        self.__machine.add_transition("eco", "overflow_start", "eco")
         self.__machine.add_transition("eco", "overflow", "eco")
         self.__machine.add_transition("waiting", "eco", "waiting")
         self.__machine.add_transition("waiting", "waiting", "waiting")
-        self.__machine.add_transition("overflow", "stop", "overflow_start")
+        self.__machine.add_transition("overflow", "stop", "overflow")
         self.__machine.add_transition("overflow", "overflow", "overflow")
-        self.__machine.add_transition("overflow", "eco", "overflow_start")
-        self.__machine.add_transition("overflow", "waiting", "overflow_start")
-        self.__machine.add_transition("overflow_start_done", "overflow_start", "overflow")
+        self.__machine.add_transition("overflow", "eco", "overflow")
+        self.__machine.add_transition("overflow", "waiting", "overflow")
         self.__machine.add_transition("stop", "*", "stop")
 
     def duration(self, value):
@@ -120,10 +118,10 @@ class Filtration(PoupoolActor):
         logger.info("Entering eco state")
         self.__encoder.filtration_state("eco")
         if not self.__duration.elapsed():
+            self.__devices.get_valve("tank").off()
+            self.__devices.get_valve("gravity").on()
             self.__devices.get_pump("boost").off()
             self.__devices.get_pump("variable").speed(1)
-            self.__devices.get_valve("gravity").on()
-            self.__devices.get_valve("tank").off()
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco(self):
@@ -132,20 +130,12 @@ class Filtration(PoupoolActor):
             self._proxy.waiting()
             raise StopRepeatException
 
-    def on_enter_overflow_start(self):
-        logger.info("Entering overflow_start state")
-        self.__encoder.filtration_state("overflow start")
-        self.__duration.update(datetime.datetime.now())
-        self.__devices.get_valve("gravity").off()
-        self.__devices.get_valve("tank").on()
-        self.__devices.get_pump("variable").speed(1)
-        self.__devices.get_pump("boost").off()
-        self._proxy.do_delay(20, "overflow_start_done")
-
     @do_repeat()
     def on_enter_overflow(self):
         logger.info("Entering overflow state")
         self.__encoder.filtration_state("overflow")
+        self.__devices.get_valve("gravity").off()
+        self.__devices.get_valve("tank").on()
         self.__devices.get_pump("variable").speed(3)
         self.__devices.get_pump("boost").on()
 
