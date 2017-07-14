@@ -50,8 +50,9 @@ class Filtration(PoupoolActor):
 
     states = ["stop", "waiting", "eco", "overflow_start", "overflow"]
 
-    def __init__(self, devices):
+    def __init__(self, encoder, devices):
         super(Filtration, self).__init__()
+        self.__encoder = encoder
         self.__devices = devices
         self.__duration = Duration()
         # Initialize the state machine
@@ -81,6 +82,7 @@ class Filtration(PoupoolActor):
 
     def on_enter_stop(self):
         logger.info("Entering stop state")
+        self.__encoder.filtration_state("stop")
         self.__duration.clear()
         tank = self.get_actor("Tank")
         if tank:
@@ -101,6 +103,7 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
+        self.__encoder.filtration_state("waiting")
         self.__duration.clear()
         if self.__duration.elapsed():
             self.__devices.get_pump("variable").off()
@@ -115,6 +118,7 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_eco(self):
         logger.info("Entering eco state")
+        self.__encoder.filtration_state("eco")
         if not self.__duration.elapsed():
             self.__devices.get_pump("boost").off()
             self.__devices.get_pump("variable").speed(1)
@@ -130,6 +134,7 @@ class Filtration(PoupoolActor):
 
     def on_enter_overflow_start(self):
         logger.info("Entering overflow_start state")
+        self.__encoder.filtration_state("overflow start")
         self.__duration.update(datetime.datetime.now())
         self.__devices.get_valve("gravity").off()
         self.__devices.get_valve("tank").on()
@@ -140,6 +145,7 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_overflow(self):
         logger.info("Entering overflow state")
+        self.__encoder.filtration_state("overflow")
         self.__devices.get_pump("variable").speed(3)
         self.__devices.get_pump("boost").on()
 

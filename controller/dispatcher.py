@@ -2,7 +2,10 @@
 
 class Dispatcher(object):
 
-    def __init__(self, filtration):
+    def __init__(self):
+        self.__mapping = {}
+
+    def register(self, filtration):
         self.__mapping = {
             "/settings/mode": (filtration, lambda x: x in ("stop", "eco", "overflow"), lambda x: x, None),
             "/settings/filtration/duration": (filtration, lambda x: 0 < int(x) <= 172800, lambda x: "duration", lambda x: int(x)),

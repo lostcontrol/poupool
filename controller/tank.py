@@ -16,8 +16,9 @@ class Tank(PoupoolActor):
 
     states = ["stop", "low", "normal"]
 
-    def __init__(self, devices):
+    def __init__(self, encoder, devices):
         super(Tank, self).__init__()
+        self.__encoder = encoder
         self.__devices = devices
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Tank.states, initial="stop")
@@ -28,11 +29,13 @@ class Tank(PoupoolActor):
 
     def on_enter_stop(self):
         logger.info("Entering stop state")
+        self.__encoder.tank_state("stop")
         self.__devices.get_valve("main").off()
 
     @do_repeat()
     def on_enter_low(self):
         logger.info("Entering low state")
+        self.__encoder.tank_state("low")
         self.__devices.get_valve("main").on()
 
     @repeat(delay=STATE_REFRESH_DELAY)
@@ -58,6 +61,7 @@ class Tank(PoupoolActor):
     @do_repeat()
     def on_enter_normal(self):
         logger.info("Entering normal state")
+        self.__encoder.tank_state("normal")
         self.__devices.get_valve("main").off()
 
     @repeat(delay=STATE_REFRESH_DELAY)
