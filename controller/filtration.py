@@ -48,23 +48,27 @@ class Filtration(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
 
-    states = ["stop", "waiting", "eco", "overflow"]
+    states = ["stop", "waiting", "eco", "eco_tank", "overflow"]
 
     def __init__(self, encoder, devices):
         super(Filtration, self).__init__()
         self.__encoder = encoder
         self.__devices = devices
         self.__duration = Duration()
+        self.__tank_duration = Duration()
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Filtration.states, initial="stop")
         # Transitions
         self.__machine.add_transition("eco", "stop", "eco")
         self.__machine.add_transition("eco", "waiting", "eco")
         self.__machine.add_transition("eco", "overflow", "eco")
+        self.__machine.add_transition("eco", "eco_tank", "eco")
+        self.__machine.add_transition("eco_tank", "eco", "eco_tank")
         self.__machine.add_transition("waiting", "eco", "waiting")
         self.__machine.add_transition("overflow", "eco", "overflow", unless="tank_is_low")
         self.__machine.add_transition("overflow", "waiting", "overflow", unless="tank_is_low")
         self.__machine.add_transition("stop", "eco", "stop")
+        self.__machine.add_transition("stop", "eco_tank", "stop")
         self.__machine.add_transition("stop", "waiting", "stop")
         self.__machine.add_transition("stop", "overflow", "stop")
 
@@ -72,8 +76,13 @@ class Filtration(PoupoolActor):
         self.__duration.daily = datetime.timedelta(seconds=value)
         logger.info("Duration for daily filtration set to: %s" % self.__duration.daily)
 
+    def tank_duration(self, value):
+        self.__tank_duration.daily = datetime.timedelta(seconds=value)
+        logger.info("Duration for daily tank filtration set to: %s" % self.__tank_duration.daily)
+
     def hour_of_reset(self, value):
         self.__duration.hour = value
+        self.__tank_duration.hour = value
         logger.info("Hour for daily filtration reset set to: %s" % self.__duration.hour)
 
     def tank_is_low(self):
@@ -107,9 +116,9 @@ class Filtration(PoupoolActor):
         logger.info("Entering waiting state")
         self.__encoder.filtration_state("waiting")
         self.__duration.clear()
-        if self.__duration.elapsed():
-            self.__devices.get_pump("variable").off()
-            self.__devices.get_pump("boost").off()
+        self.__tank_duration.clear()
+        self.__devices.get_pump("variable").off()
+        self.__devices.get_pump("boost").off()
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_waiting(self):
@@ -121,17 +130,34 @@ class Filtration(PoupoolActor):
     def on_enter_eco(self):
         logger.info("Entering eco state")
         self.__encoder.filtration_state("eco")
-        if not self.__duration.elapsed():
-            self.__devices.get_valve("tank").off()
-            self.__devices.get_valve("gravity").on()
-            self.__devices.get_pump("boost").off()
-            self.__devices.get_pump("variable").speed(1)
+        self.__tank_duration.clear()
+        self.__devices.get_valve("tank").off()
+        self.__devices.get_valve("gravity").on()
+        self.__devices.get_pump("boost").off()
+        self.__devices.get_pump("variable").speed(1)
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco(self):
         self.__duration.update(datetime.datetime.now())
+        if not self.__tank_duration.elapsed():
+            self._proxy.eco_tank()
+            raise StopRepeatException
         if self.__duration.elapsed():
             self._proxy.waiting()
+            raise StopRepeatException
+
+    @do_repeat()
+    def on_enter_eco_tank(self):
+        logger.info("Entering eco_tank state")
+        self.__encoder.filtration_state("eco_tank")
+        self.__devices.get_valve("tank").on()
+
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_eco_tank(self):
+        self.__duration.update(datetime.datetime.now())
+        self.__tank_duration.update(datetime.datetime.now())
+        if self.__tank_duration.elapsed():
+            self._proxy.eco()
             raise StopRepeatException
 
     @do_repeat()
@@ -146,3 +172,4 @@ class Filtration(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_overflow(self):
         self.__duration.update(datetime.datetime.now(), 2)
+        self.__tank_duration.update(datetime.datetime.now())
