@@ -1,5 +1,6 @@
 from controller.filtration import Filtration
 from controller.tank import Tank
+from controller.swim import Swim
 from controller.dispatcher import Dispatcher
 from controller.encoder import Encoder
 from controller.mqtt import Mqtt
@@ -27,6 +28,7 @@ def setup_gpio(registry):
 
     registry.add_pump(PumpDevice("variable", [38, 35, 36, 37]))
     registry.add_pump(SwitchDevice("boost", 29))
+    registry.add_pump(SwitchDevice("swim", 26))
     
     registry.add_valve(SwitchDevice("gravity", 15))
     registry.add_valve(SwitchDevice("backwash", 16))
@@ -46,8 +48,10 @@ def main():
     encoder = Encoder(mqtt)
 
     filtration = Filtration.start(encoder, devices).proxy()
-    dispatcher.register(filtration)
+    swim = Swim.start(encoder, devices).proxy()
     tank = Tank.start(encoder, devices).proxy()
+
+    dispatcher.register(filtration, swim)
 
     mqtt.do_start()
 

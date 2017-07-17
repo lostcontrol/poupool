@@ -219,6 +219,12 @@ class Filtration(PoupoolActor):
         if speed > 3:
             self.__devices.get_pump("boost").on()
 
+    def on_exit_overflow(self):
+        logger.info("Exiting overflow state")
+        swim = self.get_actor("Swim")
+        if swim:
+            swim.stop()
+
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_overflow(self):
         now = datetime.datetime.now()

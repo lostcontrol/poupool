@@ -5,7 +5,7 @@ class Dispatcher(object):
     def __init__(self):
         self.__mapping = {}
 
-    def register(self, filtration):
+    def register(self, filtration, swim):
         self.__mapping = {
             "/settings/mode": (filtration, lambda x: x in ("stop", "eco", "standby", "overflow"), lambda x: x, None),
             "/settings/filtration/duration": (filtration, lambda x: 0 < int(x) <= 172800, lambda x: "duration", lambda x: int(x)),
@@ -13,6 +13,8 @@ class Dispatcher(object):
             "/settings/filtration/tank_duration": (filtration, lambda x: 0 < int(x) <= 172800, lambda x: "tank_duration", lambda x: int(x)),
             "/settings/filtration/speed/standby": (filtration, lambda x: 0 <= int(x) <= 1, lambda x: "speed_standby", lambda x: int(x)),
             "/settings/filtration/speed/overflow": (filtration, lambda x: 0 < int(x) <= 4, lambda x: "speed_overflow", lambda x: int(x)),
+            "/settings/swim/mode": (swim, lambda x: x in ("stop", "timed", "continuous"), lambda x: x, None),
+            "/settings/swim/timer": (swim, lambda x: 0 < int(x) <= 60, lambda x: "timer", lambda x: int(x)),
         }
 
     def topics(self):
