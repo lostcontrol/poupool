@@ -42,14 +42,12 @@ class Tank(PoupoolActor):
 
     def on_enter_stop(self):
         logger.info("Entering stop state")
-        logger.warning("Closing the main valve")
         self.__encoder.tank_state("stop")
         self.__devices.get_valve("main").off()
 
     @do_repeat()
     def on_enter_low(self):
         logger.info("Entering low state")
-        logger.warning("Opening the main valve!!!")
         self.__encoder.tank_state("low")
         self.__devices.get_valve("main").on()
 
