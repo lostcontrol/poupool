@@ -52,8 +52,8 @@ def do_repeat():
 class PoupoolModel(transitions.Machine):
 
     def __init__(self, *args, **kwargs):
+        kwargs.setdefault("before_state_change", []).extend(["do_cancel", self.__update_state_time])
         super(PoupoolModel, self).__init__(
-            before_state_change=["do_cancel", self.__update_state_time],
             auto_transitions=False,
             ignore_invalid_triggers=True,
             *args,

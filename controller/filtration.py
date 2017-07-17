@@ -63,7 +63,8 @@ class Filtration(PoupoolActor):
         self.__speed_standby = 1
         self.__speed_overflow = 4
         # Initialize the state machine
-        self.__machine = PoupoolModel(model=self, states=Filtration.states, initial="stop")
+        self.__machine = PoupoolModel(model=self, states=Filtration.states,
+                                      initial="stop", before_state_change=[self.__before_state_change])
         # Transitions
         self.__machine.add_transition("eco", "stop", "eco")
         self.__machine.add_transition("eco", "waiting", "eco")
@@ -118,11 +119,13 @@ class Filtration(PoupoolActor):
             return tank.is_low().get()
         return False
 
+    def __before_state_change(self):
+        self.__duration.clear()
+        self.__tank_duration.clear()
+
     def on_enter_stop(self):
         logger.info("Entering stop state")
         self.__encoder.filtration_state("stop")
-        self.__duration.clear()
-        self.__tank_duration.clear()
         tank = self.get_actor("Tank")
         if tank:
             tank.stop()
@@ -143,8 +146,6 @@ class Filtration(PoupoolActor):
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
         self.__encoder.filtration_state("waiting")
-        self.__duration.clear()
-        self.__tank_duration.clear()
         self.__devices.get_pump("variable").off()
         self.__devices.get_pump("boost").off()
 
@@ -161,7 +162,6 @@ class Filtration(PoupoolActor):
     def on_enter_eco(self):
         logger.info("Entering eco state")
         self.__encoder.filtration_state("eco")
-        self.__tank_duration.clear()
         self.__devices.get_valve("tank").off()
         self.__devices.get_valve("gravity").on()
         self.__devices.get_pump("boost").off()
@@ -198,9 +198,6 @@ class Filtration(PoupoolActor):
     def on_enter_standby(self):
         logger.info("Entering standby state")
         self.__encoder.filtration_state("standby")
-        if self.__speed_standby == 0:
-            self.__duration.clear()
-            self.__tank_duration.clear()
         self.__devices.get_valve("gravity").off()
         self.__devices.get_valve("tank").on()
         self.__devices.get_pump("variable").speed(self.__speed_standby)
