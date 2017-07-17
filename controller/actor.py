@@ -15,6 +15,7 @@ class StopRepeatException(Exception):
 
 def repeat(delay=10):
     assert delay >= 0
+
     def wrap(func):
         @functools.wraps(func)
         def wrapped_func(self, *args, **kwargs):

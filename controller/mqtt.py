@@ -60,4 +60,3 @@ class Mqtt(PoupoolActor):
             logger.error("Unable to publish topic '%s':'%s'" % (topic, str(payload)))
             return False
         return True
-

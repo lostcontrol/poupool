@@ -42,12 +42,14 @@ class Tank(PoupoolActor):
 
     def on_enter_stop(self):
         logger.info("Entering stop state")
+        logger.warning("Closing the main valve")
         self.__encoder.tank_state("stop")
         self.__devices.get_valve("main").off()
 
     @do_repeat()
     def on_enter_low(self):
         logger.info("Entering low state")
+        logger.warning("Opening the main valve!!!")
         self.__encoder.tank_state("low")
         self.__devices.get_valve("main").on()
 
@@ -61,10 +63,10 @@ class Tank(PoupoolActor):
                 filtration.stop()
             raise StopRepeatException
         height = self.__get_tank_height()
-        if height >= 25:
+        if height >= 40:
             self._proxy.normal()
             raise StopRepeatException
-        elif height < 5:
+        elif height < 10:
             logger.warning("Tank TOO LOW, stopping: %d" % height)
             filtration = self.get_actor("Filtration")
             if filtration:
@@ -80,7 +82,7 @@ class Tank(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_normal(self):
         height = self.__get_tank_height()
-        if height < 10:
+        if height < 25:
             self._proxy.low()
             raise StopRepeatException
         elif height >= 75:
@@ -99,4 +101,3 @@ class Tank(PoupoolActor):
         if height < 60:
             self._proxy.normal()
             raise StopRepeatException
-

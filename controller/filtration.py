@@ -11,8 +11,9 @@ logger = logging.getLogger(__name__)
 
 class Duration(object):
 
-    def __init__(self):
+    def __init__(self, name):
         self.__duration = datetime.timedelta()
+        self.__name = name
         self.__start = None
         self.__last = None
         self.daily = datetime.timedelta()
@@ -32,12 +33,14 @@ class Duration(object):
             self.__start = now
         self.__last = now
         remaining = max(datetime.timedelta(), self.daily - self.__duration)
-        logger.debug("Duration since last reset: %s Remaining: %s" % (self.__duration, remaining))
+        logger.debug("(%s) Duration since last reset: %s Remaining: %s" %
+                     (self.__name, self.__duration, remaining))
 
     def __reset(self):
         tm = datetime.datetime.now()
         self.__start = tm.replace(hour=self.hour, minute=0, second=0, microsecond=0)
-        logger.info("Duration reset: %s Duration done: %s" % (self.__start, self.__duration))
+        logger.info("(%s) Duration reset: %s Duration done: %s" %
+                    (self.__name, self.__start, self.__duration))
         self.__duration = datetime.timedelta()
 
     def elapsed(self):
@@ -54,8 +57,8 @@ class Filtration(PoupoolActor):
         super(Filtration, self).__init__()
         self.__encoder = encoder
         self.__devices = devices
-        self.__duration = Duration()
-        self.__tank_duration = Duration()
+        self.__duration = Duration("filtration")
+        self.__tank_duration = Duration("tank")
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Filtration.states, initial="stop")
         # Transitions
