@@ -23,18 +23,18 @@ class Duration(object):
         self.__last = None
 
     def update(self, now, factor=1.0):
-        if self.__last:
-            diff = now - self.__last
-            self.__duration += factor * diff
-            if now - self.__start > datetime.timedelta(days=1):
-                # reset
-                self.__reset()
         if not self.__start:
             self.__start = now
-        self.__last = now
-        remaining = max(datetime.timedelta(), self.daily - self.__duration)
-        logger.debug("(%s) Duration since last reset: %s Remaining: %s" %
-                     (self.__name, self.__duration, remaining))
+        if now - self.__start > datetime.timedelta(days=1):
+            # reset
+            self.__reset()
+        elif self.__last:
+            self.__duration += factor * (now - self.__last)
+            remaining = max(datetime.timedelta(), self.daily - self.__duration)
+            logger.debug("(%s) Duration since last reset: %s Remaining: %s" %
+                         (self.__name, self.__duration, remaining))
+        if factor != 0:
+            self.__last = now
 
     def __reset(self):
         tm = datetime.datetime.now()
@@ -122,6 +122,7 @@ class Filtration(PoupoolActor):
         logger.info("Entering stop state")
         self.__encoder.filtration_state("stop")
         self.__duration.clear()
+        self.__tank_duration.clear()
         tank = self.get_actor("Tank")
         if tank:
             tank.stop()
@@ -149,6 +150,9 @@ class Filtration(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_waiting(self):
+        now = datetime.datetime.now()
+        self.__duration.update(now, 0)
+        self.__tank_duration.update(now, 0)
         if not self.__duration.elapsed():
             self._proxy.eco()
             raise StopRepeatException
@@ -165,7 +169,9 @@ class Filtration(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco(self):
-        self.__duration.update(datetime.datetime.now())
+        now = datetime.datetime.now()
+        self.__duration.update(now)
+        self.__tank_duration.update(now, 0)
         if not self.__tank_duration.elapsed():
             self._proxy.eco_tank()
             raise StopRepeatException
@@ -202,9 +208,8 @@ class Filtration(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_standby(self):
         now = datetime.datetime.now()
-        if self.__speed_standby > 0:
-            self.__duration.update(now)
-            self.__tank_duration.update(now)
+        self.__duration.update(now, 1 if self.__speed_standby > 0 else 0)
+        self.__tank_duration.update(now, 0)
 
     @do_repeat()
     def on_enter_overflow(self):
