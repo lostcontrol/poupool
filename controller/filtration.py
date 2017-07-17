@@ -51,14 +51,17 @@ class Filtration(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
 
-    states = ["stop", "waiting", "eco", "eco_tank", "overflow"]
+    states = ["stop", "waiting", "eco", "eco_tank", "standby", "overflow"]
 
     def __init__(self, encoder, devices):
         super(Filtration, self).__init__()
         self.__encoder = encoder
         self.__devices = devices
+        # Parameters
         self.__duration = Duration("filtration")
         self.__tank_duration = Duration("tank")
+        self.__speed_standby = 1
+        self.__speed_overflow = 4
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Filtration.states, initial="stop")
         # Transitions
@@ -68,11 +71,20 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("eco", "eco_tank", "eco")
         self.__machine.add_transition("eco_tank", "eco", "eco_tank", unless="tank_is_low")
         self.__machine.add_transition("waiting", "eco", "waiting")
+        self.__machine.add_transition("standby", "eco", "standby")
+        self.__machine.add_transition("standby", "eco_tank", "standby")
+        self.__machine.add_transition("standby", "waiting", "standby")
+        self.__machine.add_transition("standby", "overflow", "standby")
+        self.__machine.add_transition("standby", "standby", "standby")
         self.__machine.add_transition("overflow", "eco", "overflow", unless="tank_is_low")
+        self.__machine.add_transition("overflow", "eco_tank", "overflow", unless="tank_is_low")
         self.__machine.add_transition("overflow", "waiting", "overflow", unless="tank_is_low")
+        self.__machine.add_transition("overflow", "standby", "overflow", unless="tank_is_low")
+        self.__machine.add_transition("overflow", "overflow", "overflow", unless="tank_is_low")
         self.__machine.add_transition("stop", "eco", "stop")
         self.__machine.add_transition("stop", "eco_tank", "stop")
         self.__machine.add_transition("stop", "waiting", "stop")
+        self.__machine.add_transition("stop", "standby", "stop")
         self.__machine.add_transition("stop", "overflow", "stop")
 
     def duration(self, value):
@@ -87,6 +99,18 @@ class Filtration(PoupoolActor):
         self.__duration.hour = value
         self.__tank_duration.hour = value
         logger.info("Hour for daily filtration reset set to: %s" % self.__duration.hour)
+
+    def speed_standby(self, value):
+        self.__speed_standby = value
+        logger.info("Speed for standby mode set to: %d" % self.__speed_standby)
+        if self.is_standby():
+            self._proxy.standby()
+
+    def speed_overflow(self, value):
+        self.__speed_overflow = value
+        logger.info("Speed for overflow mode set to: %d" % self.__speed_overflow)
+        if self.is_overflow():
+            self._proxy.overflow()
 
     def tank_is_low(self):
         tank = self.get_actor("Tank")
@@ -157,11 +181,30 @@ class Filtration(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco_tank(self):
-        self.__duration.update(datetime.datetime.now())
-        self.__tank_duration.update(datetime.datetime.now())
+        now = datetime.datetime.now()
+        self.__duration.update(now)
+        self.__tank_duration.update(now)
         if self.__tank_duration.elapsed():
             self._proxy.eco()
             raise StopRepeatException
+
+    @do_repeat()
+    def on_enter_standby(self):
+        logger.info("Entering standby state")
+        self.__encoder.filtration_state("standby")
+        if self.__speed_standby == 0:
+            self.__duration.clear()
+            self.__tank_duration.clear()
+        self.__devices.get_valve("gravity").off()
+        self.__devices.get_valve("tank").on()
+        self.__devices.get_pump("variable").speed(self.__speed_standby)
+
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_standby(self):
+        now = datetime.datetime.now()
+        if self.__speed_standby > 0:
+            self.__duration.update(now)
+            self.__tank_duration.update(now)
 
     @do_repeat()
     def on_enter_overflow(self):
@@ -169,10 +212,13 @@ class Filtration(PoupoolActor):
         self.__encoder.filtration_state("overflow")
         self.__devices.get_valve("gravity").off()
         self.__devices.get_valve("tank").on()
-        self.__devices.get_pump("variable").speed(3)
-        self.__devices.get_pump("boost").on()
+        speed = self.__speed_overflow
+        self.__devices.get_pump("variable").speed(min(speed, 3))
+        if speed > 3:
+            self.__devices.get_pump("boost").on()
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_overflow(self):
-        self.__duration.update(datetime.datetime.now(), 2)
-        self.__tank_duration.update(datetime.datetime.now())
+        now = datetime.datetime.now()
+        self.__duration.update(now, 2)
+        self.__tank_duration.update(now)
