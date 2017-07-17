@@ -25,14 +25,14 @@ logging.getLogger("transitions").setLevel(logging.WARN)
 def setup_gpio(registry):
     GPIO.setmode(GPIO.BOARD)
 
-    registry.add_pump(PumpDevice("variable", [1, 2, 3, 4]))
-    registry.add_pump(SwitchDevice("boost", 4))
+    registry.add_pump(PumpDevice("variable", [38, 35, 36, 37]))
+    registry.add_pump(SwitchDevice("boost", 29))
     
-    registry.add_valve(SwitchDevice("gravity", 4))
-    registry.add_valve(SwitchDevice("backwash", 4))
-    registry.add_valve(SwitchDevice("tank", 4))
-    registry.add_valve(SwitchDevice("drain", 4))
-    registry.add_valve(SwitchDevice("main", 4))
+    registry.add_valve(SwitchDevice("gravity", 15))
+    registry.add_valve(SwitchDevice("backwash", 16))
+    registry.add_valve(SwitchDevice("tank", 22))
+    registry.add_valve(SwitchDevice("drain", 18))
+    registry.add_valve(SwitchDevice("main", 13))
 
     registry.add_sensor(SensorDevice("tank"))
 
