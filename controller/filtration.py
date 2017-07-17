@@ -66,7 +66,7 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("eco", "waiting", "eco")
         self.__machine.add_transition("eco", "overflow", "eco")
         self.__machine.add_transition("eco", "eco_tank", "eco")
-        self.__machine.add_transition("eco_tank", "eco", "eco_tank")
+        self.__machine.add_transition("eco_tank", "eco", "eco_tank", unless="tank_is_low")
         self.__machine.add_transition("waiting", "eco", "waiting")
         self.__machine.add_transition("overflow", "eco", "overflow", unless="tank_is_low")
         self.__machine.add_transition("overflow", "waiting", "overflow", unless="tank_is_low")
