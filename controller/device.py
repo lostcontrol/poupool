@@ -1,13 +1,16 @@
 import transitions
 import time
 import logging
-try:
-    import RPi.GPIO as GPIO
-except RuntimeError:
-    from unittest.mock import MagicMock
-    GPIO = MagicMock()
 
 logger = logging.getLogger("device")
+
+
+def map(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+
+def constrain(x, out_min, out_max):
+    return min(max(x, out_min), out_max)
 
 
 class DeviceRegistry(object):
@@ -44,25 +47,27 @@ class Device(object):
 
 class SwitchDevice(Device):
 
-    def __init__(self, name, pin):
+    def __init__(self, name, gpio, pin):
         super(SwitchDevice, self).__init__(name)
+        self.__gpio = gpio
         self.pin = pin
-        GPIO.setup(self.pin, GPIO.OUT)
+        self.__gpio.setup(self.pin, self.__gpio.OUT)
 
     def on(self):
-        GPIO.output(self.pin, True)
+        self.__gpio.output(self.pin, True)
 
     def off(self):
-        GPIO.output(self.pin, False)
+        self.__gpio.output(self.pin, False)
 
 
 class PumpDevice(Device):
 
-    def __init__(self, name, pins):
+    def __init__(self, name, gpio, pins):
         super(PumpDevice, self).__init__(name)
+        self.__gpio = gpio
         assert len(pins) == 4
         self.pins = pins
-        GPIO.setup(self.pins, GPIO.OUT)
+        self.__gpio.setup(self.pins, self.__gpio.OUT)
 
     def on(self):
         self.speed(3)
@@ -73,7 +78,7 @@ class PumpDevice(Device):
     def speed(self, value):
         assert 0 <= value <= 3
         for i, pin in enumerate(self.pins):
-            GPIO.output(pin, True if pin == value else False)
+            self.__gpio.output(pin, True if pin == value else False)
 
 
 class SensorDevice(Device):
@@ -84,3 +89,23 @@ class SensorDevice(Device):
     @property
     def value(self):
         return 50
+
+
+class TankSensorDevice(SensorDevice):
+
+    def __init__(self, name, adc, channel, gain, low, high):
+        super(SensorDevice, self).__init__(name)
+        self.__adc = adc
+        self.__channel = channel
+        self.__gain = gain
+        self.__low = low
+        self.__high = high
+
+    @property
+    def value(self):
+        values = 0
+        for i in range(10):
+            values += self.__adc.read_adc(self.__channel, gain=self.__gain)
+            time.sleep(0.05)
+        value = values / 10
+        return constrain(map(value, self.__low, self.__high, 0, 100), 0, 100)

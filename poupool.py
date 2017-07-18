@@ -4,13 +4,7 @@ from controller.swim import Swim
 from controller.dispatcher import Dispatcher
 from controller.encoder import Encoder
 from controller.mqtt import Mqtt
-from controller.device import DeviceRegistry, SwitchDevice, PumpDevice, SensorDevice
-
-try:
-    import RPi.GPIO as GPIO
-except RuntimeError:
-    from unittest.mock import MagicMock
-    GPIO = MagicMock()
+from controller.device import DeviceRegistry, SwitchDevice, PumpDevice, TankSensorDevice
 
 import time
 import pykka
@@ -20,23 +14,36 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)-15s %(levelname)-6s %(name)-15s %(message)s"
 )
-logging.getLogger("pykka").setLevel(logging.WARN)
+# logging.getLogger("pykka").setLevel(logging.WARN)
 logging.getLogger("transitions").setLevel(logging.WARN)
 
+
 def setup_gpio(registry):
+    try:
+        import RPi.GPIO as GPIO
+    except RuntimeError:
+        from unittest.mock import MagicMock
+        GPIO = MagicMock()
     GPIO.setmode(GPIO.BOARD)
 
-    registry.add_pump(PumpDevice("variable", [38, 35, 36, 37]))
-    registry.add_pump(SwitchDevice("boost", 29))
-    registry.add_pump(SwitchDevice("swim", 26))
-    
-    registry.add_valve(SwitchDevice("gravity", 15))
-    registry.add_valve(SwitchDevice("backwash", 16))
-    registry.add_valve(SwitchDevice("tank", 22))
-    registry.add_valve(SwitchDevice("drain", 18))
-    registry.add_valve(SwitchDevice("main", 13))
+    registry.add_pump(PumpDevice("variable", GPIO, [38, 35, 36, 37]))
+    registry.add_pump(SwitchDevice("boost", GPIO, 29))
+    registry.add_pump(SwitchDevice("swim", GPIO, 26))
 
-    registry.add_sensor(SensorDevice("tank"))
+    registry.add_valve(SwitchDevice("gravity", GPIO, 15))
+    registry.add_valve(SwitchDevice("backwash", GPIO, 16))
+    registry.add_valve(SwitchDevice("tank", GPIO, 22))
+    registry.add_valve(SwitchDevice("drain", GPIO, 18))
+    registry.add_valve(SwitchDevice("main", GPIO, 13))
+
+    try:
+        import Adafruit_ADS1x15
+        adc = Adafruit_ADS1x15.ADS1015()
+    except RuntimeError:
+        adc = MagicMock()
+        adc.read_adc = MagicMock(return_value=2048)
+    registry.add_sensor(TankSensorDevice("tank", adc, 0, 2 / 3, 12, 4002))
+
 
 def main():
     devices = DeviceRegistry()
@@ -63,4 +70,3 @@ if __name__ == '__main__':
             time.sleep(1000)
     except KeyboardInterrupt:
         pykka.ActorRegistry.stop_all()
-
