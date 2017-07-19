@@ -1,7 +1,6 @@
 import pykka
 import datetime
 import logging
-#from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolModel
 from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat, do_repeat, Timer
@@ -90,6 +89,7 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("stop", "eco", "stop")
         self.__machine.add_transition("stop", "standby", "stop")
         self.__machine.add_transition("stop", "overflow", "stop")
+        self.__machine.get_graph().draw("filtration.png", prog="dot")
 
     def duration(self, value):
         self.__duration.daily = datetime.timedelta(seconds=value)

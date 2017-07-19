@@ -1,6 +1,7 @@
 import pykka
 import transitions
-from transitions.extensions import HierarchicalMachine as Machine
+from transitions.extensions import HierarchicalGraphMachine as Machine
+#from transitions.extensions import HierarchicalMachine as Machine
 import time
 import datetime
 import logging
