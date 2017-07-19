@@ -51,7 +51,6 @@ class Filtration(PoupoolActor):
     STATE_REFRESH_DELAY = 10
 
     states = ["stop",
-              "waiting",
               {"name": "eco", "initial": "normal", "children": [
                   "normal",
                   "tank",
@@ -75,20 +74,15 @@ class Filtration(PoupoolActor):
         self.__machine = PoupoolModel(model=self, states=Filtration.states,
                                       initial="stop", before_state_change=[self.__before_state_change])
         # Transitions
-        self.__machine.add_transition("eco", "stop", "eco")
-        self.__machine.add_transition("eco", "standby", "eco")
-        self.__machine.add_transition("eco", "overflow", "eco")
-        self.__machine.add_transition("eco_tank", "eco", "eco_tank", unless="tank_is_low")
-        self.__machine.add_transition("eco_stir", "eco", "eco_stir")
+        self.__machine.add_transition("eco", ["stop", "standby", "overflow"], "eco")
+        self.__machine.add_transition("eco_tank", "eco_normal", "eco_tank", unless="tank_is_low")
+        self.__machine.add_transition("eco_stir", "eco_normal", "eco_stir")
         self.__machine.add_transition("eco_normal", "eco", "eco_normal")
-        self.__machine.add_transition("eco_waiting", "eco", "eco_waiting")
-        self.__machine.add_transition("standby", "eco", "standby")
-        self.__machine.add_transition("standby", "overflow", "standby")
-        self.__machine.add_transition("overflow", "eco", "overflow", unless="tank_is_low")
-        self.__machine.add_transition("overflow", "standby", "overflow", unless="tank_is_low")
-        self.__machine.add_transition("stop", "eco", "stop")
-        self.__machine.add_transition("stop", "standby", "stop")
-        self.__machine.add_transition("stop", "overflow", "stop")
+        self.__machine.add_transition("eco_waiting", "eco_normal", "eco_waiting")
+        self.__machine.add_transition("standby", ["eco", "overflow"], "standby")
+        self.__machine.add_transition(
+            "overflow", ["eco", "standby"], "overflow", unless="tank_is_low")
+        self.__machine.add_transition("stop", ["eco", "standby", "overflow"], "stop")
         self.__machine.get_graph().draw("filtration.png", prog="dot")
 
     def duration(self, value):
