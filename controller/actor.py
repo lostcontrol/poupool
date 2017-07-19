@@ -107,8 +107,7 @@ class PoupoolActor(pykka.ThreadingActor):
     def __init__(self):
         super(PoupoolActor, self).__init__()
         self._proxy = self.actor_ref.proxy()
-        self.__delay_cancelled = False
-        self.__delay_running = False
+        self.__delay_counter = 0
 
     def get_actor(self, name):
         fsm = pykka.ActorRegistry.get_by_class_name(name)
@@ -118,19 +117,18 @@ class PoupoolActor(pykka.ThreadingActor):
         return None
 
     def do_cancel(self):
-        if self.__delay_running:
-            self.__delay_cancelled = True
+        self.__delay_counter += 1
 
     def do_delay(self, delay, method, *args, **kwargs):
         assert type(method) == str
-        if self.__delay_cancelled:
-            self.__delay_cancelled = False
-            self.__delay_running = False
-        elif delay > 0:
-            self.__delay_running = True
-            time.sleep(0.1)
-            self._proxy.do_delay(delay - 0.1, method, *args, **kwargs)
-        else:
-            self.__delay_running = False
-            func = getattr(self._proxy, method)
-            func(*args, **kwargs)
+        self.__delay_counter += 1
+        self.do_delay_internal(self.__delay_counter, delay, method, *args, **kwargs)
+
+    def do_delay_internal(self, counter, delay, method, *args, **kwargs):
+        if counter == self.__delay_counter:
+            if delay > 0:
+                time.sleep(0.1)
+                self._proxy.do_delay_internal(counter, delay - 0.1, method, *args, **kwargs)
+            else:
+                func = getattr(self._proxy, method)
+                func(*args, **kwargs)
