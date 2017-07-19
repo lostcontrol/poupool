@@ -5,31 +5,9 @@ import datetime
 #from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor
 from .actor import PoupoolModel
-from .actor import StopRepeatException, repeat, do_repeat
+from .actor import StopRepeatException, repeat, do_repeat, Timer
 
 logger = logging.getLogger(__name__)
-
-class Timer(object):
-
-    def __init__(self, name):
-        self.__duration = datetime.timedelta()
-        self.__name = name
-        self.__last = None
-        self.delay = 0
-
-    def reset(self):
-        self.__last = None
-        self.__duration = datetime.timedelta()
-
-    def update(self, now):
-        if self.__last:
-            self.__duration += (now - self.__last)
-            remaining = max(datetime.timedelta(), self.delay - self.__duration)
-            logger.debug("(%s) Timer: %s Remaining: %s" % (self.__name, self.__duration, remaining))
-        self.__last = now
-
-    def elapsed(self):
-        return self.__duration >= self.delay
 
 
 class Swim(PoupoolActor):
@@ -47,9 +25,12 @@ class Swim(PoupoolActor):
         self.__machine = PoupoolModel(model=self, states=Swim.states, initial="stop")
 
         self.__machine.add_transition("timed", "stop", "timed", conditions="filtration_is_overflow")
-        self.__machine.add_transition("timed", "continuous", "timed", conditions="filtration_is_overflow")
-        self.__machine.add_transition("continuous", "stop", "continuous", conditions="filtration_is_overflow")
-        self.__machine.add_transition("continuous", "timed", "continuous", conditions="filtration_is_overflow")
+        self.__machine.add_transition("timed", "continuous", "timed",
+                                      conditions="filtration_is_overflow")
+        self.__machine.add_transition("continuous", "stop", "continuous",
+                                      conditions="filtration_is_overflow")
+        self.__machine.add_transition("continuous", "timed", "continuous",
+                                      conditions="filtration_is_overflow")
         self.__machine.add_transition("stop", "timed", "stop")
         self.__machine.add_transition("stop", "continuous", "stop")
 

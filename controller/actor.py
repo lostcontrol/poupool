@@ -1,5 +1,6 @@
 import pykka
 import transitions
+from transitions.extensions import HierarchicalMachine as Machine
 import time
 import datetime
 import logging
@@ -7,6 +8,38 @@ import functools
 import re
 
 logger = logging.getLogger(__name__)
+
+
+class Timer(object):
+
+    def __init__(self, name):
+        self.__duration = datetime.timedelta()
+        self.__name = name
+        self.__last = None
+        self.__delay = 0
+
+    @property
+    def delay(self):
+        return self.__delay
+
+    @delay.setter
+    def delay(self, value):
+        self.__delay = value
+        self.reset()
+
+    def reset(self):
+        self.__last = None
+        self.__duration = datetime.timedelta()
+
+    def update(self, now):
+        if self.__last:
+            self.__duration += (now - self.__last)
+            remaining = max(datetime.timedelta(), self.delay - self.__duration)
+            logger.debug("(%s) Timer: %s Remaining: %s" % (self.__name, self.__duration, remaining))
+        self.__last = now
+
+    def elapsed(self):
+        return self.__duration >= self.__delay
 
 
 class StopRepeatException(Exception):
@@ -49,7 +82,7 @@ def do_repeat():
     return wrap
 
 
-class PoupoolModel(transitions.Machine):
+class PoupoolModel(Machine):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("before_state_change", []).extend(["do_cancel", self.__update_state_time])

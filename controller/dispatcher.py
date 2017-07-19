@@ -11,6 +11,7 @@ class Dispatcher(object):
             "/settings/filtration/duration": (filtration, lambda x: 0 < int(x) <= 172800, lambda x: "duration", lambda x: int(x)),
             "/settings/filtration/hour_of_reset": (filtration, lambda x: 0 < int(x) <= 23, lambda x: "hour_of_reset", lambda x: int(x)),
             "/settings/filtration/tank_duration": (filtration, lambda x: 0 < int(x) <= 172800, lambda x: "tank_duration", lambda x: int(x)),
+            "/settings/filtration/stir_duration": (filtration, lambda x: 0 <= int(x) <= 10 * 60, lambda x: "stir_duration", lambda x: int(x)),
             "/settings/filtration/speed/standby": (filtration, lambda x: 0 <= int(x) <= 1, lambda x: "speed_standby", lambda x: int(x)),
             "/settings/filtration/speed/overflow": (filtration, lambda x: 0 < int(x) <= 4, lambda x: "speed_overflow", lambda x: int(x)),
             "/settings/swim/mode": (swim, lambda x: x in ("stop", "timed", "continuous"), lambda x: x, None),

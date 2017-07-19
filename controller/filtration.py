@@ -4,7 +4,7 @@ import logging
 #from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolModel
 from .actor import PoupoolActor
-from .actor import StopRepeatException, repeat, do_repeat
+from .actor import StopRepeatException, repeat, do_repeat, Timer
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,15 @@ class Filtration(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
 
-    states = ["stop", "waiting", "eco", "eco_tank", "standby", "overflow"]
+    states = ["stop",
+              "waiting",
+              {"name": "eco", "initial": "normal", "children": [
+                  "normal",
+                  "tank",
+                  "stir",
+                  "waiting"]},
+              "standby",
+              "overflow"]
 
     def __init__(self, encoder, devices):
         super(Filtration, self).__init__()
@@ -60,6 +68,8 @@ class Filtration(PoupoolActor):
         # Parameters
         self.__duration = Duration("filtration")
         self.__tank_duration = Duration("tank")
+        self.__stir_duration = datetime.timedelta()
+        self.__stir_timer = Timer("stir")
         self.__speed_standby = 1
         self.__speed_overflow = 4
         # Initialize the state machine
@@ -67,24 +77,17 @@ class Filtration(PoupoolActor):
                                       initial="stop", before_state_change=[self.__before_state_change])
         # Transitions
         self.__machine.add_transition("eco", "stop", "eco")
-        self.__machine.add_transition("eco", "waiting", "eco")
+        self.__machine.add_transition("eco", "standby", "eco")
         self.__machine.add_transition("eco", "overflow", "eco")
-        self.__machine.add_transition("eco", "eco_tank", "eco")
         self.__machine.add_transition("eco_tank", "eco", "eco_tank", unless="tank_is_low")
-        self.__machine.add_transition("waiting", "eco", "waiting")
+        self.__machine.add_transition("eco_stir", "eco", "eco_stir")
+        self.__machine.add_transition("eco_normal", "eco", "eco_normal")
+        self.__machine.add_transition("eco_waiting", "eco", "eco_waiting")
         self.__machine.add_transition("standby", "eco", "standby")
-        self.__machine.add_transition("standby", "eco_tank", "standby")
-        self.__machine.add_transition("standby", "waiting", "standby")
         self.__machine.add_transition("standby", "overflow", "standby")
-        self.__machine.add_transition("standby", "standby", "standby")
         self.__machine.add_transition("overflow", "eco", "overflow", unless="tank_is_low")
-        self.__machine.add_transition("overflow", "eco_tank", "overflow", unless="tank_is_low")
-        self.__machine.add_transition("overflow", "waiting", "overflow", unless="tank_is_low")
         self.__machine.add_transition("overflow", "standby", "overflow", unless="tank_is_low")
-        self.__machine.add_transition("overflow", "overflow", "overflow", unless="tank_is_low")
         self.__machine.add_transition("stop", "eco", "stop")
-        self.__machine.add_transition("stop", "eco_tank", "stop")
-        self.__machine.add_transition("stop", "waiting", "stop")
         self.__machine.add_transition("stop", "standby", "stop")
         self.__machine.add_transition("stop", "overflow", "stop")
 
@@ -95,6 +98,10 @@ class Filtration(PoupoolActor):
     def tank_duration(self, value):
         self.__tank_duration.daily = datetime.timedelta(seconds=value)
         logger.info("Duration for daily tank filtration set to: %s" % self.__tank_duration.daily)
+
+    def stir_duration(self, value):
+        self.__stir_duration = datetime.timedelta(seconds=value)
+        logger.info("Duration for pool stirring in eco set to: %s" % self.__stir_duration)
 
     def hour_of_reset(self, value):
         self.__duration.hour = value
@@ -143,40 +150,62 @@ class Filtration(PoupoolActor):
             tank.normal()
 
     @do_repeat()
-    def on_enter_waiting(self):
-        logger.info("Entering waiting state")
-        self.__encoder.filtration_state("waiting")
+    def on_enter_eco_waiting(self):
+        logger.info("Entering eco_waiting state")
+        self.__encoder.filtration_state("eco_waiting")
         self.__devices.get_pump("variable").off()
         self.__devices.get_pump("boost").off()
 
     @repeat(delay=STATE_REFRESH_DELAY)
-    def do_repeat_waiting(self):
+    def do_repeat_eco_waiting(self):
         now = datetime.datetime.now()
         self.__duration.update(now, 0)
         self.__tank_duration.update(now, 0)
         if not self.__duration.elapsed():
-            self._proxy.eco()
+            self._proxy.eco_normal()
             raise StopRepeatException
 
     @do_repeat()
-    def on_enter_eco(self):
-        logger.info("Entering eco state")
+    def on_enter_eco_normal(self):
+        logger.info("Entering eco_normal state")
         self.__encoder.filtration_state("eco")
         self.__devices.get_valve("tank").off()
         self.__devices.get_valve("gravity").on()
         self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").speed(1)
+        self.__stir_timer.delay = datetime.timedelta(hours=1) - self.__stir_duration
 
     @repeat(delay=STATE_REFRESH_DELAY)
-    def do_repeat_eco(self):
+    def do_repeat_eco_normal(self):
         now = datetime.datetime.now()
         self.__duration.update(now)
         self.__tank_duration.update(now, 0)
+        self.__stir_timer.update(now)
+        if self.__stir_timer.elapsed():
+            self._proxy.eco_stir()
+            raise StopRepeatException
         if not self.__tank_duration.elapsed():
             self._proxy.eco_tank()
             raise StopRepeatException
         if self.__duration.elapsed():
-            self._proxy.waiting()
+            self._proxy.eco_waiting()
+            raise StopRepeatException
+
+    @do_repeat()
+    def on_enter_eco_stir(self):
+        logger.info("Entering eco_stir state")
+        self.__encoder.filtration_state("eco_stir")
+        self.__devices.get_pump("boost").on()
+        self.__stir_timer.delay = self.__stir_duration
+
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_eco_stir(self):
+        now = datetime.datetime.now()
+        self.__duration.update(now)
+        self.__tank_duration.update(now, 0)
+        self.__stir_timer.update(now)
+        if self.__stir_timer.elapsed():
+            self._proxy.eco_normal()
             raise StopRepeatException
 
     @do_repeat()
@@ -191,7 +220,7 @@ class Filtration(PoupoolActor):
         self.__duration.update(now)
         self.__tank_duration.update(now)
         if self.__tank_duration.elapsed():
-            self._proxy.eco()
+            self._proxy.eco_normal()
             raise StopRepeatException
 
     @do_repeat()
@@ -200,6 +229,7 @@ class Filtration(PoupoolActor):
         self.__encoder.filtration_state("standby")
         self.__devices.get_valve("gravity").off()
         self.__devices.get_valve("tank").on()
+        self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").speed(self.__speed_standby)
 
     @repeat(delay=STATE_REFRESH_DELAY)
