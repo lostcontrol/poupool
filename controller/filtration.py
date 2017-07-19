@@ -51,6 +51,10 @@ class Filtration(PoupoolActor):
     STATE_REFRESH_DELAY = 10
 
     states = ["stop",
+              "closing",
+              {"name": "opening", "children": [
+                  "standby",
+                  "overflow"]},
               {"name": "eco", "initial": "normal", "children": [
                   "normal",
                   "tank",
@@ -74,15 +78,20 @@ class Filtration(PoupoolActor):
         self.__machine = PoupoolModel(model=self, states=Filtration.states,
                                       initial="stop", before_state_change=[self.__before_state_change])
         # Transitions
-        self.__machine.add_transition("eco", ["stop", "standby", "overflow"], "eco")
+        self.__machine.add_transition("eco", "stop", "eco")
+        self.__machine.add_transition("eco", ["standby", "overflow", "opening"], "closing")
+        self.__machine.add_transition("closed", "closing", "eco")
         self.__machine.add_transition("eco_tank", "eco_normal", "eco_tank", unless="tank_is_low")
         self.__machine.add_transition("eco_stir", "eco_normal", "eco_stir")
         self.__machine.add_transition("eco_normal", "eco", "eco_normal")
         self.__machine.add_transition("eco_waiting", "eco_normal", "eco_waiting")
-        self.__machine.add_transition("standby", ["eco", "overflow"], "standby")
-        self.__machine.add_transition(
-            "overflow", ["eco", "standby"], "overflow", unless="tank_is_low")
-        self.__machine.add_transition("stop", ["eco", "standby", "overflow"], "stop")
+        self.__machine.add_transition("standby", ["eco", "closing"], "opening_standby")
+        self.__machine.add_transition("standby", "overflow", "standby")
+        self.__machine.add_transition("opened", "opening_standby", "standby")
+        self.__machine.add_transition("opened", "opening_overflow", "overflow")
+        self.__machine.add_transition("overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
+        self.__machine.add_transition("overflow", "standby", "overflow", unless="tank_is_low")
+        self.__machine.add_transition("stop", ["eco", "standby", "overflow", "opening", "closing"], "stop")
         self.__machine.get_graph().draw("filtration.png", prog="dot")
 
     def duration(self, value):
@@ -143,6 +152,26 @@ class Filtration(PoupoolActor):
         if tank:
             tank.normal()
 
+    def on_enter_closing(self):
+        logger.info("Entering closing state")
+        self.__encoder.filtration_state("closing")
+        # close the roller shutter
+        self.do_delay(30, "closed")
+
+    def on_exit_closing(self):
+        logger.info("Exiting closing state")
+        # stop the roller shutter
+
+    def on_enter_opening(self):
+        logger.info("Entering opening state")
+        self.__encoder.filtration_state("opening")
+        # open the roller shutter
+        self.do_delay(30, "opened")
+
+    def on_exit_opening(self):
+        logger.info("Exiting opening state")
+        # stop the roller shutter
+
     @do_repeat()
     def on_enter_eco_waiting(self):
         logger.info("Entering eco_waiting state")
@@ -162,7 +191,7 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_eco_normal(self):
         logger.info("Entering eco_normal state")
-        self.__encoder.filtration_state("eco")
+        self.__encoder.filtration_state("eco_normal")
         self.__devices.get_valve("tank").off()
         self.__devices.get_valve("gravity").on()
         self.__devices.get_pump("boost").off()
@@ -246,7 +275,7 @@ class Filtration(PoupoolActor):
     def on_exit_overflow(self):
         logger.info("Exiting overflow state")
         swim = self.get_actor("Swim")
-        if swim:
+        if swim and not swim.is_stop().get():
             swim.stop()
 
     @repeat(delay=STATE_REFRESH_DELAY)
