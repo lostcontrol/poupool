@@ -178,7 +178,12 @@ class Filtration(PoupoolActor):
 
     def on_exit_opening(self):
         logger.info("Exiting opening state")
+        self.get_actor("Tank").set_mode("overflow")
         # stop the roller shutter
+
+    def on_enter_eco(self):
+        logger.info("Entering eco state")
+        self.get_actor("Tank").set_mode("eco")
 
     @do_repeat()
     def on_enter_eco_normal(self):
