@@ -155,8 +155,12 @@ class Filtration(PoupoolActor):
     def on_enter_closing(self):
         logger.info("Entering closing state")
         self.__encoder.filtration_state("closing")
+        # stop the pumps to avoid perturbation in the water while shutter is moving
+        self.__devices.get_valve("gravity").on()
+        self.__devices.get_pump("boost").off()
+        self.__devices.get_pump("variable").off()
         # close the roller shutter
-        self.do_delay(30, "closed")
+        self.do_delay(5, "closed")
 
     def on_exit_closing(self):
         logger.info("Exiting closing state")
@@ -165,28 +169,16 @@ class Filtration(PoupoolActor):
     def on_enter_opening(self):
         logger.info("Entering opening state")
         self.__encoder.filtration_state("opening")
+        # stop the pumps to avoid perturbation in the water while shutter is moving
+        self.__devices.get_valve("gravity").on()
+        self.__devices.get_pump("boost").off()
+        self.__devices.get_pump("variable").off()
         # open the roller shutter
-        self.do_delay(30, "opened")
+        self.do_delay(5, "opened")
 
     def on_exit_opening(self):
         logger.info("Exiting opening state")
         # stop the roller shutter
-
-    @do_repeat()
-    def on_enter_eco_waiting(self):
-        logger.info("Entering eco_waiting state")
-        self.__encoder.filtration_state("eco_waiting")
-        self.__devices.get_pump("variable").off()
-        self.__devices.get_pump("boost").off()
-
-    @repeat(delay=STATE_REFRESH_DELAY)
-    def do_repeat_eco_waiting(self):
-        now = datetime.datetime.now()
-        self.__duration.update(now, 0)
-        self.__tank_duration.update(now, 0)
-        if not self.__duration.elapsed():
-            self._proxy.eco_normal()
-            raise StopRepeatException
 
     @do_repeat()
     def on_enter_eco_normal(self):
@@ -212,6 +204,22 @@ class Filtration(PoupoolActor):
             raise StopRepeatException
         if self.__duration.elapsed():
             self._proxy.eco_waiting()
+            raise StopRepeatException
+
+    @do_repeat()
+    def on_enter_eco_waiting(self):
+        logger.info("Entering eco_waiting state")
+        self.__encoder.filtration_state("eco_waiting")
+        self.__devices.get_pump("variable").off()
+        self.__devices.get_pump("boost").off()
+
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_eco_waiting(self):
+        now = datetime.datetime.now()
+        self.__duration.update(now, 0)
+        self.__tank_duration.update(now, 0)
+        if not self.__duration.elapsed():
+            self._proxy.eco_normal()
             raise StopRepeatException
 
     @do_repeat()
