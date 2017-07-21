@@ -19,12 +19,12 @@ class Tank(PoupoolActor):
     hysteresis = 10
     levels_too_low = 10
     levels_eco = {
-        "low" : 40,
-        "high" : 80,
+        "low": 40,
+        "high": 80,
     }
     levels_overflow = {
-        "low" : 20,
-        "high" : 60,
+        "low": 20,
+        "high": 60,
     }
 
     def __init__(self, encoder, devices):

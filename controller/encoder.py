@@ -7,4 +7,4 @@ class Encoder(object):
 
     def __getattr__(self, value):
         topic = "/status/" + "/".join(value.split("_"))
-        return lambda x: self.__mqtt.publish(topic, x)
+        return lambda x, **kwargs: self.__mqtt.publish(topic, x, **kwargs)

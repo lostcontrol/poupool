@@ -1,5 +1,6 @@
 import pykka
 import datetime
+import time
 import logging
 from .actor import PoupoolModel
 from .actor import PoupoolActor
@@ -61,7 +62,10 @@ class Filtration(PoupoolActor):
                   "stir",
                   "waiting"]},
               "standby",
-              "overflow"]
+              "overflow",
+              {"name": "wash", "initial": "backwash", "children": [
+                  "backwash",
+                  "rinse"]}]
 
     def __init__(self, encoder, devices):
         super(Filtration, self).__init__()
@@ -74,12 +78,16 @@ class Filtration(PoupoolActor):
         self.__stir_timer = Timer("stir")
         self.__speed_standby = 1
         self.__speed_overflow = 4
+        self.__backwash_period = 30
+        self.__backwash_margin = 5
+        self.__backwash_last = datetime.datetime.fromtimestamp(0)
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Filtration.states,
                                       initial="stop", before_state_change=[self.__before_state_change])
         # Transitions
         self.__machine.add_transition("eco", "stop", "eco")
         self.__machine.add_transition("eco", ["standby", "overflow", "opening"], "closing")
+        self.__machine.add_transition("eco", "wash_rinse", "eco")
         self.__machine.add_transition("closed", "closing", "eco")
         self.__machine.add_transition("eco_tank", "eco_normal", "eco_tank", unless="tank_is_low")
         self.__machine.add_transition("eco_stir", "eco_normal", "eco_stir")
@@ -89,9 +97,14 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("standby", "overflow", "standby")
         self.__machine.add_transition("opened", "opening_standby", "standby")
         self.__machine.add_transition("opened", "opening_overflow", "overflow")
-        self.__machine.add_transition("overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
+        self.__machine.add_transition(
+            "overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
         self.__machine.add_transition("overflow", "standby", "overflow", unless="tank_is_low")
-        self.__machine.add_transition("stop", ["eco", "standby", "overflow", "opening", "closing"], "stop")
+        self.__machine.add_transition(
+            "stop", ["eco", "standby", "overflow", "opening", "closing", "wash"], "stop")
+        self.__machine.add_transition(
+            "wash", ["eco_normal", "eco_waiting"], "wash", conditions="tank_is_high")
+        self.__machine.add_transition("rinse", "wash_backwash", "wash_rinse")
         self.__machine.get_graph().draw("filtration.png", prog="dot")
 
     def duration(self, value):
@@ -123,10 +136,40 @@ class Filtration(PoupoolActor):
         if self.is_overflow():
             self._proxy.overflow()
 
+    def backwash_period(self, value):
+        if value - self.__backwash_margin < 2:
+            logger.error("We do not allow backwash everyday!!!")
+        else:
+            self.__backwash_period = value
+            logger.info("Backwash period set to: %d" % self.__backwash_period)
+
+    def backwash_margin(self, value):
+        if self.__backwash_period - value < 2:
+            logger.error("We do not allow backwash everyday!!!")
+        else:
+            self.__backwash_margin = value
+            logger.info("Backwash margin set to: %d" % self.__backwash_margin)
+
+    def backwash_last(self, value):
+        self.__backwash_last = datetime.datetime.strptime(value, "%c")
+        logger.info("Backwash last set to: %s" % self.__backwash_last)
+
     def tank_is_low(self):
-        tank = self.get_actor("Tank")
-        if tank:
-            return tank.is_low().get()
+        return self.get_actor("Tank").is_low().get()
+
+    def tank_is_high(self):
+        return self.get_actor("Tank").is_high().get()
+
+    def __start_backwash(self):
+        days = self.__backwash_period
+        margin = self.__backwash_margin
+        diff = datetime.datetime.now() - self.__backwash_last
+        if datetime.timedelta(days - margin) < diff < datetime.timedelta(days + margin):
+            if self.tank_is_high():
+                logger.info("Time for a backwash and tank is high")
+                return True
+            else:
+                logger.debug("Time for a backwash but tank is NOT HIGH")
         return False
 
     def __before_state_change(self):
@@ -183,6 +226,7 @@ class Filtration(PoupoolActor):
 
     def on_enter_eco(self):
         logger.info("Entering eco state")
+        self.__devices.get_valve("drain").off()
         self.get_actor("Tank").set_mode("eco")
 
     @do_repeat()
@@ -201,6 +245,9 @@ class Filtration(PoupoolActor):
         self.__duration.update(now)
         self.__tank_duration.update(now, 0)
         self.__stir_timer.update(now)
+        if self.__start_backwash():
+            self._proxy.wash()
+            raise StopRepeatException
         if self.__stir_timer.elapsed():
             self._proxy.eco_stir()
             raise StopRepeatException
@@ -223,6 +270,9 @@ class Filtration(PoupoolActor):
         now = datetime.datetime.now()
         self.__duration.update(now, 0)
         self.__tank_duration.update(now, 0)
+        if self.__start_backwash():
+            self._proxy.wash()
+            raise StopRepeatException
         if not self.__duration.elapsed():
             self._proxy.eco_normal()
             raise StopRepeatException
@@ -296,3 +346,24 @@ class Filtration(PoupoolActor):
         now = datetime.datetime.now()
         self.__duration.update(now, 2)
         self.__tank_duration.update(now)
+
+    def on_enter_wash_backwash(self):
+        logger.info("Entering backwash state")
+        self.__encoder.filtration_state("backwash")
+        self.__devices.get_valve("tank").on()
+        self.__devices.get_pump("variable").speed(3)
+        time.sleep(2)
+        self.__devices.get_valve("backwash").on()
+        time.sleep(5)
+        self.__devices.get_valve("drain").on()
+        self._proxy.do_delay(3 * 6, "rinse")
+
+    def on_enter_wash_rinse(self):
+        logger.info("Entering rinse state")
+        self.__encoder.filtration_state("rinse")
+        self.__devices.get_valve("backwash").off()
+        self._proxy.do_delay(1 * 6, "eco")
+
+    def on_exit_wash_rinse(self):
+        self.__backwash_last = datetime.datetime.now()
+        self.__encoder.filtration_backwash_last(self.__backwash_last.strftime("%c"), retain=True)
