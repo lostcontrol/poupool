@@ -1,4 +1,5 @@
 from controller.filtration import Filtration
+from controller.disinfection import Disinfection
 from controller.tank import Tank
 from controller.swim import Swim
 from controller.dispatcher import Dispatcher
@@ -30,6 +31,9 @@ def setup_gpio(registry):
     registry.add_pump(SwitchDevice("boost", GPIO, 29))
     registry.add_pump(SwitchDevice("swim", GPIO, 26))
 
+    registry.add_pump(SwitchDevice("ph", GPIO, 0))
+    registry.add_pump(SwitchDevice("cl", GPIO, 0))
+
     registry.add_valve(SwitchDevice("gravity", GPIO, 15))
     registry.add_valve(SwitchDevice("backwash", GPIO, 16))
     registry.add_valve(SwitchDevice("tank", GPIO, 22))
@@ -57,6 +61,7 @@ def main():
     filtration = Filtration.start(encoder, devices).proxy()
     swim = Swim.start(encoder, devices).proxy()
     tank = Tank.start(encoder, devices).proxy()
+    disinfection = Disinfection.start(encoder, devices).proxy()
 
     dispatcher.register(filtration, swim)
 

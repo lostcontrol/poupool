@@ -191,6 +191,7 @@ class Filtration(PoupoolActor):
 
     def on_exit_stop(self):
         logger.info("Exiting stop state")
+        self.get_actor("Disinfection").run()
         tank = self.get_actor("Tank")
         if tank:
             tank.normal()
