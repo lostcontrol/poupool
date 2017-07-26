@@ -315,7 +315,10 @@ class Filtration(PoupoolActor):
         logger.info("Entering standby state")
         self.__encoder.filtration_state("standby")
         self.__devices.get_valve("gravity").off()
-        self.__devices.get_valve("tank").on()
+        if self.__speed_standby > 0:
+            self.__devices.get_valve("tank").on()
+        else:
+            self.__devices.get_valve("tank").off()
         self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").speed(self.__speed_standby)
 
@@ -330,11 +333,11 @@ class Filtration(PoupoolActor):
         logger.info("Entering overflow state")
         self.__encoder.filtration_state("overflow")
         self.__devices.get_valve("gravity").off()
-        self.__devices.get_valve("tank").on()
         speed = self.__speed_overflow
         self.__devices.get_pump("variable").speed(min(speed, 3))
         if speed > 3:
             self.__devices.get_pump("boost").on()
+        self.__devices.get_valve("tank").on()
 
     def on_exit_overflow(self):
         logger.info("Exiting overflow state")
