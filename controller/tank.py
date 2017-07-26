@@ -28,7 +28,7 @@ class Tank(PoupoolActor):
     }
 
     def __init__(self, encoder, devices):
-        super(Tank, self).__init__()
+        super().__init__()
         self.__encoder = encoder
         self.__devices = devices
         self.levels = self.levels_eco

@@ -68,7 +68,7 @@ class Filtration(PoupoolActor):
                   "rinse"]}]
 
     def __init__(self, encoder, devices):
-        super(Filtration, self).__init__()
+        super().__init__()
         self.__encoder = encoder
         self.__devices = devices
         # Parameters
@@ -105,7 +105,7 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition(
             "wash", ["eco_normal", "eco_waiting"], "wash", conditions="tank_is_high")
         self.__machine.add_transition("rinse", "wash_backwash", "wash_rinse")
-        self.__machine.get_graph().draw("filtration.png", prog="dot")
+        #self.__machine.get_graph().draw("filtration.png", prog="dot")
 
     def duration(self, value):
         self.__duration.daily = datetime.timedelta(seconds=value)

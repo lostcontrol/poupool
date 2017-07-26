@@ -17,7 +17,7 @@ class Swim(PoupoolActor):
     states = ["stop", "timed", "continuous"]
 
     def __init__(self, encoder, devices):
-        super(Swim, self).__init__()
+        super().__init__()
         self.__encoder = encoder
         self.__devices = devices
         self.__timer = Timer("swim")

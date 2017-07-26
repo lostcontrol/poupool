@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class Mqtt(PoupoolActor):
 
     def __init__(self, dispatcher):
-        super(Mqtt, self).__init__()
+        super().__init__()
         self.__run = True
         self.__dispatcher = dispatcher
         self.__client = mqtt.Client()

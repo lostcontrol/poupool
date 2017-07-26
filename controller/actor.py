@@ -1,7 +1,7 @@
 import pykka
 import transitions
-from transitions.extensions import HierarchicalGraphMachine as Machine
-#from transitions.extensions import HierarchicalMachine as Machine
+#from transitions.extensions import HierarchicalGraphMachine as Machine
+from transitions.extensions import HierarchicalMachine as Machine
 import time
 import datetime
 import logging
@@ -87,7 +87,7 @@ class PoupoolModel(Machine):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("before_state_change", []).extend(["do_cancel", self.__update_state_time])
-        super(PoupoolModel, self).__init__(
+        super().__init__(
             auto_transitions=False,
             ignore_invalid_triggers=True,
             *args,
@@ -105,7 +105,7 @@ class PoupoolModel(Machine):
 class PoupoolActor(pykka.ThreadingActor):
 
     def __init__(self):
-        super(PoupoolActor, self).__init__()
+        super().__init__()
         self._proxy = self.actor_ref.proxy()
         self.__delay_counter = 0
 

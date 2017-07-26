@@ -48,7 +48,7 @@ class Device(object):
 class SwitchDevice(Device):
 
     def __init__(self, name, gpio, pin):
-        super(SwitchDevice, self).__init__(name)
+        super().__init__(name)
         self.__gpio = gpio
         self.pin = pin
         self.__gpio.setup(self.pin, self.__gpio.OUT)
@@ -63,7 +63,7 @@ class SwitchDevice(Device):
 class PumpDevice(Device):
 
     def __init__(self, name, gpio, pins):
-        super(PumpDevice, self).__init__(name)
+        super().__init__(name)
         self.__gpio = gpio
         assert len(pins) == 4
         self.pins = pins
@@ -84,7 +84,7 @@ class PumpDevice(Device):
 class SensorDevice(Device):
 
     def __init__(self, name):
-        super(SensorDevice, self).__init__(name)
+        super().__init__(name)
 
     @property
     def value(self):
@@ -94,7 +94,7 @@ class SensorDevice(Device):
 class TankSensorDevice(SensorDevice):
 
     def __init__(self, name, adc, channel, gain, low, high):
-        super(SensorDevice, self).__init__(name)
+        super().__init__(name)
         self.__adc = adc
         self.__channel = channel
         self.__gain = gain
