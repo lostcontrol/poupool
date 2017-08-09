@@ -1,3 +1,8 @@
+import time
+import pykka
+import logging
+import logging.config
+
 from controller.filtration import Filtration
 from controller.disinfection import Disinfection
 from controller.tank import Tank
@@ -6,17 +11,6 @@ from controller.dispatcher import Dispatcher
 from controller.encoder import Encoder
 from controller.mqtt import Mqtt
 from controller.device import DeviceRegistry, SwitchDevice, PumpDevice, TankSensorDevice
-
-import time
-import pykka
-import logging
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)-15s %(levelname)-6s %(name)-15s %(message)s"
-)
-# logging.getLogger("pykka").setLevel(logging.WARN)
-logging.getLogger("transitions").setLevel(logging.WARN)
 
 
 def setup_gpio(registry):
@@ -69,6 +63,8 @@ def main():
 
 
 if __name__ == '__main__':
+    # Setup logging
+    logging.config.fileConfig("logging.conf", disable_existing_loggers=False)
     try:
         main()
         while True:
