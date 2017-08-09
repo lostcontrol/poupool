@@ -139,9 +139,20 @@ class Filtration(PoupoolActor):
         self.__duration.clear()
         self.__tank_duration.clear()
 
+    def __disinfection_start(self):
+        actor = self.get_actor("Disinfection")
+        if actor.is_stop().get():
+            actor.run()
+
+    def __disinfection_stop(self):
+        actor = self.get_actor("Disinfection")
+        if not actor.is_stop().get():
+            actor.stop()
+
     def on_enter_stop(self):
         logger.info("Entering stop state")
         self.__encoder.filtration_state("stop")
+        self.__disinfection_stop()
         self.get_actor("Tank").stop()
         self.__devices.get_pump("variable").off()
         self.__devices.get_pump("boost").off()
@@ -152,7 +163,6 @@ class Filtration(PoupoolActor):
 
     def on_exit_stop(self):
         logger.info("Exiting stop state")
-        self.get_actor("Disinfection").run()
         self.get_actor("Tank").normal()
 
     def on_enter_closing(self):
@@ -193,6 +203,7 @@ class Filtration(PoupoolActor):
     def on_enter_eco_normal(self):
         logger.info("Entering eco_normal state")
         self.__encoder.filtration_state("eco_normal")
+        self.__disinfection_start()
         self.__devices.get_valve("tank").off()
         self.__devices.get_valve("gravity").on()
         self.__devices.get_pump("boost").off()
@@ -221,6 +232,7 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_eco_waiting(self):
         logger.info("Entering eco_waiting state")
+        self.__disinfection_stop()
         self.__encoder.filtration_state("eco_waiting")
         self.__devices.get_pump("variable").off()
         self.__devices.get_pump("boost").off()
@@ -240,6 +252,7 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_eco_stir(self):
         logger.info("Entering eco_stir state")
+        self.__disinfection_start()
         self.__encoder.filtration_state("eco_stir")
         self.__devices.get_pump("boost").on()
         self.__stir_timer.delay = self.__stir_duration
@@ -257,6 +270,7 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_eco_tank(self):
         logger.info("Entering eco_tank state")
+        self.__disinfection_start()
         self.__encoder.filtration_state("eco_tank")
         self.__devices.get_valve("tank").on()
 
@@ -275,8 +289,10 @@ class Filtration(PoupoolActor):
         self.__encoder.filtration_state("standby")
         self.__devices.get_valve("gravity").off()
         if self.__speed_standby > 0:
+            self.__disinfection_start()
             self.__devices.get_valve("tank").on()
         else:
+            self.__disinfection_stop()
             self.__devices.get_valve("tank").off()
         self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").speed(self.__speed_standby)
@@ -291,6 +307,7 @@ class Filtration(PoupoolActor):
     def on_enter_overflow(self):
         logger.info("Entering overflow state")
         self.__encoder.filtration_state("overflow")
+        self.__disinfection_start()
         self.__devices.get_valve("gravity").off()
         speed = self.__speed_overflow
         self.__devices.get_pump("variable").speed(min(speed, 3))
@@ -309,6 +326,10 @@ class Filtration(PoupoolActor):
         now = datetime.datetime.now()
         self.__duration.update(now, 2)
         self.__tank_duration.update(now)
+
+    def on_enter_wash(self):
+        logger.info("Entering wash state")
+        self.__disinfection_stop()
 
     def on_enter_wash_backwash(self):
         logger.info("Entering backwash state")
