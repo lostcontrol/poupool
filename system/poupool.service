@@ -1,0 +1,16 @@
+# https://www.freedesktop.org/software/systemd/man/systemd.unit.html
+
+[Unit]
+Description=Poupool
+After=multi-user.target
+Requires=mosquitto.service
+
+[Service]
+Type=simple
+ExecStart=/home/pi/poupool/env/bin/python /home/pi/poupool/poupool.py
+User=pi
+WorkingDirectory=/home/pi/poupool
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
