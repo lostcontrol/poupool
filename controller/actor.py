@@ -109,6 +109,10 @@ class PoupoolActor(pykka.ThreadingActor):
         self._proxy = self.actor_ref.proxy()
         self.__delay_counter = 0
 
+    # def on_failure(self, exception_type, exception_value, traceback):
+    #    logger.fatal(exception_type, exception_value, traceback)
+    #    get_actor("Filtration").stop()
+
     def get_actor(self, name):
         fsm = pykka.ActorRegistry.get_by_class_name(name)
         if fsm:
