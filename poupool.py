@@ -21,18 +21,18 @@ def setup_gpio(registry):
         GPIO = MagicMock()
     GPIO.setmode(GPIO.BOARD)
 
-    registry.add_pump(PumpDevice("variable", GPIO, [38, 35, 36, 37]))
-    registry.add_pump(SwitchDevice("boost", GPIO, 29))
-    registry.add_pump(SwitchDevice("swim", GPIO, 26))
+    registry.add_pump(PumpDevice("variable", GPIO, [40, 36, 37, 38]))
+    registry.add_pump(SwitchDevice("boost", GPIO, 12))
+    registry.add_pump(SwitchDevice("swim", GPIO, 11))
 
-    registry.add_pump(SwitchDevice("ph", GPIO, 0))
-    registry.add_pump(SwitchDevice("cl", GPIO, 0))
+    registry.add_pump(SwitchDevice("ph", GPIO, 25))
+    registry.add_pump(SwitchDevice("cl", GPIO, 32))
 
     registry.add_valve(SwitchDevice("gravity", GPIO, 15))
-    registry.add_valve(SwitchDevice("backwash", GPIO, 16))
-    registry.add_valve(SwitchDevice("tank", GPIO, 22))
-    registry.add_valve(SwitchDevice("drain", GPIO, 18))
-    registry.add_valve(SwitchDevice("main", GPIO, 13))
+    registry.add_valve(SwitchDevice("backwash", GPIO, 29))
+    registry.add_valve(SwitchDevice("tank", GPIO, 33))
+    registry.add_valve(SwitchDevice("drain", GPIO, 31))
+    registry.add_valve(SwitchDevice("main", GPIO, 35))
 
     try:
         import Adafruit_ADS1x15
