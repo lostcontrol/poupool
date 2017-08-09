@@ -1,10 +1,11 @@
 import pykka
 import time
+import datetime
 import logging
 from .actor import PoupoolModel
 from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat, do_repeat, Timer
-from .util import mapping, constrain
+from .util import mapping, constrain, Duration
 
 
 logger = logging.getLogger(__name__)
@@ -12,13 +13,15 @@ logger = logging.getLogger(__name__)
 
 class PWM(PoupoolActor):
 
-    def __init__(self, pump, period=10):
+    def __init__(self, name, pump, period=10):
         super().__init__()
         self.__pump = pump
         self.__period = period
         self.__last = None
         self.__duration = 0
         self.__state = False
+        self.__security_duration = Duration("PWM for %s" % name)
+        self.__security_duration.daily = datetime.timedelta(seconds=3600)
         self.value = 0.0
 
     @repeat(delay=1)
@@ -33,16 +36,16 @@ class PWM(PoupoolActor):
             duty = duty_on if self.__state else duty_off
             #print("duty:%f state:%d duration:%f" % (duty, self.__state, self.__duration))
             if self.__state:
+                self.__security_duration.update(datetime.datetime.now())
                 if self.__duration > duty_on:
                     self.__duration = 0
                     self.__state = False
-                    print("off")
                     self.__pump.off()
             else:
-                if self.__duration > duty_off:
+                self.__security_duration.update(datetime.datetime.now(), 0)
+                if self.__duration > duty_off and not self.__security_duration.elapsed():
                     self.__duration = 0
                     self.__state = True
-                    print("on")
                     self.__pump.on()
         self.__last = now
 
@@ -76,10 +79,10 @@ class Disinfection(PoupoolActor):
         self.__encoder = encoder
         self.__devices = devices
         self.__measures = []
-        self.__ph = PWM.start(self.__devices.get_pump("ph")).proxy()
+        self.__ph = PWM.start("pH", self.__devices.get_pump("ph")).proxy()
         self.__ph_controller = PController(pterm=-1.5)
         self.__ph_controller.setpoint = 7
-        self.__cl = PWM.start(self.__devices.get_pump("cl")).proxy()
+        self.__cl = PWM.start("cl", self.__devices.get_pump("cl")).proxy()
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Disinfection.states, initial="stop")
 
@@ -128,7 +131,7 @@ class Disinfection(PoupoolActor):
         ph = sum(self.__ph_measures) / len(self.__ph_measures)
         self.__ph_controller.current = ph
         ph_feedback = self.__ph_controller.compute()
-        print("ph: %f feedback: %f" % (ph, ph_feedback))
+        logger.info("pH: %f feedback: %f" % (ph, ph_feedback))
         self.__ph.value = ph_feedback
         self._proxy.wait()
 
