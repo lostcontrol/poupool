@@ -74,9 +74,9 @@ class Disinfection(PoupoolActor):
         "stop",
         "waiting",
         {"name": "running", "initial": "measuring", "children": [
-              "measuring",
-              "adjusting",
-              "waiting"]}]
+            "measuring",
+            "adjusting",
+            "waiting"]}]
 
     def __init__(self, encoder, devices):
         super().__init__()
