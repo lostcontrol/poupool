@@ -4,17 +4,10 @@ import logging
 from .actor import PoupoolModel
 from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat, do_repeat, Timer
+from .util import mapping, constrain
 
 
 logger = logging.getLogger(__name__)
-
-
-def map(x, in_min, in_max, out_min, out_max):
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
-
-
-def constrain(x, out_min, out_max):
-    return min(max(x, out_min), out_max)
 
 
 class PWM(PoupoolActor):

@@ -1,16 +1,9 @@
 import transitions
 import time
 import logging
+from .util import mapping, constrain
 
 logger = logging.getLogger("device")
-
-
-def map(x, in_min, in_max, out_min, out_max):
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
-
-
-def constrain(x, out_min, out_max):
-    return min(max(x, out_min), out_max)
 
 
 class DeviceRegistry(object):
@@ -108,4 +101,4 @@ class TankSensorDevice(SensorDevice):
             values += self.__adc.read_adc(self.__channel, gain=self.__gain)
             time.sleep(0.05)
         value = values / 10
-        return constrain(map(value, self.__low, self.__high, 0, 100), 0, 100)
+        return constrain(mapping(value, self.__low, self.__high, 0, 100), 0, 100)
