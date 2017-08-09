@@ -19,6 +19,10 @@ class Mqtt(PoupoolActor):
         self.__client.on_message = self.__on_message
         self.__client.on_disconnect = self.__on_disconnect
 
+    def on_stop(self):
+        self.do_stop()
+        self.__client.disconnect()
+
     def __on_connect(self, client, userdata, flags, rc):
         logger.info("MQTT client connected to broker")
         for topic in self.__dispatcher.topics():
@@ -28,8 +32,8 @@ class Mqtt(PoupoolActor):
         self.__dispatcher.dispatch(message.topic, message.payload)
 
     def __on_disconnect(self, client, userdata, rc):
-        logger.warn("MQTT client disconnected: %d" % rc)
-        if rc != 0:
+        logger.warning("MQTT client disconnected: %d" % rc)
+        if rc != 0 and self.__run:
             self.do_connect()
 
     @repeat(delay=5)
