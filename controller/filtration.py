@@ -179,9 +179,7 @@ class Filtration(PoupoolActor):
     def on_enter_stop(self):
         logger.info("Entering stop state")
         self.__encoder.filtration_state("stop")
-        tank = self.get_actor("Tank")
-        if tank:
-            tank.stop()
+        self.get_actor("Tank").stop()
         self.__devices.get_pump("variable").off()
         self.__devices.get_pump("boost").off()
         self.__devices.get_valve("gravity").off()
@@ -192,9 +190,7 @@ class Filtration(PoupoolActor):
     def on_exit_stop(self):
         logger.info("Exiting stop state")
         self.get_actor("Disinfection").run()
-        tank = self.get_actor("Tank")
-        if tank:
-            tank.normal()
+        self.get_actor("Tank").normal()
 
     def on_enter_closing(self):
         logger.info("Entering closing state")

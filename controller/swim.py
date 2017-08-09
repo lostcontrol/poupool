@@ -39,10 +39,7 @@ class Swim(PoupoolActor):
         logger.info("Timer for swim set to: %s" % self.__timer.delay)
 
     def filtration_is_overflow(self):
-        filtration = self.get_actor("Filtration")
-        if filtration:
-            return filtration.is_overflow().get()
-        return False
+        return self.get_actor("Filtration").is_overflow().get()
 
     def on_enter_stop(self):
         logger.info("Entering stop state")

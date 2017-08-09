@@ -72,9 +72,7 @@ class Tank(PoupoolActor):
         # Security feature: stop if we stay too long in this state
         if self.__machine.get_time_in_state() > datetime.timedelta(hours=6):
             logger.warning("Tank TOO LONG in low state, stopping")
-            filtration = self.get_actor("Filtration")
-            if filtration:
-                filtration.stop()
+            self.get_actor("Filtration").stop()
             raise StopRepeatException
         height = self.__get_tank_height()
         if height >= self.levels["low"] + self.hysteresis:
@@ -82,9 +80,7 @@ class Tank(PoupoolActor):
             raise StopRepeatException
         elif height < self.levels_too_low:
             logger.warning("Tank TOO LOW, stopping: %d" % height)
-            filtration = self.get_actor("Filtration")
-            if filtration:
-                filtration.stop()
+            self.get_actor("Filtration").stop()
             raise StopRepeatException
 
     @do_repeat()
