@@ -42,7 +42,6 @@ class Filtration(PoupoolActor):
         self.__speed_standby = 1
         self.__speed_overflow = 4
         self.__backwash_period = 30
-        self.__backwash_margin = 5
         self.__backwash_last = datetime.datetime.fromtimestamp(0)
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Filtration.states,
@@ -100,18 +99,11 @@ class Filtration(PoupoolActor):
             self._proxy.overflow()
 
     def backwash_period(self, value):
-        if value - self.__backwash_margin < 2:
+        if value < 2:
             logger.error("We do not allow backwash everyday!!!")
         else:
             self.__backwash_period = value
             logger.info("Backwash period set to: %d" % self.__backwash_period)
-
-    def backwash_margin(self, value):
-        if self.__backwash_period - value < 2:
-            logger.error("We do not allow backwash everyday!!!")
-        else:
-            self.__backwash_margin = value
-            logger.info("Backwash margin set to: %d" % self.__backwash_margin)
 
     def backwash_last(self, value):
         self.__backwash_last = datetime.datetime.strptime(value, "%c")
@@ -124,10 +116,8 @@ class Filtration(PoupoolActor):
         return self.get_actor("Tank").is_high().get()
 
     def __start_backwash(self):
-        days = self.__backwash_period
-        margin = self.__backwash_margin
         diff = datetime.datetime.now() - self.__backwash_last
-        if datetime.timedelta(days - margin) < diff < datetime.timedelta(days + margin):
+        if diff >= datetime.timedelta(self.__backwash_period):
             if self.tank_is_high():
                 logger.info("Time for a backwash and tank is high")
                 return True

@@ -13,7 +13,6 @@ class Dispatcher(object):
             "/settings/filtration/tank_duration": (filtration, lambda x: 0 < int(x) <= 172800, lambda x: "tank_duration", lambda x: int(x)),
             "/settings/filtration/stir_duration": (filtration, lambda x: 0 <= int(x) <= 10 * 60, lambda x: "stir_duration", lambda x: int(x)),
             "/settings/filtration/backwash_period": (filtration, lambda x: 0 <= int(x) <= 90, lambda x: "backwash_period", lambda x: int(x)),
-            "/settings/filtration/backwash_margin": (filtration, lambda x: 0 <= int(x) <= 15, lambda x: "backwash_margin", lambda x: int(x)),
             "/status/filtration/backwash/last": (filtration, lambda x: True, lambda x: "backwash_last", lambda x: str(x)),
             "/settings/filtration/speed/standby": (filtration, lambda x: 0 <= int(x) <= 1, lambda x: "speed_standby", lambda x: int(x)),
             "/settings/filtration/speed/overflow": (filtration, lambda x: 0 < int(x) <= 4, lambda x: "speed_overflow", lambda x: int(x)),
