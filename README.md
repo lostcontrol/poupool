@@ -1,8 +1,13 @@
-# poupool
-PouPool is a swimming pool control software.
+# Poupool - The swimming pool controller
+Poupool is a swimming pool control software.
 
 It is based on [Transitions](https://github.com/pytransitions/transitions),
 [Pykka](https://www.pykka.org) and [Paho MQTT](https://github.com/eclipse/paho.mqtt.python).
+The user interface will be built using the excellent home automation server
+[openHAB](http://www.openhab.org).
+
+![The swimming pool](docs/images/pool-01.jpg)
+
 This is meant as a personal project and will never be a fully-featured software.
 Some pictures of the project will be added later.
 
