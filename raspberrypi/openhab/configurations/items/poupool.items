@@ -1,0 +1,19 @@
+String Poupool_Mode "Mode" {mqtt=">[poupool:/settings/mode:command:*:${command}]"}
+String Poupool_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/filtration/state:state:default]"}
+
+Number Poupool_Filtration_Duration "Durée journalière (heure) [%d]" {mqtt="<[poupool:/settings/filtration/duration:state:JS(divide3600.js)],>[poupool:/settings/filtration/duration:command:*:JS(multiply3600.js)]"}
+Number Poupool_Filtration_HourOfReset "Heure de réinitialisation [%d]" {mqtt="<[poupool:/settings/filtration/hour_of_reset:state:default],>[poupool:/settings/filtration/hour_of_reset:command:*:default]"}
+Number Poupool_Filtration_TankDuration "Durée journalière pour tampon (heure) [%d]" {mqtt="<[poupool:/settings/filtration/tank_duration:state:JS(divide3600.js)],>[poupool:/settings/filtration/tank_duration:command:*:JS(multiply3600.js)]"}
+Number Poupool_Filtration_StirDuration "Durée brassage par heure (secondes) [%d]" {mqtt="<[poupool:/settings/filtration/stir_duration:state:default],>[poupool:/settings/filtration/stir_duration:command:*:default]"}
+Number Poupool_Filtration_SpeedStandby "Vitesse pompe en veille [%d]" {mqtt="<[poupool:/settings/filtration/speed/standby:state:default],>[poupool:/settings/filtration/speed/standby:command:*:default]"}
+Number Poupool_Filtration_SpeedOverflow "Vitesse pompe en débordement [%d]" {mqtt="<[poupool:/settings/filtration/speed/overflow:state:default],>[poupool:/settings/filtration/speed/overflow:command:*:default]"}
+
+String Poupool_Tank_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/tank/state:state:default]"}
+Number Poupool_Tank_Height "Hauteur du tampon (%) [%d%%]" {mqtt="<[poupool:/status/tank/height:state:default]"}
+
+Number Poupool_Filtration_BackwashPeriod "Période de contre-lavage (jour) [%d]" {mqtt="<[poupool:/settings/filtration/backwash_period:state:default],>[poupool:/settings/filtration/backwash_period:command:*:default]"}
+String Poupool_Filtration_BackwashLast "Dernier contre-lavage [%s]" {mqtt="<[poupool:/status/filtration/backwash/last:state:default]"}
+
+String Poupool_SwimMode "Mode" {mqtt=">[poupool:/settings/swim/mode:command:*:${command}]"}
+String Poupool_SwimState "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/swim/state:state:default]"}
+Number Poupool_SwimTimer "Durée temporisation (minute) [%d]" {mqtt="<[poupool:/settings/swim/timer:state:default],>[poupool:/settings/swim/timer:command:*:default]"}

@@ -1,0 +1,36 @@
+sitemap default label="Menu principal"
+{
+    Frame label="Maison" {
+        Text label="Poupool" icon="outdoorlight" {
+            Frame label="Mode" icon="computer" {
+                Switch item=Poupool_Mode icon="settings" mappings=[stop="Stop", eco="Eco", standby="Veille", overflow="Débordement"]
+                Text item=Poupool_State icon="info"
+            }
+            Frame label="Nage contre-courant" icon="socket" {
+                Switch item=Poupool_SwimMode icon="settings" mappings=[stop="Stop", timed="Temporisé", continuous="Continue"]
+                Text item=Poupool_SwimState icon="info"
+            }
+            Frame label="Tampon" icon="cistern-20" {
+                Text item=Poupool_Tank_State icon="info"
+                Text item=Poupool_Tank_Height icon="cistern"
+            }
+            Frame label="Paramètres" icon="settings" {
+                Text label="Filtration" icon="outdoorlight" {
+                    Setpoint item=Poupool_Filtration_Duration icon="settings" minValue=1 maxValue=48 step=1
+                    Setpoint item=Poupool_Filtration_HourOfReset icon="settings" minValue=0 maxValue=23 step=1
+                    Setpoint item=Poupool_Filtration_TankDuration icon="settings" minValue=1 maxValue=48 step=1
+                    Setpoint item=Poupool_Filtration_StirDuration icon="settings" minValue=0 maxValue=600 step=10
+                    Setpoint item=Poupool_Filtration_SpeedStandby icon="settings" minValue=0 maxValue=1 step=1
+                    Setpoint item=Poupool_Filtration_SpeedOverflow icon="settings" minValue=1 maxValue=4 step=1
+                }
+                Text label="Contre-lavage" icon="softener" {
+                    Setpoint item=Poupool_Filtration_BackwashPeriod icon="settings" minValue=0 maxValue=90 step=1
+                    Text item=Poupool_Filtration_BackwashLast icon="settings"
+                }
+                Text label="Nage contre-courant" icon="socket" {
+                    Setpoint item=Poupool_SwimTimer icon="settings" minValue=1 maxValue=60 step=1
+                }
+            }
+        }
+    }
+}
