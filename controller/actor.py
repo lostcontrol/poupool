@@ -117,7 +117,7 @@ class PoupoolActor(pykka.ThreadingActor):
         fsm = pykka.ActorRegistry.get_by_class_name(name)
         if fsm:
             return fsm[0].proxy()
-        logging.critical("Actor %s not found!!!" % name)
+        logger.critical("Actor %s not found!!!" % name)
         return None
 
     def do_cancel(self):
