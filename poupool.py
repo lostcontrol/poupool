@@ -22,11 +22,11 @@ def setup_gpio(registry):
         GPIO = MagicMock()
     GPIO.setmode(GPIO.BOARD)
 
-    registry.add_pump(PumpDevice("variable", GPIO, [40, 36, 37, 38]))
+    registry.add_pump(PumpDevice("variable", GPIO, [37, 40, 38, 36]))
     registry.add_pump(SwitchDevice("boost", GPIO, 12))
     registry.add_pump(SwitchDevice("swim", GPIO, 11))
 
-    registry.add_pump(SwitchDevice("ph", GPIO, 25))
+    registry.add_pump(SwitchDevice("ph", GPIO, 22))
     registry.add_pump(SwitchDevice("cl", GPIO, 32))
 
     registry.add_valve(SwitchDevice("gravity", GPIO, 15))
