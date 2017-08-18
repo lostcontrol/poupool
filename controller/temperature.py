@@ -23,3 +23,5 @@ class Temperature(PoupoolActor):
                 logger.debug("Temperature (%s) is %.1f°C" % (sensor.name, rounded))
                 f = getattr(self.__encoder, sensor.name)
                 f(rounded)
+            else:
+                logger.warning("Temperature (%s) cannot be read!!!" % sensor.name)

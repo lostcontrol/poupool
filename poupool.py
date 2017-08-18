@@ -10,7 +10,8 @@ from controller.swim import Swim
 from controller.dispatcher import Dispatcher
 from controller.encoder import Encoder
 from controller.mqtt import Mqtt
-from controller.device import DeviceRegistry, SwitchDevice, PumpDevice, TankSensorDevice
+from controller.temperature import Temperature
+from controller.device import DeviceRegistry, SwitchDevice, PumpDevice, TempSensorDevice, TankSensorDevice
 
 
 def setup_gpio(registry):
@@ -41,6 +42,7 @@ def setup_gpio(registry):
         adc = MagicMock()
         adc.read_adc = MagicMock(return_value=2048)
     registry.add_sensor(TankSensorDevice("tank", adc, 0, 2 / 3, 12, 4002))
+    registry.add_sensor(TempSensorDevice("temperature_pool", "28_123456"))
 
 
 def main():
@@ -59,7 +61,11 @@ def main():
 
     dispatcher.register(filtration, swim)
 
+    sensors = [devices.get_sensor("temperature_pool")]
+    temperature = Temperature.start(encoder, sensors).proxy()
+
     mqtt.do_start()
+    temperature.do_read()
 
 
 if __name__ == '__main__':
