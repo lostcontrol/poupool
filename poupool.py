@@ -1,7 +1,9 @@
+import os
 import time
 import pykka
 import logging
 import logging.config
+import argparse
 
 from controller.filtration import Filtration
 from controller.disinfection import Disinfection
@@ -69,8 +71,17 @@ def main():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--log-config", action="store",
+                        default="logging.conf", help="log configuration file")
+    args = parser.parse_args()
+
     # Setup logging
-    logging.config.fileConfig("logging.conf", disable_existing_loggers=False)
+    if os.path.isfile(args.log_config):
+        logging.config.fileConfig(args.log_config, disable_existing_loggers=False)
+    else:
+        logging.error("Log configuration file (%s) cannot be used" % args.log_config)
+
     try:
         main()
         while True:
