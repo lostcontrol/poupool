@@ -47,7 +47,7 @@ def setup_gpio(registry):
     registry.add_sensor(TempSensorDevice("temperature_pool", "28_123456"))
 
 
-def main():
+def main(args):
     devices = DeviceRegistry()
     setup_gpio(devices)
 
@@ -58,8 +58,8 @@ def main():
 
     filtration = Filtration.start(encoder, devices).proxy()
     swim = Swim.start(encoder, devices).proxy()
-    tank = Tank.start(encoder, devices).proxy()
-    disinfection = Disinfection.start(encoder, devices).proxy()
+    tank = Tank.start(encoder, devices, args.no_tank).proxy()
+    disinfection = Disinfection.start(encoder, devices, args.no_disinfection).proxy()
 
     dispatcher.register(filtration, swim)
 
@@ -74,6 +74,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-config", action="store",
                         default="logging.conf", help="log configuration file")
+    parser.add_argument("--no-tank", action="store_true", help="disable tank support")
+    parser.add_argument("--no-disinfection", action="store_true",
+                        help="disable disinfection support")
     args = parser.parse_args()
 
     # Setup logging
@@ -83,7 +86,7 @@ if __name__ == '__main__':
         logging.error("Log configuration file (%s) cannot be used" % args.log_config)
 
     try:
-        main()
+        main(args)
         while True:
             time.sleep(1000)
     except KeyboardInterrupt:

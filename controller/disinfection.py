@@ -74,8 +74,9 @@ class Disinfection(PoupoolActor):
             "adjusting",
             "waiting"]}]
 
-    def __init__(self, encoder, devices):
+    def __init__(self, encoder, devices, disable=False):
         super().__init__()
+        self.__is_disable = disable
         self.__encoder = encoder
         self.__devices = devices
         self.__measures = []
@@ -86,12 +87,15 @@ class Disinfection(PoupoolActor):
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Disinfection.states, initial="stop")
 
-        self.__machine.add_transition("run", "stop", "waiting")
+        self.__machine.add_transition("run", "stop", "waiting", unless="is_disable")
         self.__machine.add_transition("run", "waiting", "running")
         self.__machine.add_transition("stop", ["waiting", "running"], "stop")
         self.__machine.add_transition("measure", "running_waiting", "running_measuring")
         self.__machine.add_transition("adjust", "running_measuring", "running_adjusting")
         self.__machine.add_transition("wait", "running_adjusting", "running_waiting")
+
+    def is_disable(self):
+        return self.__is_disable
 
     def on_enter_stop(self):
         logger.info("Entering stop state")
