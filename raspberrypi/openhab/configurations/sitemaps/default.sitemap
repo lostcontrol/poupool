@@ -5,30 +5,58 @@ sitemap default label="Menu principal"
             Frame label="Mode" icon="computer" {
                 Switch item=Poupool_Mode icon="settings" mappings=[stop="Stop", eco="Eco", standby="Veille", overflow="Débordement"]
                 Text item=Poupool_State icon="info"
+                Text item=Poupool_Temperature_Pool icon="temperature"
             }
             Frame label="Nage contre-courant" icon="socket" {
                 Switch item=Poupool_SwimMode icon="settings" mappings=[stop="Stop", timed="Temporisé", continuous="Continue"]
                 Text item=Poupool_SwimState icon="info"
             }
-            Frame label="Tampon" icon="cistern-20" {
-                Text item=Poupool_Tank_State icon="info"
-                Text item=Poupool_Tank_Height icon="cistern"
-            }
-            Frame label="Paramètres" icon="settings" {
-                Text label="Filtration" icon="outdoorlight" {
-                    Setpoint item=Poupool_Filtration_Duration icon="settings" minValue=1 maxValue=48 step=1
-                    Setpoint item=Poupool_Filtration_HourOfReset icon="settings" minValue=0 maxValue=23 step=1
-                    Setpoint item=Poupool_Filtration_TankDuration icon="settings" minValue=1 maxValue=48 step=1
-                    Setpoint item=Poupool_Filtration_StirDuration icon="settings" minValue=0 maxValue=600 step=10
-                    Setpoint item=Poupool_Filtration_SpeedStandby icon="settings" minValue=0 maxValue=1 step=1
-                    Setpoint item=Poupool_Filtration_SpeedOverflow icon="settings" minValue=1 maxValue=4 step=1
+            Frame label="Plus d'options" icon="settings" {
+                Text label="Informations" icon="info" {
+                    Frame label="Tampon" icon="cistern-20" {
+                        Text item=Poupool_Tank_State icon="info"
+                        Text item=Poupool_Tank_Height icon="cistern"
+                    }
+                    Frame label="Statistiques" icon="info" {
+                        Text label="Température" icon="temperature" {
+                            Frame label="Piscine (24h)" {
+                                Chart item=Poupool_Temperature_Pool period=d refresh=60000
+                            }
+                            Frame label="Piscine (1 semaine)" {
+                                Chart item=Poupool_Temperature_Pool period=W refresh=600000
+                            }
+                            Frame label="Piscine (1 mois)" {
+                                Chart item=Poupool_Temperature_Pool period=M refresh=1440000
+                            }
+                        }
+                        Text label="Tampon" icon="cistern" {
+                            Frame label="Hauteur (24h)" {
+                                Chart item=Poupool_Tank_Height period=d refresh=60000
+                            }
+                            Frame label="Hauteur (1 semaine)" {
+                                Chart item=Poupool_Tank_Height period=W refresh=600000
+                            }
+                        }
+                    }
                 }
-                Text label="Contre-lavage" icon="softener" {
-                    Setpoint item=Poupool_Filtration_BackwashPeriod icon="settings" minValue=0 maxValue=90 step=1
-                    Text item=Poupool_Filtration_BackwashLast icon="settings"
-                }
-                Text label="Nage contre-courant" icon="socket" {
-                    Setpoint item=Poupool_SwimTimer icon="settings" minValue=1 maxValue=60 step=1
+                Text label="Paramètres" icon="settings" {
+                    Frame label="Paramètres" icon="settings" {
+                        Text label="Filtration" icon="outdoorlight" {
+                            Setpoint item=Poupool_Filtration_Duration icon="settings" minValue=1 maxValue=48 step=1
+                            Setpoint item=Poupool_Filtration_HourOfReset icon="settings" minValue=0 maxValue=23 step=1
+                            Setpoint item=Poupool_Filtration_TankDuration icon="settings" minValue=1 maxValue=48 step=1
+                            Setpoint item=Poupool_Filtration_StirDuration icon="settings" minValue=0 maxValue=600 step=10
+                            Setpoint item=Poupool_Filtration_SpeedStandby icon="settings" minValue=0 maxValue=1 step=1
+                            Setpoint item=Poupool_Filtration_SpeedOverflow icon="settings" minValue=1 maxValue=4 step=1
+                        }
+                        Text label="Contre-lavage" icon="softener" {
+                            Setpoint item=Poupool_Filtration_BackwashPeriod icon="settings" minValue=0 maxValue=90 step=1
+                            Text item=Poupool_Filtration_BackwashLast icon="settings"
+                        }
+                        Text label="Nage contre-courant" icon="socket" {
+                            Setpoint item=Poupool_SwimTimer icon="settings" minValue=1 maxValue=60 step=1
+                        }
+                    }
                 }
             }
         }

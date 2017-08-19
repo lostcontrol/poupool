@@ -1,0 +1,8 @@
+Strategies {
+    everyMinute : "0 * * * * ?"
+}
+
+Items {
+    Poupool_Temperature* : strategy = everyMinute, restoreOnStartup
+    Poupool_Tank_Height : strategy = everyMinute, restoreOnStartup
+}
