@@ -82,7 +82,7 @@ class SensorDevice(Device):
 
     @property
     def value(self):
-        return 50
+        return 24.567
 
 
 class TempSensorDevice(SensorDevice):
