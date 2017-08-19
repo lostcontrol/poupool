@@ -14,7 +14,10 @@ Some pictures of the project will be added later.
 Originally, I wanted to experiment with asyncio but finally I preferred to
 go with some more traditional approach.
 
-It is planned to control filtration, heating, PH and chlorination, all the
+It is planned to control filtration, heating, pH and chlorination, all the
 pumps and valves, cover and lights. It will be an overflow swimming pool so
 that adds some complexity to the control process (e.g. monitoring of the
 retention tank water level).
+
+Here is an early screenshot of the main menu in openHAB:
+![openHAB main menu](docs/images/openhab-01.png)
