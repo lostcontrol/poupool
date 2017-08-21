@@ -46,12 +46,13 @@ class SwitchDevice(Device):
         self.__gpio = gpio
         self.pin = pin
         self.__gpio.setup(self.pin, self.__gpio.OUT)
-
-    def on(self):
         self.__gpio.output(self.pin, True)
 
-    def off(self):
+    def on(self):
         self.__gpio.output(self.pin, False)
+
+    def off(self):
+        self.__gpio.output(self.pin, True)
 
 
 class PumpDevice(Device):
@@ -62,6 +63,7 @@ class PumpDevice(Device):
         assert len(pins) == 4
         self.pins = pins
         self.__gpio.setup(self.pins, self.__gpio.OUT)
+        self.__gpio.output(self.pins, True)
 
     def on(self):
         self.speed(3)
@@ -72,7 +74,7 @@ class PumpDevice(Device):
     def speed(self, value):
         assert 0 <= value <= 3
         for i, pin in enumerate(self.pins):
-            self.__gpio.output(pin, True if pin == value else False)
+            self.__gpio.output(pin, i != value)
 
 
 class SensorDevice(Device):
