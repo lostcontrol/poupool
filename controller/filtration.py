@@ -26,6 +26,7 @@ class Filtration(PoupoolActor):
                   "waiting"]},
               "standby",
               "overflow",
+              "reload",
               {"name": "wash", "initial": "backwash", "children": [
                   "backwash",
                   "rinse"]}]
@@ -56,17 +57,24 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("eco_normal", "eco", "eco_normal")
         self.__machine.add_transition("eco_waiting", "eco_normal", "eco_waiting")
         self.__machine.add_transition("standby", ["eco", "closing"], "opening_standby")
-        self.__machine.add_transition("standby", "overflow", "standby")
+        self.__machine.add_transition("standby", ["overflow", "reload"], "standby")
         self.__machine.add_transition("opened", "opening_standby", "standby")
         self.__machine.add_transition("opened", "opening_overflow", "overflow")
         self.__machine.add_transition(
             "overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
-        self.__machine.add_transition("overflow", "standby", "overflow", unless="tank_is_low")
+        self.__machine.add_transition(
+            "overflow", ["standby", "reload"], "overflow", unless="tank_is_low")
         self.__machine.add_transition(
             "stop", ["eco", "standby", "overflow", "opening", "closing", "wash"], "stop")
         self.__machine.add_transition(
             "wash", ["eco_normal", "eco_waiting"], "wash", conditions="tank_is_high")
         self.__machine.add_transition("rinse", "wash_backwash", "wash_rinse")
+        # Hack to reload settings. Often the pumps/valves are set in the on_enter callback. In some
+        # cases, we can change settings that needs to reload the same state. However, a transition
+        # to the same state does not result in on_exit/on_enter being called again (sounds logic
+        # since there is actually no state change). So we jump to the reload state and back to
+        # workaround this.
+        self.__machine.add_transition("reload", ["standby", "overflow"], "reload")
         #self.__machine.get_graph().draw("filtration.png", prog="dot")
 
     def duration(self, value):
@@ -90,12 +98,16 @@ class Filtration(PoupoolActor):
         self.__speed_standby = value
         logger.info("Speed for standby mode set to: %d" % self.__speed_standby)
         if self.is_standby():
+            # Jump to the reload state so that we can jump back into standby mode
+            self._proxy.reload()
             self._proxy.standby()
 
     def speed_overflow(self, value):
         self.__speed_overflow = value
         logger.info("Speed for overflow mode set to: %d" % self.__speed_overflow)
         if self.is_overflow():
+            # Jump to the reload state so that we can jump back into overflow mode
+            self._proxy.reload()
             self._proxy.overflow()
 
     def backwash_period(self, value):
