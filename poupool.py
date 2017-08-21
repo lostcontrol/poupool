@@ -24,7 +24,7 @@ def setup_gpio(registry):
         GPIO = MagicMock()
     GPIO.setmode(GPIO.BOARD)
 
-    registry.add_pump(PumpDevice("variable", GPIO, [37, 40, 38, 36]))
+    registry.add_pump(PumpDevice("variable", GPIO, [40, 36, 37, 38]))
     registry.add_pump(SwitchDevice("boost", GPIO, 12))
     registry.add_pump(SwitchDevice("swim", GPIO, 11))
 
@@ -41,10 +41,13 @@ def setup_gpio(registry):
         import Adafruit_ADS1x15
         adc = Adafruit_ADS1x15.ADS1015()
     except RuntimeError:
+        from unittest.mock import MagicMock
         adc = MagicMock()
         adc.read_adc = MagicMock(return_value=2048)
     registry.add_sensor(TankSensorDevice("tank", adc, 0, 2 / 3, 12, 4002))
-    registry.add_sensor(TempSensorDevice("temperature_pool", "28_123456"))
+    # 28-031634d04aff
+    # 28-0416350909ff
+    registry.add_sensor(TempSensorDevice("temperature_pool", "28-031634d04aff"))
 
 
 def main(args):
