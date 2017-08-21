@@ -98,7 +98,7 @@ class TempSensorDevice(SensorDevice):
 
     def __read_temp_raw(self):
         with open(self.__path, "r") as f:
-            return f.readlines()
+            return [line.strip() for line in f.readlines()]
 
     @property
     def value(self):
