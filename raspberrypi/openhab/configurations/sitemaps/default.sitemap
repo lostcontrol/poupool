@@ -41,11 +41,11 @@ sitemap default label="Menu principal"
                     }
                 }
                 Text label="Paramètres" icon="settings" {
+                    Frame label="Mode étendu" icon="computer" {
+                       Switch item=Poupool_Mode icon="settings" mappings=[stop="Stop", wash="Contre-lavage"]
+                       Text item=Poupool_State icon="info"
+                    }
                     Frame label="Paramètres" icon="settings" {
-                        Frame label="Mode étendu" icon="computer" {
-                           Switch item=Poupool_Mode icon="settings" mappings=[stop="Stop", wash="Contre-lavage"]
-                           Text item=Poupool_State icon="info"
-                        }
                         Text label="Filtration" icon="outdoorlight" {
                             Setpoint item=Poupool_Filtration_Duration icon="settings" minValue=1 maxValue=48 step=1
                             Setpoint item=Poupool_Filtration_HourOfReset icon="settings" minValue=0 maxValue=23 step=1
