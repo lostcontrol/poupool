@@ -1,4 +1,5 @@
 # https://www.freedesktop.org/software/systemd/man/systemd.unit.html
+# This file must be placed into /etc/systemd/system
 
 [Unit]
 Description=Poupool
@@ -7,8 +8,10 @@ Requires=mosquitto.service
 
 [Service]
 Type=simple
-ExecStart=/home/pi/poupool/env/bin/python /home/pi/poupool/poupool.py
 User=pi
+ExecStart=/home/pi/poupool/env/bin/python /home/pi/poupool/poupool.py \
+            --log-config=/home/pi/poupool/logging-file.conf \
+            --no-disinfection
 WorkingDirectory=/home/pi/poupool
 Restart=on-failure
 
