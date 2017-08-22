@@ -51,6 +51,53 @@ def setup_gpio(registry):
     registry.add_sensor(TempSensorDevice("temperature_air", "28-0416350909ff"))
 
 
+def toggle_test(device):
+    print("Toggling %s " % device.name, end="")
+    result = input("[y/N]: ")
+    if result == "y":
+        time.sleep(2)
+        device.on()
+        time.sleep(2)
+        device.off()
+
+
+def read_test(device):
+    print("Read %s " % device.name, end="")
+    result = input("[y/N]: ")
+    if result == "y":
+        for _ in range(5):
+            print(device.value)
+            time.sleep(1)
+
+
+def test(args):
+    devices = DeviceRegistry()
+    setup_gpio(devices)
+
+    pump = devices.get_pump("variable")
+    print("Toggling %s " % pump.name, end="")
+    result = input("[y/N]: ")
+    if result == "y":
+        for speed in reversed(range(4)):
+            print("%s: speed %d" % (pump.name, speed))
+            pump.speed(speed)
+            time.sleep(2)
+    toggle_test(devices.get_pump("boost"))
+    toggle_test(devices.get_pump("swim"))
+    toggle_test(devices.get_pump("ph"))
+    toggle_test(devices.get_pump("cl"))
+
+    toggle_test(devices.get_valve("gravity"))
+    toggle_test(devices.get_valve("backwash"))
+    toggle_test(devices.get_valve("tank"))
+    toggle_test(devices.get_valve("drain"))
+    toggle_test(devices.get_valve("main"))
+
+    read_test(devices.get_sensor("temperature_pool"))
+    read_test(devices.get_sensor("temperature_air"))
+    read_test(devices.get_sensor("tank"))
+
+
 def main(args):
     devices = DeviceRegistry()
     setup_gpio(devices)
@@ -73,6 +120,10 @@ def main(args):
     mqtt.do_start()
     temperature.do_read()
 
+    # Wait forever
+    while True:
+        time.sleep(1000)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -81,6 +132,7 @@ if __name__ == '__main__':
     parser.add_argument("--no-tank", action="store_true", help="disable tank support")
     parser.add_argument("--no-disinfection", action="store_true",
                         help="disable disinfection support")
+    parser.add_argument("--test-mode", action="store_true", help="test mode")
     args = parser.parse_args()
 
     # Setup logging
@@ -90,8 +142,9 @@ if __name__ == '__main__':
         logging.error("Log configuration file (%s) cannot be used" % args.log_config)
 
     try:
-        main(args)
-        while True:
-            time.sleep(1000)
+        if args.test_mode:
+            test(args)
+        else:
+            main(args)
     except KeyboardInterrupt:
         pykka.ActorRegistry.stop_all()
