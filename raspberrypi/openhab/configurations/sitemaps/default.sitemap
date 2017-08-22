@@ -43,7 +43,7 @@ sitemap default label="Menu principal"
                 Text label="Paramètres" icon="settings" {
                     Frame label="Paramètres" icon="settings" {
                         Frame label="Mode étendu" icon="computer" {
-                           Switch item=Poupool_Mode icon="settings" mappings=[stop="Stop", eco="Eco", standby="Veille", overflow="Débordement"]
+                           Switch item=Poupool_Mode icon="settings" mappings=[stop="Stop", wash="Contre-lavage"]
                            Text item=Poupool_State icon="info"
                         }
                         Text label="Filtration" icon="outdoorlight" {
