@@ -48,6 +48,7 @@ def setup_gpio(registry):
     # 28-031634d04aff
     # 28-0416350909ff
     registry.add_sensor(TempSensorDevice("temperature_pool", "28-031634d04aff"))
+    registry.add_sensor(TempSensorDevice("temperature_air", "28-0416350909ff"))
 
 
 def main(args):
@@ -66,7 +67,7 @@ def main(args):
 
     dispatcher.register(filtration, swim)
 
-    sensors = [devices.get_sensor("temperature_pool")]
+    sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_air")]
     temperature = Temperature.start(encoder, sensors).proxy()
 
     mqtt.do_start()

@@ -21,3 +21,4 @@ String Poupool_SwimState "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/sw
 Number Poupool_SwimTimer "Durée temporisation (minute) [%d]" {mqtt="<[poupool:/settings/swim/timer:state:default],>[poupool:/settings/swim/timer:command:*:default]"}
 
 Number Poupool_Temperature_Pool "Température piscine [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/pool:state:default]"}
+Number Poupool_Temperature_Air "Température air [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/air:state:default]"}
