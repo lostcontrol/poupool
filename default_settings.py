@@ -1,3 +1,4 @@
+import datetime
 from controller.mqtt import Mqtt
 from controller.dispatcher import Dispatcher
 
@@ -35,6 +36,7 @@ def main():
     publish("/settings/filtration/speed/overflow", 4)
     publish("/settings/swim/mode", "stop")
     publish("/settings/swim/timer", 10)
+    publish("/status/filtration/backwash/last", datetime.datetime.now().strftime("%c"))
 
     print("\n**** Missing default parameters ***")
     [print(t) for t in remaining]
