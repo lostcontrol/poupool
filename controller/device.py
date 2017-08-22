@@ -2,7 +2,9 @@ import transitions
 import time
 import logging
 import re
+from abc import abstractmethod
 from .util import mapping, constrain
+
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +75,7 @@ class PumpDevice(Device):
 
     def speed(self, value):
         assert 0 <= value <= 3
-        for i, pin in enumerate(self.pins):
-            self.__gpio.output(pin, i != value)
+        self.__gpio.output(self.pins, [i != value for i in range(len(self.pins))])
 
 
 class SensorDevice(Device):
@@ -83,8 +84,9 @@ class SensorDevice(Device):
         super().__init__(name)
 
     @property
+    @abstractmethod
     def value(self):
-        return 24.567
+        pass
 
 
 class TempSensorDevice(SensorDevice):

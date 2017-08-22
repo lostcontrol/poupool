@@ -13,42 +13,82 @@ from controller.dispatcher import Dispatcher
 from controller.encoder import Encoder
 from controller.mqtt import Mqtt
 from controller.temperature import Temperature
-from controller.device import DeviceRegistry, SwitchDevice, PumpDevice, TempSensorDevice, TankSensorDevice
+from controller.device import DeviceRegistry
 
 
-def setup_gpio(registry):
-    try:
-        import RPi.GPIO as GPIO
-    except RuntimeError:
-        from unittest.mock import MagicMock
-        GPIO = MagicMock()
-    GPIO.setmode(GPIO.BOARD)
+def setup_gpio(registry, gpio):
+    from controller.device import SwitchDevice, PumpDevice
 
-    registry.add_pump(PumpDevice("variable", GPIO, [37, 40, 38, 36]))
-    registry.add_pump(SwitchDevice("boost", GPIO, 7))
-    registry.add_pump(SwitchDevice("swim", GPIO, 11))
+    gpio.setmode(gpio.BOARD)
 
-    registry.add_pump(SwitchDevice("ph", GPIO, 22))
-    registry.add_pump(SwitchDevice("cl", GPIO, 32))
+    registry.add_pump(PumpDevice("variable", gpio, [37, 40, 38, 36]))
+    registry.add_pump(SwitchDevice("boost", gpio, 7))
+    registry.add_pump(SwitchDevice("swim", gpio, 11))
 
-    registry.add_valve(SwitchDevice("gravity", GPIO, 15))
-    registry.add_valve(SwitchDevice("backwash", GPIO, 29))
-    registry.add_valve(SwitchDevice("tank", GPIO, 33))
-    registry.add_valve(SwitchDevice("drain", GPIO, 31))
-    registry.add_valve(SwitchDevice("main", GPIO, 35))
+    registry.add_pump(SwitchDevice("ph", gpio, 22))
+    registry.add_pump(SwitchDevice("cl", gpio, 32))
 
-    try:
-        import Adafruit_ADS1x15
-        adc = Adafruit_ADS1x15.ADS1015()
-    except RuntimeError:
-        from unittest.mock import MagicMock
-        adc = MagicMock()
-        adc.read_adc = MagicMock(return_value=2048)
+    registry.add_valve(SwitchDevice("gravity", gpio, 15))
+    registry.add_valve(SwitchDevice("backwash", gpio, 29))
+    registry.add_valve(SwitchDevice("tank", gpio, 33))
+    registry.add_valve(SwitchDevice("drain", gpio, 31))
+    registry.add_valve(SwitchDevice("main", gpio, 35))
+
+
+def setup_rpi(registry):
+    from controller.device import TempSensorDevice, TankSensorDevice
+
+    # Relay
+    import RPi.GPIO as GPIO
+    setup_gpio(registry, GPIO)
+
+    # ADC
+    import Adafruit_ADS1x15
+    adc = Adafruit_ADS1x15.ADS1015()
     registry.add_sensor(TankSensorDevice("tank", adc, 0, 2 / 3, 12, 4002))
+
+    # 1-wire
     # 28-031634d04aff
     # 28-0416350909ff
     registry.add_sensor(TempSensorDevice("temperature_pool", "28-031634d04aff"))
     registry.add_sensor(TempSensorDevice("temperature_air", "28-0416350909ff"))
+
+
+def setup_fake(registry):
+    from controller.device import SensorDevice
+
+    class FakeGpio(object):
+        OUT = "OUT"
+        BOARD = "BOARD"
+
+        def setmode(self, mode):
+            print("Set mode to %s" % mode)
+
+        def setup(self, pins, pins_type):
+            print("Setup pin(s) %s to %s" % (str(pins), pins_type))
+
+        def output(self, pins, values):
+            print("Set pin(s) %s to %s" % (str(pins), str(values)))
+
+    class FakeSensor(SensorDevice):
+        def __init__(self, name, value):
+            super().__init__(name)
+            self.__value = value
+
+        @property
+        def value(self):
+            return self.__value
+
+    # Relay
+    GPIO = FakeGpio()
+    setup_gpio(registry, GPIO)
+
+    # ADC
+    registry.add_sensor(FakeSensor("tank", 51.234))
+
+    # 1-wire
+    registry.add_sensor(FakeSensor("temperature_pool", 24.5))
+    registry.add_sensor(FakeSensor("temperature_air", 20.6))
 
 
 def toggle_test(device):
@@ -63,17 +103,17 @@ def toggle_test(device):
 
 def read_test(device):
     print("Read %s " % device.name, end="")
-    result = input("[y/N]: ")
-    if result == "y":
-        for _ in range(5):
-            print(device.value)
-            time.sleep(1)
+    try:
+        result = int(input("[0-10000]: "))
+        if 0 < result <= 10000:
+            for _ in range(result):
+                print(device.value)
+                time.sleep(1)
+    except ValueError:
+        pass
 
 
-def test(args):
-    devices = DeviceRegistry()
-    setup_gpio(devices)
-
+def test(args, devices):
     pump = devices.get_pump("variable")
     print("Toggling %s " % pump.name, end="")
     result = input("[y/N]: ")
@@ -98,10 +138,7 @@ def test(args):
     read_test(devices.get_sensor("tank"))
 
 
-def main(args):
-    devices = DeviceRegistry()
-    setup_gpio(devices)
-
+def main(args, devices):
     dispatcher = Dispatcher()
 
     mqtt = Mqtt.start(dispatcher).proxy()
@@ -132,7 +169,8 @@ if __name__ == '__main__':
     parser.add_argument("--no-tank", action="store_true", help="disable tank support")
     parser.add_argument("--no-disinfection", action="store_true",
                         help="disable disinfection support")
-    parser.add_argument("--test-mode", action="store_true", help="test mode")
+    parser.add_argument("--test-mode", action="store_true", help="test mode for the hardware")
+    parser.add_argument("--fake-devices", action="store_true", help="fake the underlying hardware")
     args = parser.parse_args()
 
     # Setup logging
@@ -142,9 +180,14 @@ if __name__ == '__main__':
         logging.error("Log configuration file (%s) cannot be used" % args.log_config)
 
     try:
-        if args.test_mode:
-            test(args)
+        devices = DeviceRegistry()
+        if args.fake_devices:
+            setup_fake(devices)
         else:
-            main(args)
+            setup_rpi(devices)
+        if args.test_mode:
+            test(args, devices)
+        else:
+            main(args, devices)
     except KeyboardInterrupt:
         pykka.ActorRegistry.stop_all()
