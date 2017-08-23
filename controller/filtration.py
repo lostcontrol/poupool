@@ -151,6 +151,16 @@ class Filtration(PoupoolActor):
         if not actor.is_stop().get():
             actor.stop()
 
+    def __heating_start(self):
+        actor = self.get_actor("Heating")
+        if actor.is_stop().get():
+            actor.heat()
+
+    def __heating_stop(self):
+        actor = self.get_actor("Heating")
+        if not actor.is_stop().get():
+            actor.stop()
+
     def on_enter_stop(self):
         logger.info("Entering stop state")
         self.__encoder.filtration_state("stop")
@@ -201,10 +211,14 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("drain").off()
         self.get_actor("Tank").set_mode("eco")
 
+    def on_exit_eco(self):
+        self.__heating_stop()
+
     @do_repeat()
     def on_enter_eco_normal(self):
         logger.info("Entering eco_normal state")
         self.__encoder.filtration_state("eco_normal")
+        self.__heating_start()
         self.__disinfection_start()
         self.__devices.get_valve("tank").off()
         self.__devices.get_valve("gravity").on()
@@ -234,6 +248,7 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_eco_waiting(self):
         logger.info("Entering eco_waiting state")
+        self.__heating_stop()
         self.__disinfection_stop()
         self.__encoder.filtration_state("eco_waiting")
         self.__devices.get_pump("variable").off()
@@ -272,6 +287,7 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_eco_tank(self):
         logger.info("Entering eco_tank state")
+        self.__heating_stop()
         self.__disinfection_start()
         self.__encoder.filtration_state("eco_tank")
         self.__devices.get_valve("tank").on()

@@ -7,6 +7,7 @@ import argparse
 
 from controller.filtration import Filtration
 from controller.disinfection import Disinfection
+from controller.heating import Heating
 from controller.tank import Tank
 from controller.swim import Swim
 from controller.dispatcher import Dispatcher
@@ -33,6 +34,8 @@ def setup_gpio(registry, gpio):
     registry.add_valve(SwitchDevice("tank", gpio, 33))
     registry.add_valve(SwitchDevice("drain", gpio, 31))
     registry.add_valve(SwitchDevice("main", gpio, 35))
+
+    registry.add_valve(SwitchDevice("heating", gpio, 18))
 
 
 def setup_rpi(registry):
@@ -148,6 +151,7 @@ def main(args, devices):
     swim = Swim.start(encoder, devices).proxy()
     tank = Tank.start(encoder, devices, args.no_tank).proxy()
     disinfection = Disinfection.start(encoder, devices, args.no_disinfection).proxy()
+    heating = Heating.start(encoder, devices).proxy()
 
     dispatcher.register(filtration, swim)
 
