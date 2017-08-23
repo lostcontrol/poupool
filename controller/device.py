@@ -51,9 +51,11 @@ class SwitchDevice(Device):
         self.__gpio.output(self.pin, True)
 
     def on(self):
+        logger.debug("Switch %s (%d) set to ON" % (self.name, self.pin))
         self.__gpio.output(self.pin, False)
 
     def off(self):
+        logger.debug("Switch %s (%d) set to OFF" % (self.name, self.pin))
         self.__gpio.output(self.pin, True)
 
 
@@ -75,7 +77,9 @@ class PumpDevice(Device):
 
     def speed(self, value):
         assert 0 <= value <= 3
-        self.__gpio.output(self.pins, [i != value for i in range(len(self.pins))])
+        values = [i != value for i in range(len(self.pins))]
+        logger.debug("Pump %s speed %d (%s:%s)" % (self.name, value, str(self.pins), str(values)))
+        self.__gpio.output(self.pins, values)
 
 
 class SensorDevice(Device):
@@ -113,12 +117,15 @@ class TempSensorDevice(SensorDevice):
                     crc, data = raw
                     if crc.endswith("YES"):
                         break
+                    else:
+                        logger.debug("Bad CRC: %s" % str(raw))
                 time.sleep(0.1)
             else:
                 return None
         except OSError:
             logger.exception("Unable to read temperature (%s)" % self.name)
             return None
+        logger.debug("Temp sensor raw data: %s" % str(data))
         # CRC valid, read the data
         match = TempSensorDevice.CRE.search(data)
         return int(match.group(1)) / 1000. if match else None
@@ -141,4 +148,5 @@ class TankSensorDevice(SensorDevice):
             values += self.__adc.read_adc(self.__channel, gain=self.__gain)
             time.sleep(0.05)
         value = values / 10
+        logger.debug("Tank sensor average ADC=%.2f" % value)
         return constrain(mapping(value, self.__low, self.__high, 0, 100), 0, 100)
