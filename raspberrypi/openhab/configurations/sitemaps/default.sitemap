@@ -18,6 +18,9 @@ sitemap default label="Menu principal"
                         Text item=Poupool_Tank_State icon="info"
                         Text item=Poupool_Tank_Height icon="cistern"
                     }
+                    Frame label="Chauffage" icon="inverter" {
+                        Text item=Poupool_Heating_State icon="info"
+                    }
                     Frame label="Statistiques" icon="info" {
                         Text label="Températures" icon="temperature" {
                             Frame label="Températures (24h)" {
