@@ -4,6 +4,7 @@ import pykka
 import logging
 import logging.config
 import argparse
+import itertools
 
 from controller.filtration import Filtration
 from controller.disinfection import Disinfection
@@ -183,8 +184,8 @@ if __name__ == '__main__':
     else:
         logging.error("Log configuration file (%s) cannot be used" % args.log_config)
 
+    devices = DeviceRegistry()
     try:
-        devices = DeviceRegistry()
         if args.fake_devices:
             setup_fake(devices)
         else:
@@ -195,3 +196,7 @@ if __name__ == '__main__':
             main(args, devices)
     except KeyboardInterrupt:
         pykka.ActorRegistry.stop_all()
+    finally:
+        # Turn off all the devices on exit
+        for device in itertools.chain(devices.get_pumps(), devices.get_valves()):
+            device.off()

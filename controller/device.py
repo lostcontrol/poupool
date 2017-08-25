@@ -16,6 +16,15 @@ class DeviceRegistry(object):
         self.__pumps = {}
         self.__sensors = {}
 
+    def get_valves(self):
+        return self.__valves.values()
+
+    def get_pumps(self):
+        return self.__pumps.values()
+
+    def get_sensors(self):
+        return self.__sensors.values()
+
     def add_valve(self, device):
         self.__valves[device.name] = device
 
