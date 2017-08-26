@@ -99,7 +99,6 @@ def toggle_test(device):
     print("Toggling %s " % device.name, end="")
     result = input("[y/N]: ")
     if result == "y":
-        time.sleep(2)
         device.on()
         time.sleep(2)
         device.off()
