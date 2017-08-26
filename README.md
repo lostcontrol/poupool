@@ -21,3 +21,24 @@ retention tank water level).
 
 Here is an early screenshot of the main menu in openHAB:
 ![openHAB main menu](docs/images/openhab-01.png)
+
+## Dependencies
+
+These are the external dependencies that can be install via `pip`. You will also need Python 3.5.
+Best is to setup a virtual environment.
+
+Frameworks:
+
+* Pykka
+* transitions
+* pygraphviz (optional for transitions)
+* paho-mqtt
+
+Raspberry Pi:
+
+* Adafruit-ADS1x15
+* RPi.GPIO
+
+Development tools:
+
+* autopep8
