@@ -161,6 +161,11 @@ class Filtration(PoupoolActor):
         if not actor.is_stop().get():
             actor.stop()
 
+    def __light_stop(self):
+        actor = self.get_actor("Light")
+        if not actor.is_stop().get():
+            actor.stop()
+
     def on_enter_stop(self):
         logger.info("Entering stop state")
         self.__encoder.filtration_state("stop")
@@ -208,6 +213,7 @@ class Filtration(PoupoolActor):
 
     def on_enter_eco(self):
         logger.info("Entering eco state")
+        self.__light_stop()
         self.__devices.get_valve("drain").off()
         self.get_actor("Tank").set_mode("eco")
 

@@ -1,6 +1,6 @@
 Group Poupool_Temperature
 
-String Poupool_Mode "Mode" {mqtt=">[poupool:/settings/mode:command:*:${command}]"}
+String Poupool_Mode "Mode" {mqtt=">[poupool:/settings/mode:command:*:${command}]", autoupdate="false"}
 String Poupool_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/filtration/state:state:default]"}
 
 Number Poupool_Filtration_Duration "Durée journalière (heure) [%d]" {mqtt="<[poupool:/settings/filtration/duration:state:JS(divide3600.js)],>[poupool:/settings/filtration/duration:command:*:JS(multiply3600.js)]"}
@@ -16,7 +16,7 @@ Number Poupool_Tank_Height "Hauteur du tampon (%) [%d%%]" {mqtt="<[poupool:/stat
 Number Poupool_Filtration_BackwashPeriod "Période de contre-lavage (jour) [%d]" {mqtt="<[poupool:/settings/filtration/backwash_period:state:default],>[poupool:/settings/filtration/backwash_period:command:*:default]"}
 String Poupool_Filtration_BackwashLast "Dernier contre-lavage [%s]" {mqtt="<[poupool:/status/filtration/backwash/last:state:default]"}
 
-String Poupool_SwimMode "Mode" {mqtt=">[poupool:/settings/swim/mode:command:*:${command}]"}
+String Poupool_SwimMode "Mode" {mqtt=">[poupool:/settings/swim/mode:command:*:${command}]", autoupdate="false"}
 String Poupool_SwimState "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/swim/state:state:default]"}
 Number Poupool_SwimTimer "Durée temporisation (minute) [%d]" {mqtt="<[poupool:/settings/swim/timer:state:default],>[poupool:/settings/swim/timer:command:*:default]"}
 
@@ -24,3 +24,6 @@ Number Poupool_Temperature_Pool "Température piscine [%.1f°C]" (Poupool_Temper
 Number Poupool_Temperature_Air "Température air [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/air:state:default]"}
 
 String Poupool_Heating_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/heating/state:state:default]"}
+
+String Poupool_Light_Mode "Mode" {mqtt=">[poupool:/settings/light/mode:command:*:${command}]", autoupdate="false"}
+String Poupool_Light_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/light/state:state:default]"}

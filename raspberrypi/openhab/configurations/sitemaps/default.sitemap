@@ -12,6 +12,10 @@ sitemap default label="Menu principal"
                 Switch item=Poupool_SwimMode icon="settings" mappings=[stop="Stop", timed="Temporisé", continuous="Continue"]
                 Text item=Poupool_SwimState icon="info"
             }
+            Frame label="Lumières" icon="light" {
+                Switch item=Poupool_Light_Mode icon="settings" mappings=[stop="Stop", on="Allumé"]
+                Text item=Poupool_Light_State icon="info"
+            }
             Frame label="Plus d'options" icon="settings" {
                 Text label="Informations" icon="info" {
                     Frame label="Tampon" icon="cistern-20" {

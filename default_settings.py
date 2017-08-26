@@ -11,7 +11,7 @@ class FakeDispatcher(object):
 
 def main():
     dispatcher = Dispatcher()
-    dispatcher.register(None, None)
+    dispatcher.register(None, None, None)
     remaining = list(dispatcher.topics())
     missing = []
 
@@ -37,6 +37,7 @@ def main():
     publish("/settings/swim/mode", "stop")
     publish("/settings/swim/timer", 10)
     publish("/status/filtration/backwash/last", datetime.datetime.now().strftime("%c"))
+    publish("/settings/light/mode", "stop")
 
     print("\n**** Missing default parameters ***")
     [print(t) for t in remaining]

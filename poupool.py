@@ -9,6 +9,7 @@ import itertools
 from controller.filtration import Filtration
 from controller.disinfection import Disinfection
 from controller.heating import Heating
+from controller.light import Light
 from controller.tank import Tank
 from controller.swim import Swim
 from controller.dispatcher import Dispatcher
@@ -37,6 +38,8 @@ def setup_gpio(registry, gpio):
     registry.add_valve(SwitchDevice("main", gpio, 35))
 
     registry.add_valve(SwitchDevice("heating", gpio, 18))
+
+    registry.add_valve(SwitchDevice("light", gpio, 13))
 
 
 def setup_rpi(registry):
@@ -152,8 +155,9 @@ def main(args, devices):
     tank = Tank.start(encoder, devices, args.no_tank).proxy()
     disinfection = Disinfection.start(encoder, devices, args.no_disinfection).proxy()
     heating = Heating.start(encoder, devices).proxy()
+    light = Light.start(encoder, devices).proxy()
 
-    dispatcher.register(filtration, swim)
+    dispatcher.register(filtration, swim, light)
 
     sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_air")]
     temperature = Temperature.start(encoder, sensors).proxy()
