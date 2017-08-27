@@ -53,7 +53,7 @@ class Mqtt(PoupoolActor):
     def do_loop(self):
         if not self.__run:
             raise StopRepeatException()
-        self.__client.loop(timeout=1.0)
+        self.__client.loop(timeout=0.05)
 
     def do_stop(self):
         self.__run = False
