@@ -56,6 +56,7 @@ sitemap default label="Menu principal"
                         Text label="Filtration" icon="outdoorlight" {
                             Setpoint item=Poupool_Filtration_Duration icon="settings" minValue=1 maxValue=48 step=1
                             Setpoint item=Poupool_Filtration_HourOfReset icon="settings" minValue=0 maxValue=23 step=1
+                            Setpoint item=Poupool_Filtration_BoostDuration icon="settings" minValue=0 maxValue=600 step=10
                             Setpoint item=Poupool_Filtration_TankDuration icon="settings" minValue=1 maxValue=48 step=1
                             Setpoint item=Poupool_Filtration_StirDuration icon="settings" minValue=0 maxValue=600 step=10
                             Setpoint item=Poupool_Filtration_SpeedStandby icon="settings" minValue=0 maxValue=1 step=1

@@ -24,8 +24,12 @@ class Filtration(PoupoolActor):
                   "tank",
                   "stir",
                   "waiting"]},
-              "standby",
-              "overflow",
+              {"name": "standby", "initial": "normal", "children": [
+                  "boost",
+                  "normal"]},
+              {"name": "overflow", "initial": "normal", "children": [
+                  "boost",
+                  "normal"]},
               "reload",
               {"name": "wash", "initial": "backwash", "children": [
                   "backwash",
@@ -40,6 +44,7 @@ class Filtration(PoupoolActor):
         self.__tank_duration = Duration("tank")
         self.__stir_duration = datetime.timedelta()
         self.__stir_timer = Timer("stir")
+        self.__boost_duration = datetime.timedelta(minutes=5)
         self.__speed_standby = 1
         self.__speed_overflow = 4
         self.__backwash_period = 30
@@ -58,12 +63,14 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("eco_waiting", "eco_normal", "eco_waiting")
         self.__machine.add_transition("standby", ["eco", "closing"], "opening_standby")
         self.__machine.add_transition("standby", ["overflow", "reload"], "standby")
-        self.__machine.add_transition("opened", "opening_standby", "standby")
-        self.__machine.add_transition("opened", "opening_overflow", "overflow")
+        self.__machine.add_transition("standby", "standby_boost", "standby_normal")
+        self.__machine.add_transition("opened", "opening_standby", "standby_boost")
+        self.__machine.add_transition("opened", "opening_overflow", "overflow_boost")
         self.__machine.add_transition(
             "overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
         self.__machine.add_transition(
             "overflow", ["standby", "reload"], "overflow", unless="tank_is_low")
+        self.__machine.add_transition("overflow", "overflow_boost", "overflow_normal")
         self.__machine.add_transition(
             "stop", ["eco", "standby", "overflow", "opening", "closing", "wash"], "stop")
         self.__machine.add_transition(
@@ -94,10 +101,14 @@ class Filtration(PoupoolActor):
         self.__tank_duration.hour = value
         logger.info("Hour for daily filtration reset set to: %s" % self.__duration.hour)
 
+    def boost_duration(self, value):
+        self.__boost_duration = datetime.timedelta(seconds=value)
+        logger.info("Duration for boost while going out of eco set to: %s" % self.__boost_duration)
+
     def speed_standby(self, value):
         self.__speed_standby = value
         logger.info("Speed for standby mode set to: %d" % self.__speed_standby)
-        if self.is_standby():
+        if self.is_standby_normal():
             # Jump to the reload state so that we can jump back into standby mode
             self._proxy.reload()
             self._proxy.standby()
@@ -105,7 +116,7 @@ class Filtration(PoupoolActor):
     def speed_overflow(self, value):
         self.__speed_overflow = value
         logger.info("Speed for overflow mode set to: %d" % self.__speed_overflow)
-        if self.is_overflow():
+        if self.is_overflow_normal():
             # Jump to the reload state so that we can jump back into overflow mode
             self._proxy.reload()
             self._proxy.overflow()
@@ -307,11 +318,21 @@ class Filtration(PoupoolActor):
             self._proxy.eco_normal()
             raise StopRepeatException
 
-    @do_repeat()
     def on_enter_standby(self):
         logger.info("Entering standby state")
-        self.__encoder.filtration_state("standby")
         self.__devices.get_valve("gravity").off()
+
+    def on_enter_standby_boost(self):
+        logger.info("Entering standby boost state")
+        self.__encoder.filtration_state("standby_boost")
+        self.__devices.get_pump("boost").on()
+        self.__devices.get_pump("variable").speed(3)
+        self._proxy.do_delay(self.__boost_duration.total_seconds(), "standby")
+
+    @do_repeat()
+    def on_enter_standby_normal(self):
+        logger.info("Entering standby state")
+        self.__encoder.filtration_state("standby")
         if self.__speed_standby > 0:
             self.__disinfection_start()
             self.__devices.get_valve("tank").on()
@@ -322,13 +343,26 @@ class Filtration(PoupoolActor):
         self.__devices.get_pump("variable").speed(self.__speed_standby)
 
     @repeat(delay=STATE_REFRESH_DELAY)
-    def do_repeat_standby(self):
+    def do_repeat_standby_normal(self):
         now = datetime.datetime.now()
         self.__duration.update(now, 1 if self.__speed_standby > 0 else 0)
         self.__tank_duration.update(now, 0)
 
-    @do_repeat()
     def on_enter_overflow(self):
+        logger.info("Entering overflow state")
+        self.__disinfection_start()
+        self.__devices.get_valve("gravity").off()
+        self.__devices.get_valve("tank").on()
+
+    def on_enter_overflow_boost(self):
+        logger.info("Entering overflow boost state")
+        self.__encoder.filtration_state("overflow_boost")
+        self.__devices.get_pump("variable").speed(3)
+        self.__devices.get_pump("boost").on()
+        self._proxy.do_delay(self.__boost_duration.total_seconds(), "overflow")
+
+    @do_repeat()
+    def on_enter_overflow_normal(self):
         logger.info("Entering overflow state")
         self.__encoder.filtration_state("overflow")
         self.__disinfection_start()
@@ -339,14 +373,14 @@ class Filtration(PoupoolActor):
             self.__devices.get_pump("boost").on()
         self.__devices.get_valve("tank").on()
 
-    def on_exit_overflow(self):
+    def on_exit_overflow_normal(self):
         logger.info("Exiting overflow state")
         swim = self.get_actor("Swim")
         if swim and not swim.is_stop().get():
             swim.stop()
 
     @repeat(delay=STATE_REFRESH_DELAY)
-    def do_repeat_overflow(self):
+    def do_repeat_overflow_normal(self):
         now = datetime.datetime.now()
         self.__duration.update(now, 2)
         self.__tank_duration.update(now)

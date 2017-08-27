@@ -23,6 +23,7 @@ class Dispatcher(object):
             "/settings/filtration/hour_of_reset": (filtration, between(0, 23), lambda x: "hour_of_reset", to_int),
             "/settings/filtration/tank_duration": (filtration, between(1, 172800), lambda x: "tank_duration", to_int),
             "/settings/filtration/stir_duration": (filtration, between(0, 10 * 60), lambda x: "stir_duration", to_int),
+            "/settings/filtration/boost_duration": (filtration, between(0, 10 * 60), lambda x: "boost_duration", to_int),
             "/settings/filtration/backwash_period": (filtration, between(0, 90), lambda x: "backwash_period", to_int),
             "/status/filtration/backwash/last": (filtration, lambda x: True, lambda x: "backwash_last", lambda x: str(x)),
             "/settings/filtration/speed/standby": (filtration, between(0, 1), lambda x: "speed_standby", to_int),
