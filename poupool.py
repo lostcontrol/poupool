@@ -139,6 +139,10 @@ def test(args, devices):
     toggle_test(devices.get_valve("drain"))
     toggle_test(devices.get_valve("main"))
 
+    toggle_test(devices.get_valve("light"))
+
+    toggle_test(devices.get_valve("heating"))
+
     read_test(devices.get_sensor("temperature_pool"))
     read_test(devices.get_sensor("temperature_air"))
     read_test(devices.get_sensor("tank"))
