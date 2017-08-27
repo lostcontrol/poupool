@@ -35,7 +35,7 @@ def main():
     publish("/settings/filtration/speed/standby", 0)
     publish("/settings/filtration/speed/overflow", 4)
     publish("/settings/swim/mode", "stop")
-    publish("/settings/swim/timer", 10)
+    publish("/settings/swim/timer", 5)
     publish("/status/filtration/backwash/last", datetime.datetime.now().strftime("%c"))
     publish("/settings/light/mode", "stop")
 
