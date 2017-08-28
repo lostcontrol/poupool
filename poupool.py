@@ -53,7 +53,7 @@ def setup_rpi(registry):
     import Adafruit_ADS1x15
     adc = Adafruit_ADS1x15.ADS1015()
     # With a gain of 2/3 and a sensor output of 0.25V-5V, the values should be around 83 and 1665
-    registry.add_sensor(TankSensorDevice("tank", adc, 0, 2 / 3, 83, 1065))
+    registry.add_sensor(TankSensorDevice("tank", adc, 0, 2 / 3, 83, 1665))
 
     # 1-wire
     # 28-031634d04aff
