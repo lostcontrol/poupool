@@ -366,12 +366,12 @@ class Filtration(PoupoolActor):
         logger.info("Entering overflow state")
         self.__encoder.filtration_state("overflow")
         self.__disinfection_start()
-        self.__devices.get_valve("gravity").off()
         speed = self.__speed_overflow
         self.__devices.get_pump("variable").speed(min(speed, 3))
         if speed > 3:
             self.__devices.get_pump("boost").on()
-        self.__devices.get_valve("tank").on()
+        else:
+            self.__devices.get_pump("boost").off()
 
     def on_exit_overflow_normal(self):
         logger.info("Exiting overflow state")
