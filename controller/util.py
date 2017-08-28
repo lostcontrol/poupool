@@ -11,15 +11,28 @@ class Duration(object):
         self.__name = name
         self.__start = None
         self.__last = None
+        self.__hour = 0
+        self.__set_start()
         self.daily = datetime.timedelta()
-        self.hour = 0
+
+    def __set_start(self):
+        tm = datetime.datetime.now()
+        self.__start = tm.replace(hour=self.__hour, minute=0, second=0, microsecond=0)
+        logger.debug("(%s) Duration reset: %s" % (self.__name, self.__start))
+
+    @property
+    def hour(self):
+        return self.__hour
+
+    @hour.setter
+    def hour(self, value):
+        self.__hour = value
+        self.__set_start()
 
     def clear(self):
         self.__last = None
 
     def update(self, now, factor=1.0):
-        if not self.__start:
-            self.__start = now
         if now - self.__start > datetime.timedelta(days=1):
             # reset
             self.__reset()
@@ -32,10 +45,8 @@ class Duration(object):
             self.__last = now
 
     def __reset(self):
-        tm = datetime.datetime.now()
-        self.__start = tm.replace(hour=self.hour, minute=0, second=0, microsecond=0)
-        logger.info("(%s) Duration reset: %s Duration done: %s" %
-                    (self.__name, self.__start, self.__duration))
+        self.__set_start()
+        logger.info("(%s) Reset. Duration done: %s" % (self.__name, self.__duration))
         self.__duration = datetime.timedelta()
 
     def elapsed(self):
