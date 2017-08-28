@@ -16,10 +16,10 @@ class Tank(PoupoolActor):
 
     states = ["stop", "low", "normal", "high"]
 
-    hysteresis = 10
+    hysteresis = 5
     levels_too_low = 10
     levels_eco = {
-        "low": 40,
+        "low": 30,
         "high": 80,
     }
     levels_overflow = {
