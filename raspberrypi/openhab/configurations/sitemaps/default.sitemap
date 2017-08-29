@@ -5,8 +5,8 @@ sitemap default label="Menu principal"
             Frame label="Mode" icon="computer" {
                 Switch item=Poupool_Mode icon="settings" mappings=[eco="Eco", standby="Veille", overflow="Débordement"]
                 Text item=Poupool_State icon="info"
-                Setpoint item=Poupool_Filtration_SpeedStandby icon="settings" minValue=0 maxValue=1 step=1
-                Setpoint item=Poupool_Filtration_SpeedOverflow icon="settings" minValue=1 maxValue=4 step=1
+                Selection item=Poupool_Filtration_SpeedStandby icon="settings" mappings=[0="0", 1="1"]
+                Selection item=Poupool_Filtration_SpeedOverflow icon="settings" mappings=[1="1", 2="2", 3="3", 4="4"]
                 Text item=Poupool_Temperature_Pool icon="temperature"
                 Text item=Poupool_Temperature_Air icon="temperature"
             }
@@ -61,8 +61,8 @@ sitemap default label="Menu principal"
                             Setpoint item=Poupool_Filtration_BoostDuration icon="settings" minValue=0 maxValue=600 step=10
                             Setpoint item=Poupool_Filtration_TankDuration icon="settings" minValue=1 maxValue=48 step=1
                             Setpoint item=Poupool_Filtration_StirDuration icon="settings" minValue=0 maxValue=600 step=10
-                            Setpoint item=Poupool_Filtration_SpeedStandby icon="settings" minValue=0 maxValue=1 step=1
-                            Setpoint item=Poupool_Filtration_SpeedOverflow icon="settings" minValue=1 maxValue=4 step=1
+                            Selection item=Poupool_Filtration_SpeedStandby icon="settings" mappings=[0="0", 1="1"]
+                            Selection item=Poupool_Filtration_SpeedOverflow icon="settings" mappings=[1="1", 2="2", 3="3", 4="4"]
                         }
                         Text label="Contre-lavage" icon="softener" {
                             Setpoint item=Poupool_Filtration_BackwashPeriod icon="settings" minValue=0 maxValue=90 step=1
