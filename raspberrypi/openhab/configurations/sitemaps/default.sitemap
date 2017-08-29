@@ -40,6 +40,9 @@ sitemap default label="Menu principal"
                             }
                         }
                         Text label="Tampon" icon="cistern" {
+                            Frame label="Hauteur (1h)" {
+                                Chart item=Poupool_Tank_Height period=h refresh=20000
+                            }
                             Frame label="Hauteur (24h)" {
                                 Chart item=Poupool_Tank_Height period=d refresh=60000
                             }
