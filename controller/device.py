@@ -106,10 +106,11 @@ class TempSensorDevice(SensorDevice):
 
     CRE = re.compile(" t=(\d+)$")
 
-    def __init__(self, name, address):
+    def __init__(self, name, address, offset=0.0):
         super().__init__(name)
         self.__address = address
         self.__path = "/sys/bus/w1/devices/%s/w1_slave" % address
+        self.__offset = offset
 
     def __read_temp_raw(self):
         with open(self.__path, "r") as f:
@@ -137,7 +138,7 @@ class TempSensorDevice(SensorDevice):
         logger.debug("Temp sensor raw data: %s" % str(data))
         # CRC valid, read the data
         match = TempSensorDevice.CRE.search(data)
-        return int(match.group(1)) / 1000. if match else None
+        return int(match.group(1)) / 1000. + self.__offset if match else None
 
 
 class TankSensorDevice(SensorDevice):
