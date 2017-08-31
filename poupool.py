@@ -157,7 +157,7 @@ def main(args, devices):
 
     filtration = Filtration.start(encoder, devices).proxy()
     swim = Swim.start(encoder, devices).proxy()
-    tank = Tank.start(encoder, devices, args.no_tank).proxy()
+    tank = Tank.start(encoder, devices).proxy()
     disinfection = Disinfection.start(encoder, devices, args.no_disinfection).proxy()
     heating = Heating.start(encoder, devices).proxy()
     light = Light.start(encoder, devices).proxy()
@@ -179,7 +179,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-config", action="store",
                         default="logging.conf", help="log configuration file")
-    parser.add_argument("--no-tank", action="store_true", help="disable tank support")
     parser.add_argument("--no-disinfection", action="store_true",
                         help="disable disinfection support")
     parser.add_argument("--test-mode", action="store_true", help="test mode for the hardware")

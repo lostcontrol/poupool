@@ -27,28 +27,24 @@ class Tank(PoupoolActor):
         "high": 60,
     }
 
-    def __init__(self, encoder, devices, disable=False):
+    def __init__(self, encoder, devices):
         super().__init__()
-        self.__is_disable = disable
         self.__encoder = encoder
         self.__devices = devices
         self.levels = self.levels_eco
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Tank.states, initial="stop")
 
-        self.__machine.add_transition("low", "stop", "low", unless="is_disable")
+        self.__machine.add_transition("low", "stop", "low")
         self.__machine.add_transition("low", "normal", "low")
-        self.__machine.add_transition("normal", "stop", "normal", unless="is_disable")
+        self.__machine.add_transition("normal", "stop", "normal")
         self.__machine.add_transition("normal", "low", "normal")
         self.__machine.add_transition("normal", "high", "normal")
-        self.__machine.add_transition("high", "stop", "high", unless="is_disable")
+        self.__machine.add_transition("high", "stop", "high")
         self.__machine.add_transition("high", "normal", "high")
         self.__machine.add_transition("stop", "low", "stop")
         self.__machine.add_transition("stop", "normal", "stop")
         self.__machine.add_transition("stop", "high", "stop")
-
-    def is_disable(self):
-        return self.__is_disable
 
     def __get_tank_height(self):
         height = self.__devices.get_sensor("tank").value
