@@ -20,7 +20,7 @@ class Tank(PoupoolActor):
     levels_too_low = 10
     levels_eco = {
         "low": 30,
-        "high": 80,
+        "high": 70,
     }
     levels_overflow = {
         "low": 20,
