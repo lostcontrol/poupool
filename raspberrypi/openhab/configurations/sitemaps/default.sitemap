@@ -69,6 +69,8 @@ sitemap default label="Menu principal"
                         }
                         Text label="Contre-lavage" icon="softener" {
                             Setpoint item=Poupool_Filtration_BackwashPeriod icon="settings" minValue=0 maxValue=90 step=1
+                            Setpoint item=Poupool_Filtration_BackwashBackwashDuration icon="settings" minValue=10 maxValue=300 step=10
+                            Setpoint item=Poupool_Filtration_BackwashRinseDuration icon="settings" minValue=10 maxValue=300 step=10
                             Text item=Poupool_Filtration_BackwashLast icon="settings"
                         }
                         Text label="Nage contre-courant" icon="socket" {

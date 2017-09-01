@@ -14,7 +14,9 @@ Number Poupool_Filtration_SpeedOverflow "Vitesse pompe en débordement" {mqtt="<
 String Poupool_Tank_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/tank/state:state:default]"}
 Number Poupool_Tank_Height "Hauteur du tampon (%) [%d%%]" {mqtt="<[poupool:/status/tank/height:state:default]"}
 
-Number Poupool_Filtration_BackwashPeriod "Période de contre-lavage (jour) [%d]" {mqtt="<[poupool:/settings/filtration/backwash_period:state:default],>[poupool:/settings/filtration/backwash_period:command:*:default]"}
+Number Poupool_Filtration_BackwashPeriod "Période de contre-lavage (jour) [%d]" {mqtt="<[poupool:/settings/filtration/backwash/period:state:default],>[poupool:/settings/filtration/backwash/period:command:*:default]"}
+Number Poupool_Filtration_BackwashBackwashDuration "Durée de contre-lavage (secondes) [%d]" {mqtt="<[poupool:/settings/filtration/backwash/backwash_duration:state:default],>[poupool:/settings/filtration/backwash/backwash_duration:command:*:default]"}
+Number Poupool_Filtration_BackwashRinseDuration "Durée de rinçage (secondes) [%d]" {mqtt="<[poupool:/settings/filtration/backwash/rinse_duration:state:default],>[poupool:/settings/filtration/backwash/rinse_duration:command:*:default]"}
 String Poupool_Filtration_BackwashLast "Dernier contre-lavage [%s]" {mqtt="<[poupool:/status/filtration/backwash/last:state:default]"}
 
 String Poupool_SwimMode "Mode" {mqtt=">[poupool:/settings/swim/mode:command:*:${command}]", autoupdate="false"}

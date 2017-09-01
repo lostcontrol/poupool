@@ -47,6 +47,8 @@ class Filtration(PoupoolActor):
         self.__boost_duration = datetime.timedelta(minutes=5)
         self.__speed_standby = 1
         self.__speed_overflow = 4
+        self.__backwash_backwash_duration = 120
+        self.__backwash_rinse_duration = 60
         self.__backwash_period = 30
         self.__backwash_last = datetime.datetime.fromtimestamp(0)
         # Initialize the state machine
@@ -120,6 +122,14 @@ class Filtration(PoupoolActor):
             # Jump to the reload state so that we can jump back into overflow mode
             self._proxy.reload()
             self._proxy.overflow()
+
+    def backwash_backwash_duration(self, value):
+        self.__backwash_backwash_duration = datetime.timedelta(seconds=value)
+        logger.info("Duration for backwash set to: %s" % self.__backwash_backwash_duration)
+
+    def backwash_rinse_duration(self, value):
+        self.__backwash_rinse_duration = datetime.timedelta(seconds=value)
+        logger.info("Duration for rinse set to: %s" % self.__backwash_rinse_duration)
 
     def backwash_period(self, value):
         if value < 2:
@@ -398,13 +408,13 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("backwash").on()
         time.sleep(2)
         self.__devices.get_valve("drain").on()
-        self._proxy.do_delay(30, "rinse")
+        self._proxy.do_delay(self.__backwash_backwash_duration, "rinse")
 
     def on_enter_wash_rinse(self):
         logger.info("Entering rinse state")
         self.__encoder.filtration_state("rinse")
         self.__devices.get_valve("backwash").off()
-        self._proxy.do_delay(10, "eco")
+        self._proxy.do_delay(self.__backwash_rinse_duration, "eco")
 
     def on_exit_wash_rinse(self):
         self.__backwash_last = datetime.datetime.now()
