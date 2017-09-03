@@ -408,13 +408,13 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("backwash").on()
         time.sleep(2)
         self.__devices.get_valve("drain").on()
-        self._proxy.do_delay(self.__backwash_backwash_duration, "rinse")
+        self._proxy.do_delay(self.__backwash_backwash_duration.total_seconds(), "rinse")
 
     def on_enter_wash_rinse(self):
         logger.info("Entering rinse state")
         self.__encoder.filtration_state("rinse")
         self.__devices.get_valve("backwash").off()
-        self._proxy.do_delay(self.__backwash_rinse_duration, "eco")
+        self._proxy.do_delay(self.__backwash_rinse_duration.total_seconds(), "eco")
 
     def on_exit_wash_rinse(self):
         self.__backwash_last = datetime.datetime.now()
