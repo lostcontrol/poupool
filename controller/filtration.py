@@ -355,8 +355,9 @@ class Filtration(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_standby_normal(self):
         now = datetime.datetime.now()
-        self.__duration.update(now, 1 if self.__speed_standby > 0 else 0)
-        self.__tank_duration.update(now, 0)
+        factor = 1 if self.__speed_standby > 0 else 0
+        self.__duration.update(now, factor)
+        self.__tank_duration.update(now, factor)
 
     def on_enter_overflow(self):
         logger.info("Entering overflow state")
