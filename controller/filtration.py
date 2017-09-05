@@ -12,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 class EcoMode(object):
 
-    def __init__(self, actor, encoder):
-        self.__actor = actor
+    def __init__(self, encoder):
         self.__encoder = encoder
         self.filtration = Timer("filtration")
         self.current = Timer("current")
@@ -86,7 +85,6 @@ class EcoMode(object):
         seconds = (self.filtration.delay - self.filtration.duration).total_seconds()
         remaining = max(timedelta(), timedelta(seconds=int(seconds)))
         self.__encoder.filtration_remaining(str(remaining))
-        self.__check_reset(now)
 
     def elapsed_on(self):
         return self.current.elapsed() or self.filtration.elapsed()
@@ -94,11 +92,12 @@ class EcoMode(object):
     def elapsed_off(self):
         return self.current.elapsed() and not self.filtration.elapsed()
 
-    def __check_reset(self, now):
+    def check_reset(self, now):
         if now >= self.__next_reset:
             self.__next_reset += timedelta(days=1)
             self.filtration.reset()
-            self.__actor.reload_eco()
+            return True
+        return False
 
 
 class Filtration(PoupoolActor):
@@ -132,7 +131,7 @@ class Filtration(PoupoolActor):
         self.__encoder = encoder
         self.__devices = devices
         # Parameters
-        self.__eco_mode = EcoMode(self, encoder)
+        self.__eco_mode = EcoMode(encoder)
         self.__boost_duration = timedelta(minutes=5)
         self.__speed_standby = 1
         self.__speed_overflow = 4
@@ -174,7 +173,7 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("reload", ["eco", "standby", "overflow"], "reload")
         #self.__machine.get_graph().draw("filtration.png", prog="dot")
 
-    def reload_eco(self):
+    def __reload_eco(self):
         if self.is_eco(allow_substates=True):
             # Jump to the reload state so that we can jump back into the same state
             self._proxy.reload()
@@ -183,27 +182,27 @@ class Filtration(PoupoolActor):
     def duration(self, value):
         self.__eco_mode.daily = timedelta(seconds=value)
         logger.info("Duration for daily filtration set to: %s" % self.__eco_mode.daily)
-        self.reload_eco()
+        self.__reload_eco()
 
     def period(self, value):
         self.__eco_mode.period = value
         logger.info("Period(s) for filtration set to: %s" % self.__eco_mode.period)
-        self.reload_eco()
+        self.__reload_eco()
 
     def tank_percentage(self, value):
         self.__eco_mode.tank_percentage = value
         logger.info("Percentage for tank filtration set to: %s" % self.__eco_mode.tank_percentage)
-        self.reload_eco()
+        self.__reload_eco()
 
     def stir_duration(self, value):
         self.__eco_mode.stir_duration = timedelta(seconds=value)
         logger.info("Duration for pool stirring in eco set to: %s" % self.__eco_mode.stir_duration)
-        self.reload_eco()
+        self.__reload_eco()
 
     def reset_hour(self, value):
         self.__eco_mode.reset_hour = value
         logger.info("Hour for daily filtration reset set to: %s" % self.__eco_mode.reset_hour.hour)
-        self.reload_eco()
+        self.__reload_eco()
 
     def boost_duration(self, value):
         self.__boost_duration = timedelta(seconds=value)
@@ -347,6 +346,7 @@ class Filtration(PoupoolActor):
     def on_enter_eco_compute(self):
         logger.info("Entering eco compute")
         self.__encoder.filtration_state("eco_compute")
+        self.__eco_mode.check_reset(datetime.now())
         self.__eco_mode.compute()
         if self.__eco_mode.off_duration.total_seconds() > 0:
             self._proxy.do_delay(10, "eco_waiting")
@@ -372,6 +372,9 @@ class Filtration(PoupoolActor):
     def do_repeat_eco_stir(self):
         now = datetime.now()
         self.__eco_mode.update(now)
+        if self.__eco_mode.check_reset(now):
+            self.__reload_eco()
+            raise StopRepeatException
         if self.__eco_mode.elapsed_on():
             self._proxy.eco_normal()
             raise StopRepeatException
@@ -394,6 +397,9 @@ class Filtration(PoupoolActor):
             raise StopRepeatException
         now = datetime.now()
         self.__eco_mode.update(now)
+        if self.__eco_mode.check_reset(now):
+            self.__reload_eco()
+            raise StopRepeatException
         if self.__eco_mode.elapsed_on():
             if self.tank_is_low():
                 self._proxy.eco_waiting()
@@ -414,6 +420,9 @@ class Filtration(PoupoolActor):
     def do_repeat_eco_tank(self):
         now = datetime.now()
         self.__eco_mode.update(now)
+        if self.__eco_mode.check_reset(now):
+            self.__reload_eco()
+            raise StopRepeatException
         if self.__eco_mode.elapsed_on():
             self._proxy.eco_waiting()
             raise StopRepeatException
@@ -437,6 +446,9 @@ class Filtration(PoupoolActor):
             raise StopRepeatException
         now = datetime.now()
         self.__eco_mode.update(now, 0)
+        if self.__eco_mode.check_reset(now):
+            self.__reload_eco()
+            raise StopRepeatException
         if self.__eco_mode.elapsed_off():
             self._proxy.eco_stir()
             raise StopRepeatException
