@@ -28,9 +28,10 @@ def main():
 
     publish("/settings/mode", "stop")
     publish("/settings/filtration/duration", 10 * 3600)
-    publish("/settings/filtration/hour_of_reset", 0)
+    publish("/settings/filtration/period", 3)
+    publish("/settings/filtration/reset_hour", 0)
     publish("/settings/filtration/boost_duration", 5 * 60)
-    publish("/settings/filtration/tank_duration", 1 * 3600)
+    publish("/settings/filtration/tank_percentage", 0.1)
     publish("/settings/filtration/stir_duration", 5 * 60)
     publish("/settings/filtration/backwash/period", 30)
     publish("/settings/filtration/backwash/backwash_duration", 120)
