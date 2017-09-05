@@ -51,6 +51,7 @@ class EcoMode(object):
     def clear(self):
         self.filtration.clear()
         self.current.delay = timedelta()
+        self.__encoder.filtration_next(str(round_timedelta(self.current.remaining)))
 
     def compute(self):
         remaining_duration = max(timedelta(), self.filtration.delay - self.filtration.duration)
