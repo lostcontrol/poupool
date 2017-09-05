@@ -5,7 +5,8 @@ import datetime
 #from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor
 from .actor import PoupoolModel
-from .actor import StopRepeatException, repeat, do_repeat, Timer
+from .actor import StopRepeatException, repeat, do_repeat
+from .util import Timer
 
 logger = logging.getLogger(__name__)
 

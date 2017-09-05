@@ -11,49 +11,6 @@ import re
 logger = logging.getLogger(__name__)
 
 
-class Timer(object):
-
-    def __init__(self, name):
-        self.__duration = datetime.timedelta()
-        self.__name = name
-        self.__last = None
-        self.__delay = datetime.timedelta()
-
-    @property
-    def duration(self):
-        return self.__duration
-
-    @property
-    def remaining(self):
-        return max(datetime.timedelta(), self.__delay - self.__duration)
-
-    @property
-    def delay(self):
-        return self.__delay
-
-    @delay.setter
-    def delay(self, value):
-        self.__delay = value
-        self.reset()
-
-    def clear(self):
-        self.__last = None
-
-    def reset(self):
-        self.clear()
-        self.__duration = datetime.timedelta()
-
-    def update(self, now, factor=1):
-        if self.__last:
-            self.__duration += factor * (now - self.__last)
-            remaining = max(datetime.timedelta(), self.delay - self.__duration)
-            logger.debug("(%s) Timer: %s Remaining: %s" % (self.__name, self.__duration, remaining))
-        self.__last = now
-
-    def elapsed(self):
-        return self.__duration >= self.__delay
-
-
 class StopRepeatException(Exception):
     pass
 

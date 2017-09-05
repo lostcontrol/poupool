@@ -1,11 +1,11 @@
 import pykka
 import time
-import datetime
+from datetime import datetime, timedelta
 import logging
 from .actor import PoupoolModel
 from .actor import PoupoolActor
-from .actor import StopRepeatException, repeat, do_repeat, Timer
-from .util import mapping, constrain, Duration
+from .actor import StopRepeatException, repeat, do_repeat
+from .util import mapping, constrain, Timer
 
 
 logger = logging.getLogger(__name__)
@@ -20,8 +20,9 @@ class PWM(PoupoolActor):
         self.__last = None
         self.__duration = 0
         self.__state = False
-        self.__security_duration = Duration("PWM for %s" % name)
-        self.__security_duration.daily = datetime.timedelta(seconds=3600)
+        self.__security_duration = Timer("PWM for %s" % name)
+        self.__security_duration.delay = timedelta(seconds=3600)
+        self.__security_reset = datetime.now() + timedelta(days=1)
         self.value = 0.0
 
     @repeat(delay=1)
@@ -36,17 +37,20 @@ class PWM(PoupoolActor):
             duty = duty_on if self.__state else duty_off
             #print("duty:%f state:%d duration:%f" % (duty, self.__state, self.__duration))
             if self.__state:
-                self.__security_duration.update(datetime.datetime.now())
+                self.__security_duration.update(datetime.now())
                 if self.__duration > duty_on:
                     self.__duration = 0
                     self.__state = False
                     self.__pump.off()
             else:
-                self.__security_duration.update(datetime.datetime.now(), 0)
+                self.__security_duration.update(datetime.now(), 0)
                 if self.__duration > duty_off and not self.__security_duration.elapsed():
                     self.__duration = 0
                     self.__state = True
                     self.__pump.on()
+        if datetime.now() > self.__security_reset:
+            self.__security_duration.reset()
+            self.__security_reset += timedelta(days=1)
         self.__last = now
 
 

@@ -4,8 +4,8 @@ import time
 import logging
 from .actor import PoupoolModel
 from .actor import PoupoolActor
-from .actor import StopRepeatException, repeat, do_repeat, Timer
-from .util import round_timedelta
+from .actor import StopRepeatException, repeat, do_repeat
+from .util import round_timedelta, Timer
 
 logger = logging.getLogger(__name__)
 
