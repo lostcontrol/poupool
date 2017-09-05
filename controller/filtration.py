@@ -17,7 +17,6 @@ class EcoMode(object):
         self.__encoder = encoder
         self.filtration = Timer("filtration")
         self.current = Timer("current")
-        self.stir = Timer("stir")
         self.reset_hour = 0
         self.period = 3
         self.tank_percentage = 0.1
@@ -25,6 +24,7 @@ class EcoMode(object):
         self.period_duration = timedelta(hours=1)
         self.off_duration = timedelta()
         self.on_duration = timedelta()
+        self.stir_duration = timedelta()
         self.tank_duration = timedelta()
 
     @property
@@ -68,10 +68,12 @@ class EcoMode(object):
         self.tank_duration = self.tank_percentage * self.on_duration
         if self.tank_duration < timedelta(minutes=1):
             self.tank_duration = timedelta(minutes=1)
+        if self.on_duration > self.stir_duration:
+            self.on_duration -= self.stir_duration
         if self.on_duration > self.tank_duration:
             self.on_duration -= self.tank_duration
-        logger.info("Duration on: %s tank: %s off: %s" %
-                    (self.on_duration, self.tank_duration, self.off_duration))
+        logger.info("Duration stir: %s on: %s tank: %s off: %s" %
+                    (self.stir_duration, self.on_duration, self.tank_duration, self.off_duration))
 
     def set_current(self, duration):
         self.current.delay = duration
@@ -193,8 +195,8 @@ class Filtration(PoupoolActor):
         self.reload_eco()
 
     def stir_duration(self, value):
-        self.__eco_mode.stir.delay = timedelta(seconds=value)
-        logger.info("Duration for pool stirring in eco set to: %s" % self.__eco_mode.stir.delay)
+        self.__eco_mode.stir_duration = timedelta(seconds=value)
+        logger.info("Duration for pool stirring in eco set to: %s" % self.__eco_mode.stir_duration)
         self.reload_eco()
 
     def reset_hour(self, value):
@@ -355,10 +357,10 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_eco_stir(self):
         logger.info("Entering eco_stir state")
-        self.__disinfection_start()
         self.__encoder.filtration_state("eco_stir")
-        self.__eco_mode.set_current(self.__eco_mode.on_duration)
-        if not self.__eco_mode.stir.elapsed():
+        self.__eco_mode.set_current(self.__eco_mode.stir_duration)
+        self.__disinfection_start()
+        if not self.__eco_mode.elapsed_on():
             self.__devices.get_pump("variable").speed(1)
             self.__devices.get_pump("boost").on()
         else:
@@ -368,20 +370,19 @@ class Filtration(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco_stir(self):
         now = datetime.now()
-        self.__eco_mode.duration.update(now)
-        self.__eco_mode.stir.update(now)
-        if self.__eco_mode.stir.elapsed():
+        self.__eco_mode.update(now)
+        if self.__eco_mode.elapsed_on():
             self._proxy.eco_normal()
             raise StopRepeatException
 
     def on_exit_eco_stir(self):
-        self.__eco_mode.stir.reset()
         self.__devices.get_pump("boost").off()
 
     @do_repeat()
     def on_enter_eco_normal(self):
         logger.info("Entering eco_normal state")
         self.__encoder.filtration_state("eco_normal")
+        self.__eco_mode.set_current(self.__eco_mode.on_duration)
         self.__heating_start()
         self.__devices.get_pump("variable").speed(1)
 
@@ -402,11 +403,11 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_eco_tank(self):
         logger.info("Entering eco_tank state")
+        self.__encoder.filtration_state("eco_tank")
+        self.__eco_mode.set_current(self.__eco_mode.tank_duration)
         self.__heating_stop()
         self.__disinfection_start()
-        self.__encoder.filtration_state("eco_tank")
         self.__devices.get_valve("tank").on()
-        self.__eco_mode.set_current(self.__eco_mode.tank_duration)
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco_tank(self):
@@ -422,11 +423,11 @@ class Filtration(PoupoolActor):
     @do_repeat()
     def on_enter_eco_waiting(self):
         logger.info("Entering eco_waiting state")
+        self.__encoder.filtration_state("eco_waiting")
+        self.__eco_mode.set_current(self.__eco_mode.off_duration)
         self.__heating_stop()
         self.__disinfection_stop()
-        self.__encoder.filtration_state("eco_waiting")
         self.__devices.get_pump("variable").off()
-        self.__eco_mode.set_current(self.__eco_mode.off_duration)
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco_waiting(self):
