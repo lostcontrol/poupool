@@ -17,7 +17,15 @@ class Timer(object):
         self.__duration = datetime.timedelta()
         self.__name = name
         self.__last = None
-        self.__delay = 0
+        self.__delay = datetime.timedelta()
+
+    @property
+    def duration(self):
+        return self.__duration
+
+    @property
+    def remaining(self):
+        return max(datetime.timedelta(), self.__delay - self.__duration)
 
     @property
     def delay(self):
@@ -28,13 +36,16 @@ class Timer(object):
         self.__delay = value
         self.reset()
 
-    def reset(self):
+    def clear(self):
         self.__last = None
+
+    def reset(self):
+        self.clear()
         self.__duration = datetime.timedelta()
 
-    def update(self, now):
+    def update(self, now, factor=1):
         if self.__last:
-            self.__duration += (now - self.__last)
+            self.__duration += factor * (now - self.__last)
             remaining = max(datetime.timedelta(), self.delay - self.__duration)
             logger.debug("(%s) Timer: %s Remaining: %s" % (self.__name, self.__duration, remaining))
         self.__last = now

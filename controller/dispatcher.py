@@ -4,11 +4,15 @@ logger = logging.getLogger(__name__)
 
 
 def between(minimum, maximum):
-    return lambda x: minimum <= int(float(x)) <= maximum
+    return lambda x: minimum <= float(x) <= maximum
 
 
 def to_int(x):
     return int(float(x))
+
+
+def to_float(x):
+    return float(x)
 
 
 class Dispatcher(object):
@@ -20,8 +24,9 @@ class Dispatcher(object):
         self.__mapping = {
             "/settings/mode": (filtration, lambda x: x in ("stop", "eco", "standby", "overflow", "wash"), lambda x: x, None),
             "/settings/filtration/duration": (filtration, between(1, 172800), lambda x: "duration", to_int),
-            "/settings/filtration/hour_of_reset": (filtration, between(0, 23), lambda x: "hour_of_reset", to_int),
-            "/settings/filtration/tank_duration": (filtration, between(1, 172800), lambda x: "tank_duration", to_int),
+            "/settings/filtration/period": (filtration, between(1, 10), lambda x: "period", to_int),
+            "/settings/filtration/reset_hour": (filtration, between(0, 23), lambda x: "reset_hour", to_int),
+            "/settings/filtration/tank_percentage": (filtration, between(0, 0.5), lambda x: "tank_percentage", to_float),
             "/settings/filtration/stir_duration": (filtration, between(0, 10 * 60), lambda x: "stir_duration", to_int),
             "/settings/filtration/boost_duration": (filtration, between(0, 10 * 60), lambda x: "boost_duration", to_int),
             "/settings/filtration/backwash/period": (filtration, between(0, 90), lambda x: "backwash_period", to_int),

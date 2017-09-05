@@ -21,6 +21,10 @@ class Duration(object):
         logger.debug("(%s) Duration reset: %s" % (self.__name, self.__start))
 
     @property
+    def start(self):
+        return self.__start
+
+    @property
     def hour(self):
         return self.__hour
 
@@ -28,6 +32,10 @@ class Duration(object):
     def hour(self, value):
         self.__hour = value
         self.__set_start()
+
+    @property
+    def duration(self):
+        return self.__duration
 
     def clear(self):
         self.__last = None
@@ -52,6 +60,8 @@ class Duration(object):
     def elapsed(self):
         return self.__duration >= self.daily
 
+def round_timedelta(x):
+    return datetime.timedelta(seconds=int(x.total_seconds()))
 
 def mapping(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min

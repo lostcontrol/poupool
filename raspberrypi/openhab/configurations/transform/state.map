@@ -3,6 +3,7 @@ stop=Stop
 opening=Ouverture en cours
 closing=Fermeture en cours
 eco=Eco
+eco_compute=Eco (initialisation)
 eco_normal=Eco
 eco_waiting=Eco (en attente)
 eco_stir=Eco (brassage)
