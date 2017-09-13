@@ -8,7 +8,7 @@ Number Poupool_Filtration_Period "Nombre de période(s) de filtration [%d]" {mqt
 Number Poupool_Filtration_HourOfReset "Heure de réinitialisation [%d]" {mqtt="<[poupool:/settings/filtration/reset_hour:state:default],>[poupool:/settings/filtration/reset_hour:command:*:default]"}
 Number Poupool_Filtration_BoostDuration "Durée boost sortie mode eco (secondes) [%d]" {mqtt="<[poupool:/settings/filtration/boost_duration:state:default],>[poupool:/settings/filtration/boost_duration:command:*:default]"}
 Number Poupool_Filtration_TankPercentage "Pourcentage filtration tampon [%.1f]" {mqtt="<[poupool:/settings/filtration/tank_percentage:state:default],>[poupool:/settings/filtration/tank_percentage:command:*:default]"}
-Number Poupool_Filtration_StirDuration "Durée brassage par heure (secondes) [%d]" {mqtt="<[poupool:/settings/filtration/stir_duration:state:default],>[poupool:/settings/filtration/stir_duration:command:*:default]"}
+Number Poupool_Filtration_StirDuration "Durée brassage par période (secondes) [%d]" {mqtt="<[poupool:/settings/filtration/stir_duration:state:default],>[poupool:/settings/filtration/stir_duration:command:*:default]"}
 Number Poupool_Filtration_SpeedStandby "Vitesse pompe en veille" {mqtt="<[poupool:/settings/filtration/speed/standby:state:default],>[poupool:/settings/filtration/speed/standby:command:*:default]"}
 Number Poupool_Filtration_SpeedOverflow "Vitesse pompe en débordement" {mqtt="<[poupool:/settings/filtration/speed/overflow:state:default],>[poupool:/settings/filtration/speed/overflow:command:*:default]"}
 String Poupool_Filtration_NextEvent "Prochain événement [%s]" {mqtt="<[poupool:/status/filtration/next:state:default]"}
