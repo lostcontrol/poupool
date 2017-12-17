@@ -8,7 +8,7 @@ import itertools
 
 from controller.filtration import Filtration
 from controller.disinfection import Disinfection
-from controller.heating import Heating
+from controller.heating import Heating, Heater
 from controller.light import Light
 from controller.tank import Tank
 from controller.swim import Swim
@@ -37,6 +37,7 @@ def setup_gpio(registry, gpio):
     registry.add_valve(SwitchDevice("drain", gpio, 31))
     registry.add_valve(SwitchDevice("main", gpio, 35))
 
+    registry.add_valve(SwitchDevice("heater", gpio, 18))
     registry.add_valve(SwitchDevice("heating", gpio, 18))
 
     registry.add_valve(SwitchDevice("light", gpio, 13))
@@ -146,6 +147,7 @@ def test(args, devices):
 
     toggle_test(devices.get_valve("light"))
 
+    toggle_test(devices.get_valve("heater"))
     toggle_test(devices.get_valve("heating"))
 
     read_test(devices.get_sensor("temperature_pool"))
@@ -165,10 +167,15 @@ def main(args, devices):
     swim = Swim.start(encoder, devices).proxy()
     tank = Tank.start(encoder, devices).proxy()
     disinfection = Disinfection.start(encoder, devices, args.no_disinfection).proxy()
+
+    temperature = devices.get_sensor("temperature_local")
+    switch = devices.get_valve("heater")
+    heater = Heater.start(temperature, switch).proxy()
     heating = Heating.start(encoder, devices).proxy()
+
     light = Light.start(encoder, devices).proxy()
 
-    dispatcher.register(filtration, swim, light)
+    dispatcher.register(filtration, swim, light, heater)
 
     sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_local"),
                devices.get_sensor("temperature_air"), devices.get_sensor("temperature_ncc")]
