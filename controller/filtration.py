@@ -124,7 +124,10 @@ class Filtration(PoupoolActor):
               "reload",
               {"name": "wash", "initial": "backwash", "children": [
                   "backwash",
-                  "rinse"]}]
+                  "rinse"]},
+              {"name": "wintering", "initial": "waiting", "children": [
+                  "stir",
+                  "waiting"]}]
 
     def __init__(self, encoder, devices):
         super().__init__()
@@ -143,6 +146,7 @@ class Filtration(PoupoolActor):
         self.__machine = PoupoolModel(model=self, states=Filtration.states,
                                       initial="stop", before_state_change=[self.__before_state_change])
         # Transitions
+        # Eco
         self.__machine.add_transition("eco", ["standby", "overflow", "opening"], "closing")
         self.__machine.add_transition("eco", ["stop", "reload", "wash_rinse"], "eco")
         self.__machine.add_transition("closed", "closing", "eco")
@@ -150,21 +154,29 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("eco_normal", "eco_stir", "eco_normal")
         self.__machine.add_transition("eco_tank", "eco_normal", "eco_tank", unless="tank_is_low")
         self.__machine.add_transition("eco_waiting", ["eco_compute", "eco_tank"], "eco_waiting")
+        self.__machine.add_transition("opened", "opening_standby", "standby_boost")
+        self.__machine.add_transition("opened", "opening_overflow", "overflow_boost")
+        # Standby
         self.__machine.add_transition("standby", ["eco", "closing"], "opening_standby")
         self.__machine.add_transition("standby", ["overflow", "reload"], "standby")
         self.__machine.add_transition("standby", "standby_boost", "standby_normal")
-        self.__machine.add_transition("opened", "opening_standby", "standby_boost")
-        self.__machine.add_transition("opened", "opening_overflow", "overflow_boost")
+        # Overflow
         self.__machine.add_transition(
             "overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
         self.__machine.add_transition(
             "overflow", ["standby", "reload"], "overflow", unless="tank_is_low")
         self.__machine.add_transition("overflow", "overflow_boost", "overflow_normal")
+        # Stop
         self.__machine.add_transition(
-            "stop", ["eco", "standby", "overflow", "opening", "closing", "wash"], "stop")
+            "stop", ["eco", "standby", "overflow", "opening", "closing", "wash", "wintering"], "stop")
+        # (Back)wash
         self.__machine.add_transition(
             "wash", ["eco_normal", "eco_waiting"], "wash", conditions="tank_is_high")
         self.__machine.add_transition("rinse", "wash_backwash", "wash_rinse")
+        # Wintering
+        self.__machine.add_transition("wintering", "stop", "wintering")
+        self.__machine.add_transition("wintering_waiting", "wintering_stir", "wintering_waiting")
+        self.__machine.add_transition("wintering_stir", "wintering_waiting", "wintering_stir")
         # Hack to reload settings. Often the pumps/valves are set in the on_enter callback. In some
         # cases, we can change settings that needs to reload the same state. However, a transition
         # to the same state does not result in on_exit/on_enter being called again (sounds logic
@@ -543,3 +555,30 @@ class Filtration(PoupoolActor):
     def on_exit_wash_rinse(self):
         self.__backwash_last = datetime.now()
         self.__encoder.filtration_backwash_last(self.__backwash_last.strftime("%c"), retain=True)
+
+    def on_enter_wintering(self):
+        logger.info("Entering wintering state")
+        self.get_actor("Tank").stop()
+        self.get_actor("Heater").waiting()
+        # open the roller shutter
+
+    def on_enter_wintering_waiting(self):
+        logger.info("Entering wintering waiting state")
+        self.__encoder.filtration_state("wintering_waiting")
+        self.__devices.get_pump("boost").off()
+        self.__devices.get_pump("variable").off()
+        self._proxy.do_delay(6 * 3600, "wintering_stir")
+
+    def on_enter_wintering_stir(self):
+        logger.info("Entering wintering stir state")
+        self.__encoder.filtration_state("wintering_stir")
+        self.__devices.get_pump("boost").on()
+        self.__devices.get_pump("variable").speed(3)
+        self._proxy.do_delay(600, "wintering_waiting")
+
+    def on_exit_wintering(self):
+        logger.info("Exiting wintering state")
+        self.get_actor("Heater").stop()
+        swim = self.get_actor("Swim")
+        if swim and not swim.is_stop().get():
+            swim.stop()

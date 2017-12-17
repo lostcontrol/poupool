@@ -25,13 +25,13 @@ class Swim(PoupoolActor):
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Swim.states, initial="stop")
 
-        self.__machine.add_transition("timed", "stop", "timed", conditions="filtration_is_overflow")
+        self.__machine.add_transition("timed", "stop", "timed", conditions="filtration_allow_swim")
         self.__machine.add_transition("timed", "continuous", "timed",
-                                      conditions="filtration_is_overflow")
+                                      conditions="filtration_allow_swim")
         self.__machine.add_transition("continuous", "stop", "continuous",
-                                      conditions="filtration_is_overflow")
+                                      conditions="filtration_allow_swim")
         self.__machine.add_transition("continuous", "timed", "continuous",
-                                      conditions="filtration_is_overflow")
+                                      conditions="filtration_allow_swim")
         self.__machine.add_transition("stop", "timed", "stop")
         self.__machine.add_transition("stop", "continuous", "stop")
 
@@ -39,8 +39,10 @@ class Swim(PoupoolActor):
         self.__timer.delay = datetime.timedelta(minutes=value)
         logger.info("Timer for swim set to: %s" % self.__timer.delay)
 
-    def filtration_is_overflow(self):
-        return self.get_actor("Filtration").is_overflow_normal().get()
+    def filtration_allow_swim(self):
+        actor = self.get_actor("Filtration")
+        is_wintering = actor.is_wintering_waiting().get() or actor.is_wintering_stir().get()
+        return actor.is_overflow_normal().get() or is_wintering
 
     def on_enter_stop(self):
         logger.info("Entering stop state")
