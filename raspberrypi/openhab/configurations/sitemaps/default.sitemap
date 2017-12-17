@@ -20,6 +20,12 @@ sitemap default label="Menu principal"
             }
             Frame label="Plus d'options" icon="settings" {
                 Text label="Informations" icon="info" {
+                    Frame label="Température" icon="temperature" {
+                        Text item=Poupool_Temperature_Pool icon="temperature"
+                        Text item=Poupool_Temperature_Air icon="temperature"
+                        Text item=Poupool_Temperature_Local icon="temperature"
+                        Text item=Poupool_Temperature_Ncc icon="temperature"
+                    }
                     Frame label="Tampon" icon="cistern-20" {
                         Text item=Poupool_Tank_State icon="info"
                         Text item=Poupool_Tank_Height icon="cistern"

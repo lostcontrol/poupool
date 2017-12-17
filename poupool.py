@@ -59,7 +59,9 @@ def setup_rpi(registry):
     # 28-031634d04aff
     # 28-0416350909ff
     registry.add_sensor(TempSensorDevice("temperature_pool", "28-031634d04aff"))
-    registry.add_sensor(TempSensorDevice("temperature_air", "28-0416350909ff"))
+    registry.add_sensor(TempSensorDevice("temperature_air", ""))
+    registry.add_sensor(TempSensorDevice("temperature_local", "28-0416350909ff"))
+    registry.add_sensor(TempSensorDevice("temperature_ncc", ""))
 
 
 def setup_fake(registry):
@@ -96,7 +98,9 @@ def setup_fake(registry):
 
     # 1-wire
     registry.add_sensor(FakeSensor("temperature_pool", 24.5))
-    registry.add_sensor(FakeSensor("temperature_air", 20.6))
+    registry.add_sensor(FakeSensor("temperature_local", 20.6))
+    registry.add_sensor(FakeSensor("temperature_air", 19.4))
+    registry.add_sensor(FakeSensor("temperature_ncc", 21.3))
 
 
 def toggle_test(device):
@@ -145,7 +149,9 @@ def test(args, devices):
     toggle_test(devices.get_valve("heating"))
 
     read_test(devices.get_sensor("temperature_pool"))
+    read_test(devices.get_sensor("temperature_local"))
     read_test(devices.get_sensor("temperature_air"))
+    read_test(devices.get_sensor("temperature_ncc"))
     read_test(devices.get_sensor("tank"))
 
 
@@ -164,7 +170,8 @@ def main(args, devices):
 
     dispatcher.register(filtration, swim, light)
 
-    sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_air")]
+    sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_local"),
+               devices.get_sensor("temperature_air"), devices.get_sensor("temperature_ncc")]
     temperature = Temperature.start(encoder, sensors).proxy()
 
     mqtt.do_start()
