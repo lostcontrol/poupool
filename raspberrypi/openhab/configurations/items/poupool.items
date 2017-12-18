@@ -29,7 +29,7 @@ Number Poupool_SwimTimer "Durée temporisation (minute) [%d]" {mqtt="<[poupool:/
 Number Poupool_Temperature_Pool "Température piscine [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/pool:state:default]"}
 Number Poupool_Temperature_Air "Température air [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/air:state:default]"}
 Number Poupool_Temperature_Local "Température local [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/local:state:default]"}
-Number Poupool_Temperature_Ncc "Température ncc [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/ncc:state:default]"}
+Number Poupool_Temperature_Ncc "Température trappe [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/ncc:state:default]"}
 
 String Poupool_Heating_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/heating/state:state:default]"}
 
