@@ -313,7 +313,9 @@ class Filtration(PoupoolActor):
 
     def on_exit_stop(self):
         logger.info("Exiting stop state")
-        self.get_actor("Tank").normal()
+        # TODO: find a way to start the tank actor but not here since it will interfere in
+        # wintering mode (tank is empty and not used).
+        # self.get_actor("Tank").normal()
 
     def on_enter_closing(self):
         logger.info("Entering closing state")
