@@ -104,7 +104,7 @@ class SensorDevice(Device):
 
 class TempSensorDevice(SensorDevice):
 
-    CRE = re.compile(" t=(\d+)$")
+    CRE = re.compile(" t=(-?\d+)$")
 
     def __init__(self, name, address, offset=0.0):
         super().__init__(name)
