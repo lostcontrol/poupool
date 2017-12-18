@@ -565,16 +565,16 @@ class Filtration(PoupoolActor):
     def on_enter_wintering_waiting(self):
         logger.info("Entering wintering waiting state")
         self.__encoder.filtration_state("wintering_waiting")
-        self.__devices.get_pump("boost").off()
+        # self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").off()
-        self._proxy.do_delay(6 * 3600, "wintering_stir")
+        self._proxy.do_delay(3 * 3600, "wintering_stir")
 
     def on_enter_wintering_stir(self):
         logger.info("Entering wintering stir state")
         self.__encoder.filtration_state("wintering_stir")
-        self.__devices.get_pump("boost").on()
-        self.__devices.get_pump("variable").speed(3)
-        self._proxy.do_delay(600, "wintering_waiting")
+        # self.__devices.get_pump("boost").on()
+        self.__devices.get_pump("variable").speed(1)
+        self._proxy.do_delay(30 * 60, "wintering_waiting")
 
     def on_exit_wintering(self):
         logger.info("Exiting wintering state")
