@@ -62,8 +62,8 @@ def setup_rpi(registry):
     # 28-031634d54bff
     # 28-041635088bff
     registry.add_sensor(TempSensorDevice("temperature_pool", "28-031634d04aff"))
-    registry.add_sensor(TempSensorDevice("temperature_air", "28-031634d54bff"))
-    registry.add_sensor(TempSensorDevice("temperature_local", "28-0416350909ff"))
+    registry.add_sensor(TempSensorDevice("temperature_air", "28-0416350909ff"))
+    registry.add_sensor(TempSensorDevice("temperature_local", "28-031634d54bff"))
     registry.add_sensor(TempSensorDevice("temperature_ncc", "28-041635088bff"))
 
 
