@@ -148,7 +148,11 @@ class Filtration(PoupoolActor):
         # Transitions
         # Eco
         self.__machine.add_transition("eco", ["standby", "overflow", "opening"], "closing")
-        self.__machine.add_transition("eco", ["stop", "reload", "wash_rinse"], "eco")
+        # Special transition from stop to eco because we need to start the tank FSM. However, we
+        # cannot start it on_exit of stop because when going from stop to wintering, the tank will
+        # remain in the stop state.
+        self.__machine.add_transition("eco", "stop", "eco", before="tank_start")
+        self.__machine.add_transition("eco", ["reload", "wash_rinse"], "eco")
         self.__machine.add_transition("closed", "closing", "eco")
         self.__machine.add_transition("eco_stir", ["eco_compute", "eco_waiting"], "eco_stir")
         self.__machine.add_transition("eco_normal", "eco_stir", "eco_normal")
@@ -255,6 +259,11 @@ class Filtration(PoupoolActor):
         self.__backwash_last = datetime.strptime(value, "%c")
         logger.info("Backwash last set to: %s" % self.__backwash_last)
 
+    def tank_start(self):
+        tank = self.get_actor("Tank")
+        if tank.is_stop().get():
+            tank.normal()
+
     def tank_is_low(self):
         return self.get_actor("Tank").is_low().get()
 
@@ -310,12 +319,6 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("backwash").off()
         self.__devices.get_valve("tank").off()
         self.__devices.get_valve("drain").off()
-
-    def on_exit_stop(self):
-        logger.info("Exiting stop state")
-        # TODO: find a way to start the tank actor but not here since it will interfere in
-        # wintering mode (tank is empty and not used).
-        # self.get_actor("Tank").normal()
 
     def on_enter_closing(self):
         logger.info("Entering closing state")
