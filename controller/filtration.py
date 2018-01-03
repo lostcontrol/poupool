@@ -288,31 +288,21 @@ class Filtration(PoupoolActor):
         if actor.is_stop().get():
             actor.run()
 
-    def __disinfection_stop(self):
-        actor = self.get_actor("Disinfection")
-        if not actor.is_stop().get():
-            actor.stop()
-
     def __heating_start(self):
         actor = self.get_actor("Heating")
         if actor.is_stop().get():
             actor.heat()
 
-    def __heating_stop(self):
-        actor = self.get_actor("Heating")
-        if not actor.is_stop().get():
-            actor.stop()
-
-    def __light_stop(self):
-        actor = self.get_actor("Light")
+    def __actor_stop(self, name):
+        actor = self.get_actor(name)
         if not actor.is_stop().get():
             actor.stop()
 
     def on_enter_stop(self):
         logger.info("Entering stop state")
         self.__encoder.filtration_state("stop")
-        self.__disinfection_stop()
-        self.get_actor("Tank").stop()
+        self.__actor_stop("Disinfection")
+        self.__actor_stop("Tank")
         self.__devices.get_pump("variable").off()
         self.__devices.get_pump("boost").off()
         self.__devices.get_valve("gravity").off()
@@ -351,14 +341,14 @@ class Filtration(PoupoolActor):
 
     def on_enter_eco(self):
         logger.info("Entering eco state")
-        self.__light_stop()
+        self.__actor_stop("Light")
         self.__devices.get_valve("drain").off()
         self.__devices.get_valve("gravity").on()
         self.__devices.get_valve("tank").off()
         self.get_actor("Tank").set_mode("eco")
 
     def on_exit_eco(self):
-        self.__heating_stop()
+        self.__actor_stop("Heating")
 
     def on_enter_eco_compute(self):
         logger.info("Entering eco compute")
@@ -429,7 +419,7 @@ class Filtration(PoupoolActor):
         logger.info("Entering eco_tank state")
         self.__encoder.filtration_state("eco_tank")
         self.__eco_mode.set_current(self.__eco_mode.tank_duration)
-        self.__heating_stop()
+        self.__actor_stop("Heating")
         self.__disinfection_start()
         self.__devices.get_valve("tank").on()
 
@@ -452,8 +442,8 @@ class Filtration(PoupoolActor):
         logger.info("Entering eco_waiting state")
         self.__encoder.filtration_state("eco_waiting")
         self.__eco_mode.set_current(self.__eco_mode.off_duration)
-        self.__heating_stop()
-        self.__disinfection_stop()
+        self.__actor_stop("Heating")
+        self.__actor_stop("Disinfection")
         self.__devices.get_pump("variable").off()
 
     @repeat(delay=STATE_REFRESH_DELAY)
@@ -489,7 +479,7 @@ class Filtration(PoupoolActor):
             self.__disinfection_start()
             self.__devices.get_valve("tank").on()
         else:
-            self.__disinfection_stop()
+            self.__actor_stop("Disinfection")
             self.__devices.get_valve("tank").off()
         self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").speed(self.__speed_standby)
@@ -527,9 +517,7 @@ class Filtration(PoupoolActor):
 
     def on_exit_overflow_normal(self):
         logger.info("Exiting overflow state")
-        swim = self.get_actor("Swim")
-        if swim and not swim.is_stop().get():
-            swim.stop()
+        self.__actor_stop("Swim")
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_overflow_normal(self):
@@ -538,7 +526,7 @@ class Filtration(PoupoolActor):
 
     def on_enter_wash(self):
         logger.info("Entering wash state")
-        self.__disinfection_stop()
+        self.__actor_stop("Disinfection")
 
     def on_enter_wash_backwash(self):
         logger.info("Entering backwash state")
@@ -563,7 +551,6 @@ class Filtration(PoupoolActor):
 
     def on_enter_wintering(self):
         logger.info("Entering wintering state")
-        self.get_actor("Tank").stop()
         self.get_actor("Heater").waiting()
         # open the roller shutter
 
@@ -583,7 +570,5 @@ class Filtration(PoupoolActor):
 
     def on_exit_wintering(self):
         logger.info("Exiting wintering state")
-        self.get_actor("Heater").stop()
-        swim = self.get_actor("Swim")
-        if swim and not swim.is_stop().get():
-            swim.stop()
+        self.__actor_stop("Heater")
+        self.__actor_stop("Swim")
