@@ -92,12 +92,26 @@ def setup_fake(registry):
         def value(self):
             return self.__value
 
+    class FakeRandomSensor(SensorDevice):
+        def __init__(self, name, min, max):
+            super().__init__(name)
+            self.__min = min
+            self.__max = max
+
+        @property
+        def value(self):
+            import random
+            return random.uniform(self.__min, self.__max)
+
     # Relay
     GPIO = FakeGpio()
     setup_gpio(registry, GPIO)
 
     # ADC
     registry.add_sensor(FakeSensor("tank", 51.234))
+
+    # pH, cl
+    registry.add_sensor(FakeRandomSensor("ph", 6.5, 8.5))
 
     # 1-wire
     registry.add_sensor(FakeSensor("temperature_pool", 24.5))

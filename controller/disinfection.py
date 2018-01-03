@@ -127,9 +127,7 @@ class Disinfection(PoupoolActor):
 
     @repeat(delay=2)
     def do_repeat_running_measuring(self):
-        #ph = self.__devices.get_sensor("ph").value
-        import random
-        self.__ph_measures.append(random.uniform(6.5, 8.5))
+        self.__ph_measures.append(self.__devices.get_sensor("ph").value)
         if len(self.__ph_measures) > 5:
             self._proxy.adjust()
             raise StopRepeatException
