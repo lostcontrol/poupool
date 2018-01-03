@@ -37,7 +37,7 @@ def setup_gpio(registry, gpio):
     registry.add_valve(SwitchDevice("drain", gpio, 31))
     registry.add_valve(SwitchDevice("main", gpio, 35))
 
-    registry.add_valve(SwitchDevice("heater", gpio, 18))
+    #registry.add_valve(SwitchDevice("heater", gpio, 18))
     registry.add_valve(SwitchDevice("heating", gpio, 18))
 
     registry.add_valve(SwitchDevice("light", gpio, 13))

@@ -27,9 +27,13 @@ class Heater(PoupoolActor):
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Heating.states, initial="stop")
 
-        self.__machine.add_transition("waiting", ["stop", "heating"], "waiting")
+        self.__machine.add_transition(
+            "waiting", ["stop", "heating"], "waiting", conditions="has_heater")
         self.__machine.add_transition("heat", "waiting", "heating")
         self.__machine.add_transition("stop", ["waiting", "heating"], "stop")
+
+    def has_heater(self):
+        return self.__heater is not None
 
     def setpoint(self, value):
         self.__setpoint = value

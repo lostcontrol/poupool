@@ -35,13 +35,13 @@ class DeviceRegistry(object):
         self.__sensors[device.name] = device
 
     def get_valve(self, name):
-        return self.__valves[name]
+        return self.__valves.get(name)
 
     def get_pump(self, name):
-        return self.__pumps[name]
+        return self.__pumps.get(name)
 
     def get_sensor(self, name):
-        return self.__sensors[name]
+        return self.__sensors.get(name)
 
 
 class Device(object):
