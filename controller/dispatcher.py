@@ -20,7 +20,7 @@ class Dispatcher(object):
     def __init__(self):
         self.__mapping = {}
 
-    def register(self, filtration, swim, light, heater):
+    def register(self, filtration, swim, light, heater, disinfection):
         self.__mapping = {
             "/settings/mode": (filtration, lambda x: x in ("stop", "eco", "standby", "overflow", "wash", "wintering"), lambda x: x, None),
             "/settings/filtration/duration": (filtration, between(1, 172800), lambda x: "duration", to_int),
@@ -39,6 +39,8 @@ class Dispatcher(object):
             "/settings/swim/timer": (swim, between(1, 60), lambda x: "timer", to_int),
             "/settings/light/mode": (light, lambda x: x in ("stop", "on"), lambda x: x, None),
             "/settings/heater/setpoint": (heater, between(0, 30), lambda x: "setpoint", to_float),
+            "/settings/disinfection/ph/setpoint": (disinfection, between(6, 8), lambda x: "ph_setpoint", to_float),
+            "/settings/disinfection/ph/pterm": (disinfection, between(0, 10), lambda x: "ph_pterm", to_float),
         }
 
     def topics(self):

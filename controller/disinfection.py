@@ -7,7 +7,6 @@ from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat, do_repeat
 from .util import mapping, constrain, Timer
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -89,7 +88,7 @@ class Disinfection(PoupoolActor):
         self.__devices = devices
         self.__measures = []
         self.__ph = PWM.start("pH", self.__devices.get_pump("ph")).proxy()
-        self.__ph_controller = PController(pterm=-1.5)
+        self.__ph_controller = PController(pterm=-1.0)
         self.__ph_controller.setpoint = 7
         self.__cl = PWM.start("cl", self.__devices.get_pump("cl")).proxy()
         # Initialize the state machine
@@ -101,6 +100,15 @@ class Disinfection(PoupoolActor):
         self.__machine.add_transition("measure", "running_waiting", "running_measuring")
         self.__machine.add_transition("adjust", "running_measuring", "running_adjusting")
         self.__machine.add_transition("wait", "running_adjusting", "running_waiting")
+
+    def ph_setpoint(self, value):
+        self.__ph_controller.setpoint = value
+        logger.info("pH setpoint set to: %f" % self.__ph_controller.setpoint)
+
+    def ph_pterm(self, value):
+        # We assume here that we use "pH minus" chemicals, therefore inverse the term.
+        self.__ph_controller.pterm = -value
+        logger.info("pH pterm set to: %f" % self.__ph_controller.pterm)
 
     def is_disable(self):
         return self.__is_disable
@@ -127,6 +135,7 @@ class Disinfection(PoupoolActor):
     @do_repeat()
     def on_enter_running_measuring(self):
         logger.info("Entering measuring state")
+        self.__encoder.disinfection_state("measuring")
         self.__ph_measures = []
 
     @repeat(delay=2)
@@ -138,13 +147,17 @@ class Disinfection(PoupoolActor):
 
     def on_enter_running_adjusting(self):
         logger.info("Entering adjusting state")
+        self.__encoder.disinfection_state("adjusting")
         ph = sum(self.__ph_measures) / len(self.__ph_measures)
+        self.__encoder.disinfection_ph_value("%.1f" % ph)
         self.__ph_controller.current = ph
         ph_feedback = self.__ph_controller.compute()
+        self.__encoder.disinfection_ph_feedback(int(round(ph_feedback * 100)))
         logger.info("pH: %f feedback: %f" % (ph, ph_feedback))
         self.__ph.value = ph_feedback
         self._proxy.wait()
 
     def on_enter_running_waiting(self):
         logger.info("Entering waiting state")
+        self.__encoder.disinfection_state("waiting")
         self._proxy.do_delay(10, "measure")
