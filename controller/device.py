@@ -2,11 +2,16 @@ import transitions
 import time
 import logging
 import re
+import serial
+import io
 from abc import abstractmethod
 from .util import mapping, constrain
 
-
 logger = logging.getLogger(__name__)
+
+
+class SensorError(Exception):
+    pass
 
 
 class DeviceRegistry(object):
@@ -160,3 +165,45 @@ class TankSensorDevice(SensorDevice):
         value = values / 10
         logger.debug("Tank sensor average ADC=%.2f" % value)
         return constrain(mapping(value, self.__low, self.__high, 0, 100), 0, 100)
+
+
+class EZOSensorDevice(SensorDevice):
+
+    def __init__(self, name, port):
+        super().__init__(name)
+        self.__serial = serial.Serial(port, timeout=0.1)
+        self.__sio = io.TextIOWrapper(io.BufferedRWPair(self.__serial, self.__serial))
+        info = self.__send("i")
+        logger.info("EZO sensor %s says: %s" % (name, info))
+        # Disable continuous mode
+        self.__send("C,0")
+        if self.__send("C,?") == "?C,0":
+            logger.debug("Disabled continuous readings")
+        else:
+            logger.error("Unable to disable continuous readings for %s" % name)
+
+    @property
+    def value(self):
+        try:
+            # This can block for up to ~1000ms
+            value = self.__send("R")
+            return float(value) if value else None
+        except SensorError:
+            logger.exception("Unable to read sensor %s" % self.name)
+            return None
+
+    def __send(self, value):
+        # send
+        self.__sio.write(value + "\r")
+        self.__sio.flush()
+        # receive
+        response = None
+        read = self.__sio.readline()
+        while not read.startswith("*"):
+            # Only keep the last line of the response
+            response = read.strip()
+            read = self.__sio.readline()
+        if read.strip() == "*OK":
+            return response
+        else:
+            raise SensorError("Bad response: %s" % read.strip())
