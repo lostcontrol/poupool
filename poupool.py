@@ -56,6 +56,10 @@ def setup_rpi(registry):
     # With a gain of 2/3 and a sensor output of 0.25V-5V, the values should be around 83 and 1665
     registry.add_sensor(TankSensorDevice("tank", adc, 0, 2 / 3, 83, 1665))
 
+    # pH, ORP
+    registry.add_sensor(EZOSensorDevice("ph", "/dev/ezo_ph"))
+    registry.add_sensor(EZOSensorDevice("orp", "/dev/ezo_orp"))
+
     # 1-wire
     # 28-031634d04aff
     # 28-0416350909ff
@@ -68,7 +72,7 @@ def setup_rpi(registry):
 
 
 def setup_fake(registry):
-    from controller.device import SensorDevice
+    from controller.device import SensorDevice, EZOSensorDevice
 
     class FakeGpio(object):
         OUT = "OUT"
@@ -110,8 +114,9 @@ def setup_fake(registry):
     # ADC
     registry.add_sensor(FakeSensor("tank", 51.234))
 
-    # pH, cl
-    registry.add_sensor(FakeRandomSensor("ph", 6.5, 8.5))
+    # pH, ORP
+    registry.add_sensor(FakeRandomSensor("ph", 6.5, 8))
+    registry.add_sensor(FakeRandomSensor("orp", 640, 800))
 
     # 1-wire
     registry.add_sensor(FakeSensor("temperature_pool", 24.5))
