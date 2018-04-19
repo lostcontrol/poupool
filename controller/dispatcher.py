@@ -15,6 +15,10 @@ def to_float(x):
     return float(x)
 
 
+def to_string(x):
+    return str(x)
+
+
 class Dispatcher(object):
 
     def __init__(self):
@@ -32,7 +36,7 @@ class Dispatcher(object):
             "/settings/filtration/backwash/period": (filtration, between(0, 90), lambda x: "backwash_period", to_int),
             "/settings/filtration/backwash/backwash_duration": (filtration, between(0, 300), lambda x: "backwash_backwash_duration", to_int),
             "/settings/filtration/backwash/rinse_duration": (filtration, between(0, 300), lambda x: "backwash_rinse_duration", to_int),
-            "/status/filtration/backwash/last": (filtration, lambda x: True, lambda x: "backwash_last", lambda x: str(x)),
+            "/status/filtration/backwash/last": (filtration, lambda x: True, lambda x: "backwash_last", to_string),
             "/settings/filtration/speed/standby": (filtration, between(0, 1), lambda x: "speed_standby", to_int),
             "/settings/filtration/speed/overflow": (filtration, between(1, 4), lambda x: "speed_overflow", to_int),
             "/settings/swim/mode": (swim, lambda x: x in ("stop", "timed", "continuous"), lambda x: x, None),
