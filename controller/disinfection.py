@@ -73,6 +73,13 @@ class Disinfection(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
 
+    curves = {
+        "low": lambda x: -45.162 * x + 1002,         # 0.8
+        "mid": lambda x: -50 * x + 1065,             # 1.0
+        "mid_high": lambda x: -55.691 * x + 1138.9,  # 1.3
+        "high": lambda x: -58.618 * x + 1178.1,      # 1.5
+    }
+
     states = [
         "stop",
         "waiting",
@@ -86,11 +93,18 @@ class Disinfection(PoupoolActor):
         self.__is_disable = disable
         self.__encoder = encoder
         self.__devices = devices
-        self.__measures = []
+        # pH
+        self.__ph_measures = []
         self.__ph = PWM.start("pH", self.__devices.get_pump("ph")).proxy()
         self.__ph_controller = PController(pterm=-1.0)
         self.__ph_controller.setpoint = 7
+        # ORP
+        self.__orp_measures = []
+        self.__orp_controller = PController(pterm=0.01)
+        self.__orp_controller.setpoint = 700
+        # Chlorine
         self.__cl = PWM.start("cl", self.__devices.get_pump("cl")).proxy()
+        self.__free_chlorine = "mid"
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Disinfection.states, initial="stop")
 
@@ -105,19 +119,32 @@ class Disinfection(PoupoolActor):
         self.__ph_controller.setpoint = value
         logger.info("pH setpoint set to: %f" % self.__ph_controller.setpoint)
 
+    def free_chlorine(self, value):
+        if value in self.curves:
+            self.__free_chlorine = value
+            logger.info("Free chlorine level set to: %s" % self.__free_chlorine)
+        else:
+            logger.error("Unsupported free chlorine level: %s" % value)
+
     def ph_pterm(self, value):
         # We assume here that we use "pH minus" chemicals, therefore inverse the term.
         self.__ph_controller.pterm = -value
         logger.info("pH pterm set to: %f" % self.__ph_controller.pterm)
+
+    def orp_pterm(self, value):
+        self.__orp_controller.pterm = value
+        logger.info("ORP pterm set to: %f" % self.__orp_controller.pterm)
 
     def is_disable(self):
         return self.__is_disable
 
     def on_enter_stop(self):
         logger.info("Entering stop state")
+        self.__encoder.disinfection_state("stop")
 
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
+        self.__encoder.disinfection_state("waiting")
         self._proxy.do_delay(6, "run")
 
     def on_enter_running(self):
@@ -137,24 +164,38 @@ class Disinfection(PoupoolActor):
         logger.info("Entering measuring state")
         self.__encoder.disinfection_state("measuring")
         self.__ph_measures = []
+        self.__orp_measures = []
 
     @repeat(delay=2)
     def do_repeat_running_measuring(self):
         self.__ph_measures.append(self.__devices.get_sensor("ph").value)
-        if len(self.__ph_measures) > 3:
+        self.__orp_measures.append(self.__devices.get_sensor("orp").value)
+        if len(self.__ph_measures) > 2:
             self._proxy.adjust()
             raise StopRepeatException
 
     def on_enter_running_adjusting(self):
         logger.info("Entering adjusting state")
         self.__encoder.disinfection_state("adjusting")
+        # pH
         ph = sum(self.__ph_measures) / len(self.__ph_measures)
         self.__encoder.disinfection_ph_value("%.1f" % ph)
         self.__ph_controller.current = ph
         ph_feedback = self.__ph_controller.compute()
         self.__encoder.disinfection_ph_feedback(int(round(ph_feedback * 100)))
-        logger.info("pH: %f feedback: %f" % (ph, ph_feedback))
+        logger.info("pH: %.1f feedback: %.2f" % (ph, ph_feedback))
         self.__ph.value = ph_feedback
+        # ORP/Chlorine
+        orp = sum(self.__orp_measures) / len(self.__orp_measures)
+        self.__encoder.disinfection_orp_value("%d" % orp)
+        orp_setpoint = self.curves[self.__free_chlorine](ph)
+        self.__orp_controller.setpoint = orp_setpoint
+        self.__orp_controller.current = orp
+        cl_feedback = self.__orp_controller.compute()
+        self.__encoder.disinfection_cl_feedback(int(round(cl_feedback * 100)))
+        self.__encoder.disinfection_orp_setpoint(int(orp_setpoint))
+        logger.info("ORP: %d setpoint: %d feedback: %.2f" % (orp, orp_setpoint, cl_feedback))
+        self.__cl.value = cl_feedback
         self._proxy.wait()
 
     def on_enter_running_waiting(self):
