@@ -34,6 +34,8 @@ Number Poupool_Temperature_Local "Température local [%.1f°C]" (Poupool_Tempera
 Number Poupool_Temperature_Ncc "Température trappe [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/ncc:state:default]"}
 
 String Poupool_Heating_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/heating/state:state:default]"}
+Number Poupool_Heating_Setpoint "Température de consigne [%.1f°C]" {mqtt="<[poupool:/settings/heating/setpoint:state:default],>[poupool:/settings/heating/setpoint:command:*:default]"}
+Number Poupool_Heating_HourOfStart "Heure de chauffage [%d]" {mqtt="<[poupool:/settings/heating/start_hour:state:default],>[poupool:/settings/heating/start_hour:command:*:default]"}
 
 String Poupool_Light_Mode "Mode" {mqtt=">[poupool:/settings/light/mode:command:*:${command}]", autoupdate="false"}
 String Poupool_Light_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/light/state:state:default]"}
