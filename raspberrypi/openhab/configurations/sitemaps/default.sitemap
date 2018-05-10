@@ -6,8 +6,6 @@ sitemap default label="Menu principal"
                 Switch item=Poupool_Mode icon="settings" mappings=[eco="Eco", standby="Veille", overflow="Débordement"]
                 Text item=Poupool_State icon="info"
                 Setpoint item=Poupool_Heating_Setpoint icon="temperature" minValue=10 maxValue=30 step=0.5
-                Selection item=Poupool_Filtration_SpeedStandby icon="settings" mappings=[0="0", 1="1"]
-                Selection item=Poupool_Filtration_SpeedOverflow icon="settings" mappings=[1="1", 2="2", 3="3", 4="4"]
                 Text item=Poupool_Temperature_Pool icon="temperature"
                 Text item=Poupool_Temperature_Air icon="temperature"
             }
