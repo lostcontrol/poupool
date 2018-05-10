@@ -114,6 +114,7 @@ class Filtration(PoupoolActor):
                   "stir",
                   "normal",
                   "tank",
+                  "heating",
                   "waiting"]},
               {"name": "standby", "initial": "normal", "children": [
                   "boost",
@@ -151,12 +152,13 @@ class Filtration(PoupoolActor):
         # Special transition from stop to eco because we need to start the tank FSM. However, we
         # cannot start it on_exit of stop because when going from stop to wintering, the tank will
         # remain in the stop state.
-        self.__machine.add_transition("eco", "stop", "eco", before="tank_start")
-        self.__machine.add_transition("eco", ["reload", "wash_rinse"], "eco")
+        self.__machine.add_transition("eco", "stop", "eco", before=["tank_start", "heating_start"])
+        self.__machine.add_transition("eco", ["eco_heating", "reload", "wash_rinse"], "eco")
         self.__machine.add_transition("closed", "closing", "eco")
         self.__machine.add_transition("eco_stir", ["eco_compute", "eco_waiting"], "eco_stir")
         self.__machine.add_transition("eco_normal", "eco_stir", "eco_normal")
         self.__machine.add_transition("eco_tank", "eco_normal", "eco_tank", unless="tank_is_low")
+        self.__machine.add_transition("eco_heating", ["eco_waiting", "eco_normal"], "eco_heating")
         self.__machine.add_transition("eco_waiting", ["eco_compute", "eco_tank"], "eco_waiting")
         self.__machine.add_transition("opened", "opening_standby", "standby_boost")
         self.__machine.add_transition("opened", "opening_overflow", "overflow_boost")
@@ -264,6 +266,11 @@ class Filtration(PoupoolActor):
         if tank.is_stop().get():
             tank.normal()
 
+    def heating_start(self):
+        heating = self.get_actor("Heating")
+        if heating.is_stop().get():
+            heating.wait()
+
     def tank_is_low(self):
         return self.get_actor("Tank").is_low().get()
 
@@ -287,11 +294,6 @@ class Filtration(PoupoolActor):
         actor = self.get_actor("Disinfection")
         if actor.is_stop().get():
             actor.run()
-
-    def __heating_start(self):
-        actor = self.get_actor("Heating")
-        if actor.is_stop().get():
-            actor.heat()
 
     def __actor_stop(self, name):
         actor = self.get_actor(name)
@@ -347,9 +349,6 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("tank").off()
         self.get_actor("Tank").set_mode("eco")
 
-    def on_exit_eco(self):
-        self.__actor_stop("Heating")
-
     def on_enter_eco_compute(self):
         logger.info("Entering eco compute")
         self.__encoder.filtration_state("eco_compute")
@@ -394,7 +393,6 @@ class Filtration(PoupoolActor):
         logger.info("Entering eco_normal state")
         self.__encoder.filtration_state("eco_normal")
         self.__eco_mode.set_current(self.__eco_mode.on_duration)
-        self.__heating_start()
         self.__devices.get_pump("variable").speed(1)
 
     @repeat(delay=STATE_REFRESH_DELAY)
@@ -419,7 +417,6 @@ class Filtration(PoupoolActor):
         logger.info("Entering eco_tank state")
         self.__encoder.filtration_state("eco_tank")
         self.__eco_mode.set_current(self.__eco_mode.tank_duration)
-        self.__actor_stop("Heating")
         self.__disinfection_start()
         self.__devices.get_valve("tank").on()
 
@@ -438,11 +435,25 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("tank").off()
 
     @do_repeat()
+    def on_enter_eco_heating(self):
+        logger.info("Entering eco_heating state")
+        self.__encoder.filtration_state("eco_heating")
+        self.__eco_mode.set_current(self.__eco_mode.on_duration)
+        self.__devices.get_pump("variable").speed(2)
+
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_eco_heating(self):
+        # We are running at speed 2 so count a bit more than 1 for the filteration
+        self.__eco_mode.update(datetime.now(), 1.1)
+
+    def on_exit_eco_heating(self):
+        self.get_actor("Heating").wait()
+
+    @do_repeat()
     def on_enter_eco_waiting(self):
         logger.info("Entering eco_waiting state")
         self.__encoder.filtration_state("eco_waiting")
         self.__eco_mode.set_current(self.__eco_mode.off_duration)
-        self.__actor_stop("Heating")
         self.__actor_stop("Disinfection")
         self.__devices.get_pump("variable").off()
 
@@ -551,7 +562,7 @@ class Filtration(PoupoolActor):
 
     def on_enter_wintering(self):
         logger.info("Entering wintering state")
-        self.get_actor("Heater").waiting()
+        self.get_actor("Heater").wait()
         # open the roller shutter
 
     def on_enter_wintering_waiting(self):

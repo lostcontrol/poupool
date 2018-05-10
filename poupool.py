@@ -196,7 +196,7 @@ def main(args, devices):
 
     light = Light.start(encoder, devices).proxy()
 
-    dispatcher.register(filtration, swim, light, heater, disinfection)
+    dispatcher.register(filtration, swim, light, heater, heating, disinfection)
 
     sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_local"),
                devices.get_sensor("temperature_air"), devices.get_sensor("temperature_ncc")]
