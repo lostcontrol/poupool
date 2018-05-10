@@ -145,7 +145,7 @@ class Disinfection(PoupoolActor):
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
         self.__encoder.disinfection_state("waiting")
-        self._proxy.do_delay(6, "run")
+        self._proxy.do_delay(60, "run")
 
     def on_enter_running(self):
         self.__ph.do_run()
