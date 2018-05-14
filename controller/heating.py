@@ -32,6 +32,9 @@ class Heater(PoupoolActor):
         self.__machine.add_transition("heat", "waiting", "heating")
         self.__machine.add_transition("stop", ["waiting", "heating"], "stop")
 
+    def __read_temperature(self):
+        return self.__temperature.get_temperature("temperature_local").get()
+
     def has_heater(self):
         return self.__heater is not None
 
@@ -49,7 +52,7 @@ class Heater(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_waiting(self):
-        temp = self.__temperature.value
+        temp = self.__read_temperature()
         if temp < self.__setpoint - Heater.HYSTERESIS_DOWN:
             self._proxy.heat()
             raise StopRepeatException
@@ -64,7 +67,7 @@ class Heater(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_heating(self):
-        temp = self.__temperature.value
+        temp = self.__read_temperature()
         if temp > self.__setpoint + Heater.HYSTERESIS_UP:
             self._proxy.wait()
             raise StopRepeatException
@@ -75,12 +78,13 @@ class Heating(PoupoolActor):
     STATE_REFRESH_DELAY = 10
     HYSTERESIS_DOWN = 0.5
     HYSTERESIS_UP = 0.5
-    RECOVER_PERIOD = 20  # * 60
+    RECOVER_PERIOD = 20 * 60
 
     states = ["stop", "waiting", "heating", "recovering"]
 
-    def __init__(self, encoder, devices):
+    def __init__(self, temperature, encoder, devices):
         super().__init__()
+        self.__temperature = temperature
         self.__encoder = encoder
         self.__devices = devices
         self.__next_start = datetime.now()
@@ -95,6 +99,9 @@ class Heating(PoupoolActor):
         self.__machine.add_transition("wait", "heating", "recovering")
         self.__machine.add_transition("wait", "recovering", "waiting")
 
+    def __read_temperature(self):
+        return self.__temperature.get_temperature("temperature_pool").get()
+
     def setpoint(self, value):
         self.__setpoint = value
         logger.info("Setpoint set to %.1f" % self.__setpoint)
@@ -107,7 +114,7 @@ class Heating(PoupoolActor):
         tm = datetime.now()
         self.__next_start = tm.replace(hour=value, minute=0, second=0, microsecond=0)
         if self.__next_start < tm:
-            self.__next_start += timedelta(days=1)
+            self.__next_start -= timedelta(days=1)
 
     def filtration_ready_for_heating(self):
         actor = self.get_actor("Filtration")
@@ -118,7 +125,7 @@ class Heating(PoupoolActor):
         return actor.is_eco_heating().get()
 
     def check_before_on(self):
-        temperature = self.__devices.get_sensor("temperature_pool").value
+        temperature = self.__read_temperature()
         return (temperature - Heating.HYSTERESIS_DOWN) < self.__setpoint
 
     def on_enter_stop(self):
@@ -154,7 +161,7 @@ class Heating(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_heating(self):
-        temperature = self.__devices.get_sensor("temperature_pool").value
+        temperature = self.__read_temperature()
         if temperature >= self.__setpoint + Heating.HYSTERESIS_UP:
             self.__next_start += timedelta(days=1)
             self._proxy.wait()

@@ -189,21 +189,20 @@ def main(args, devices):
     tank = Tank.start(encoder, devices).proxy()
     disinfection = Disinfection.start(encoder, devices, args.no_disinfection).proxy()
 
-    temperature = devices.get_sensor("temperature_local")
+    sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_local"),
+               devices.get_sensor("temperature_air"), devices.get_sensor("temperature_ncc")]
+    temperature = Temperature.start(encoder, sensors).proxy()
+    temperature.do_read()
+
     switch = devices.get_valve("heater")
     heater = Heater.start(temperature, switch).proxy()
-    heating = Heating.start(encoder, devices).proxy()
+    heating = Heating.start(temperature, encoder, devices).proxy()
 
     light = Light.start(encoder, devices).proxy()
 
     dispatcher.register(filtration, swim, light, heater, heating, disinfection)
 
-    sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_local"),
-               devices.get_sensor("temperature_air"), devices.get_sensor("temperature_ncc")]
-    temperature = Temperature.start(encoder, sensors).proxy()
-
     mqtt.do_start()
-    temperature.do_read()
 
     # Wait forever
     while True:

@@ -13,11 +13,18 @@ class Temperature(PoupoolActor):
         super().__init__()
         self.__encoder = encoder
         self.__sensors = sensors
+        self.__temperatures = {}
+
+    def get_temperature(self, name):
+        return self.__temperatures.get(name)
 
     @repeat(delay=READ_DELAY)
     def do_read(self):
         for sensor in self.__sensors:
             value = sensor.value
+            # In order to avoid reading the temperature again from different actors, we cache the
+            # results in a map. Other actors can then get the values from here.
+            self.__temperatures[sensor.name] = value
             if value:
                 rounded = round(value, 1)
                 logger.debug("Temperature (%s) is %.1f°C" % (sensor.name, rounded))
