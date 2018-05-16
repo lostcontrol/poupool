@@ -112,7 +112,7 @@ class Cover {
       InterruptGuard _();
       const auto diff = m_position.open - m_position.close;
       if (diff == 0) return 0;
-      return 100 * (m_position.position - m_position.close) / diff;
+      return constrain(100 * (m_position.position - m_position.close) / diff, 0, 100);
     }
 
     void step() {
