@@ -92,6 +92,7 @@ class Cover {
             // Emergency stop
             m_direction = Direction::STOP;
             Serial.println(F("emergency stop"));
+            Serial.println(F("***"));
           }
           m_previous_position = position;
           m_previous_time = now;
@@ -357,8 +358,10 @@ void loop()
           Serial.println(F("reset"));
           cover.reset();
         }
+        Serial.println(F("***"));
       } else {
         Serial.println(F("error"));
+        Serial.println(F("***"));
       }
     }
   }
