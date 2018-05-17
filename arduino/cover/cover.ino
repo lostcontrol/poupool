@@ -335,25 +335,25 @@ void loop()
     CmdBuffer<32> buffer;
     if (buffer.readFromSerial(&Serial, 30000)) {
       if (cmdParser.parseCmd(&buffer) != CMDPARSER_ERROR) {
-        if (cmdParser.equalCommand(F("open"))) {
+        if (cmdParser.equalCommand("open")) {
           Serial.println(F("open"));
           cover.set_direction(Cover::Direction::OPEN);
-        } else if (cmdParser.equalCommand(F("close"))) {
+        } else if (cmdParser.equalCommand("close")) {
           Serial.println(F("close"));
           cover.set_direction(Cover::Direction::CLOSE);
-        } else if (cmdParser.equalCommand(F("stop"))) {
+        } else if (cmdParser.equalCommand("stop")) {
           Serial.println(F("stop"));
           cover.set_direction(Cover::Direction::STOP);
-        } else if (cmdParser.equalCommand(F("position"))) {
+        } else if (cmdParser.equalCommand("position")) {
           Serial.print(F("position "));
           Serial.println(cover.get_position_percentage());
-        } else if (cmdParser.equalCommand(F("water"))) {
+        } else if (cmdParser.equalCommand("water")) {
           Serial.print(F("water "));
           Serial.println(water.get_counter());
-        } else if (cmdParser.equalCommand(F("debug"))) {
+        } else if (cmdParser.equalCommand("debug")) {
           Serial.println(F("debug"));
           cover.debug();
-        } else if (cmdParser.equalCommand(F("reset"))) {
+        } else if (cmdParser.equalCommand("reset")) {
           Serial.println(F("reset"));
           cover.reset();
         }
