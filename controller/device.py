@@ -207,3 +207,55 @@ class EZOSensorDevice(SensorDevice):
             return response
         else:
             raise SensorError("Bad response: %s" % read.strip())
+
+
+class ArduinoDevice(Device):
+
+    def __init__(self, name, port):
+        super().__init__(name)
+        self.__serial = serial.Serial(port, baudrate=9600, timeout=0.1)
+        self.__sio = io.TextIOWrapper(io.BufferedRWPair(self.__serial, self.__serial))
+
+    @property
+    def cover_position(self):
+        value = self.__send("position")
+        return int(value.replace("position ", "")) if value else None
+
+    def cover_open(self):
+        self.__send("open")
+
+    def cover_close(self):
+        self.__send("close")
+
+    def cover_stop(self):
+        self.__send("stop")
+
+    def water_counter(self):
+        value = self.__send("water")
+        return int(value.replace("water ", "")) if value else None
+
+    def off(self):
+        # This is to be compatible with the sensor API. All devices are turned off() when exiting
+        # the application. We stop the cover.
+        self.cover_stop()
+
+    def __send(self, value):
+        # flush buffer (should be empty but we can receive an "emergency stop")
+        read = self.__sio.readline()
+        while not read.strip() == "":
+            logger.error("Unexpected buffer content: %s" % read.strip())
+            read = self.__sio.readline()
+        # send
+        self.__sio.write(value + "\n")
+        self.__sio.flush()
+        # receive
+        response = None
+        read = self.__sio.readline()
+        while not read.startswith("***"):
+            # Only keep the last line of the response
+            response = read.strip()
+            read = self.__sio.readline()
+        if read.strip() == "***" and response.startswith(value):
+            return response
+        else:
+            raise SensorError("Bad response: %s" % read.strip())
