@@ -48,25 +48,54 @@ class Cover {
       pinMode(pins.cover_open, OUTPUT);
     }
 
-    void process_direction() {
+    void process_direction(unsigned long now) {
       if (m_direction != m_previous_direction) {
         switch (m_direction) {
           case Direction::OPEN:
             digitalWrite(pins.cover_close, LOW);
+            delay(100);
             digitalWrite(pins.cover_open, HIGH);
+            // Update the time/position for consistency check when the cover starts moving
+            m_previous_position = get_position();
+            m_previous_time = now;
             break;
           case Direction::CLOSE:
             digitalWrite(pins.cover_open, LOW);
+            delay(100);
             digitalWrite(pins.cover_close, HIGH);
+            // Update the time/position for consistency check when the cover starts moving
+            m_previous_position = get_position();
+            m_previous_time = now;
             break;
           case Direction::STOP:
             digitalWrite(pins.cover_close, LOW);
             digitalWrite(pins.cover_open, LOW);
-            // Save the positions to EEPROM
+            // Ensure the motor is stopped before saving the position
+            delay(200);
+            // Save the positions to EEPROM. Disable interrupts to ensure the values get not
+            // updated by ISR during the process
+            InterruptGuard _();
             EEPROM.updateBlock(0, m_position);
             break;
         }
         m_previous_direction = m_direction;
+      }
+    }
+
+    void ensure_consistency(unsigned long now) {
+      if (m_direction != Direction::STOP) {
+        if (now - m_previous_time > 500) {
+          const auto position = get_position();
+          // The motor is supposed to generate 3000 pulses/min so we should get around 40 pulses
+          // during 500 ms.
+          if (abs(position - m_previous_position) < 30) {
+            // Emergency stop
+            m_direction = Direction::STOP;
+            Serial.println(F("emergency stop"));
+          }
+          m_previous_position = position;
+          m_previous_time = now;
+        }
       }
     }
 
@@ -75,14 +104,15 @@ class Cover {
     }
 
     bool set_direction(Direction direction) {
+      const auto position = get_position();
       switch (direction) {
         case Direction::OPEN:
-          if (m_set_limits || m_position.position < m_position.open) {
+          if (m_set_limits || position < m_position.open) {
             m_direction = Direction::OPEN;
           }
           break;
         case Direction::CLOSE:
-          if (m_set_limits || m_position.position > m_position.close) {
+          if (m_set_limits || position > m_position.close) {
             m_direction = Direction::CLOSE;
           }
           break;
@@ -93,14 +123,15 @@ class Cover {
     }
 
     void set_limit(Direction direction) {
+      const auto position = get_position();
       switch (direction) {
         case Direction::OPEN:
           m_set_limits = true;
-          m_position.open = m_position.position;
+          m_position.open = position;
           break;
         case Direction::CLOSE:
           m_set_limits = true;
-          m_position.close = m_position.position;
+          m_position.close = position;
           break;
         case Direction::STOP:
           m_set_limits = false;
@@ -108,15 +139,14 @@ class Cover {
       }
     }
 
-    byte get_position() const {
-      InterruptGuard _();
+    byte get_position_percentage() const {
+      const auto position = get_position();
       const auto diff = m_position.open - m_position.close;
       if (diff == 0) return 0;
-      return constrain(100 * (m_position.position - m_position.close) / diff, 0, 100);
+      return constrain(100 * (position - m_position.close) / diff, 0, 100);
     }
 
     void step() {
-      Serial.println((int)m_direction);
       switch (m_direction) {
         case Direction::OPEN:
           ++m_position.position;
@@ -145,7 +175,18 @@ class Cover {
     }
 
   private:
+    long get_position() const {
+      // m_position.position is a long (4 bytes) which is updated in the ISR and read in the main
+      // loop. We need to disable the interruptions when reading it in order to avoid getting
+      // inconsistent values (e.g. half of the bytes updated by the ISR)
+      InterruptGuard _();
+      return m_position.position;
+    }
+
+  private:
     Position m_position;
+    long m_previous_position = 0;
+    unsigned long m_previous_time = 0;
     Direction m_previous_direction = Direction::STOP;
     volatile Direction m_direction = Direction::STOP;
     volatile bool m_set_limits = false;
@@ -209,6 +250,7 @@ class Button {
       s_cover->set_limit(Cover::Direction::STOP);
     }
 
+  private:
     static Cover* s_cover;
     InputDebounce m_open;
     InputDebounce m_close;
@@ -293,37 +335,40 @@ void loop()
     CmdBuffer<32> buffer;
     if (buffer.readFromSerial(&Serial, 30000)) {
       if (cmdParser.parseCmd(&buffer) != CMDPARSER_ERROR) {
-        if (cmdParser.equalCommand("open")) {
-          Serial.println("open");
+        if (cmdParser.equalCommand(F("open"))) {
+          Serial.println(F("open"));
           cover.set_direction(Cover::Direction::OPEN);
-        } else if (cmdParser.equalCommand("close")) {
-          Serial.println("close");
+        } else if (cmdParser.equalCommand(F("close"))) {
+          Serial.println(F("close"));
           cover.set_direction(Cover::Direction::CLOSE);
-        } else if (cmdParser.equalCommand("stop")) {
-          Serial.println("stop");
+        } else if (cmdParser.equalCommand(F("stop"))) {
+          Serial.println(F("stop"));
           cover.set_direction(Cover::Direction::STOP);
-        } else if (cmdParser.equalCommand("position")) {
-          Serial.print("position ");
-          Serial.println(cover.get_position());
-        } else if (cmdParser.equalCommand("water")) {
-          Serial.print("water ");
+        } else if (cmdParser.equalCommand(F("position"))) {
+          Serial.print(F("position "));
+          Serial.println(cover.get_position_percentage());
+        } else if (cmdParser.equalCommand(F("water"))) {
+          Serial.print(F("water "));
           Serial.println(water.get_counter());
-        } else if (cmdParser.equalCommand("debug")) {
-          Serial.println("debug");
+        } else if (cmdParser.equalCommand(F("debug"))) {
+          Serial.println(F("debug"));
           cover.debug();
-        } else if (cmdParser.equalCommand("reset")) {
-          Serial.println("reset");
+        } else if (cmdParser.equalCommand(F("reset"))) {
+          Serial.println(F("reset"));
           cover.reset();
         }
       } else {
-        Serial.println("error");
+        Serial.println(F("error"));
       }
     }
   }
 
+  const auto now = millis();
+
   // Handle buttons. They have an higher priority over the serial communication
-  button.process(millis());
+  button.process(now);
 
   // Action
-  cover.process_direction();
+  cover.process_direction(now);
+  cover.ensure_consistency(now);
 }
