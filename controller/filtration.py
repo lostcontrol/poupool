@@ -323,7 +323,7 @@ class Filtration(PoupoolActor):
         # close the roller shutter
         self.get_actor("Arduino").cover_close()
 
-    @repeat(delay=STATE_REFRESH_DELAY)
+    @repeat(delay=5)
     def do_repeat_closing(self):
         position = self.get_actor("Arduino").cover_position().get()
         logger.debug("Cover position is %d" % position)
@@ -347,7 +347,7 @@ class Filtration(PoupoolActor):
         # open the roller shutter
         self.get_actor("Arduino").cover_open()
 
-    @repeat(delay=STATE_REFRESH_DELAY)
+    @repeat(delay=5)
     def do_repeat_opening(self):
         position = self.get_actor("Arduino").cover_position().get()
         logger.debug("Cover position is %d" % position)
