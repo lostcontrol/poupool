@@ -38,7 +38,7 @@ class Arduino(PoupoolActor):
         self.__arduino.cover_stop()
 
     def cover_position(self):
-        return self.__arduino.cover_position()
+        return self.__arduino.cover_position
 
     def water_counter(self):
         return self.__water_counter
@@ -54,6 +54,5 @@ class Arduino(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_run(self):
         # Water counter
-        self.__water_counter = self.__arduino.water_counter()
+        self.__water_counter = self.__arduino.water_counter
         self.__encoder.water_counter(self.__water_counter)
-

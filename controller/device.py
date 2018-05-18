@@ -230,6 +230,7 @@ class ArduinoDevice(Device):
     def cover_stop(self):
         self.__send("stop")
 
+    @property
     def water_counter(self):
         value = self.__send("water")
         return int(value.replace("water ", "")) if value else None
