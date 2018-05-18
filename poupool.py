@@ -6,6 +6,7 @@ import logging.config
 import argparse
 import itertools
 
+from controller.arduino import Arduino
 from controller.filtration import Filtration
 from controller.disinfection import Disinfection
 from controller.heating import Heating, Heater
@@ -44,7 +45,7 @@ def setup_gpio(registry, gpio):
 
 
 def setup_rpi(registry):
-    from controller.device import TempSensorDevice, TankSensorDevice
+    from controller.device import TempSensorDevice, TankSensorDevice, ArduinoDevice
 
     # Relay
     import RPi.GPIO as GPIO
@@ -60,6 +61,9 @@ def setup_rpi(registry):
     registry.add_sensor(EZOSensorDevice("ph", "/dev/ezo_ph"))
     registry.add_sensor(EZOSensorDevice("orp", "/dev/ezo_orp"))
 
+    # Arduino (cover, water)
+    registry.add_valve(ArduinoDevice("arduino", "/dev/arduino"))
+
     # 1-wire
     # 28-031634d04aff
     # 28-0416350909ff
@@ -72,7 +76,7 @@ def setup_rpi(registry):
 
 
 def setup_fake(registry):
-    from controller.device import SensorDevice, EZOSensorDevice
+    from controller.device import Device, SensorDevice
 
     class FakeGpio(object):
         OUT = "OUT"
@@ -107,6 +111,40 @@ def setup_fake(registry):
             import random
             return random.uniform(self.__min, self.__max)
 
+    class FakeArduino(Device):
+
+        def __init__(self, name):
+            super().__init__(name)
+            self.__cover_position = 0
+            self.__cover_direction = 0
+            self.__water_counter = 0
+
+        @property
+        def cover_position(self):
+            if self.__cover_direction == 1:
+                self.__cover_position += 40
+            elif self.__cover_direction == -1:
+                self.__cover_position -= 40
+            self.__cover_position = min(max(self.__cover_position, 0), 100)
+            return self.__cover_position
+
+        def cover_open(self):
+            self.__cover_direction = 1
+
+        def cover_close(self):
+            self.__cover_direction = -1
+
+        def cover_stop(self):
+            self.__cover_direction = 0
+
+        @property
+        def water_counter(self):
+            self.__water_counter += 1
+            return self.__water_counter
+
+        def off(self):
+            self.cover_stop()
+
     # Relay
     GPIO = FakeGpio()
     setup_gpio(registry, GPIO)
@@ -123,6 +161,9 @@ def setup_fake(registry):
     registry.add_sensor(FakeSensor("temperature_local", 20.6))
     registry.add_sensor(FakeSensor("temperature_air", 19.4))
     registry.add_sensor(FakeSensor("temperature_ncc", 21.3))
+
+    # Arduino
+    registry.add_valve(FakeArduino("arduino"))
 
 
 def toggle_test(device):
@@ -199,6 +240,8 @@ def main(args, devices):
     heating = Heating.start(temperature, encoder, devices).proxy()
 
     light = Light.start(encoder, devices).proxy()
+
+    arduino = Arduino.start(encoder, devices).proxy()
 
     dispatcher.register(filtration, swim, light, heater, heating, disinfection)
 
