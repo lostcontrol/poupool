@@ -291,7 +291,10 @@ class Filtration(PoupoolActor):
         self.__eco_mode.clear()
 
     def __disinfection_start(self):
-        actor = self.get_actor("Disinfection")
+        self.__actor_run("Disinfection")
+
+    def __actor_run(self, name):
+        actor = self.get_actor(name)
         if actor.is_stop().get():
             actor.run()
 
@@ -305,12 +308,17 @@ class Filtration(PoupoolActor):
         self.__encoder.filtration_state("stop")
         self.__actor_stop("Disinfection")
         self.__actor_stop("Tank")
+        self.__actor_stop("Arduino")
         self.__devices.get_pump("variable").off()
         self.__devices.get_pump("boost").off()
         self.__devices.get_valve("gravity").off()
         self.__devices.get_valve("backwash").off()
         self.__devices.get_valve("tank").off()
         self.__devices.get_valve("drain").off()
+
+    def on_exit_stop(self):
+        logger.info("Exiting stop state")
+        self.__actor_run("Arduino")
 
     @do_repeat()
     def on_enter_closing(self):
