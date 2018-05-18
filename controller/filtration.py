@@ -312,6 +312,7 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("tank").off()
         self.__devices.get_valve("drain").off()
 
+    @do_repeat()
     def on_enter_closing(self):
         logger.info("Entering closing state")
         self.__encoder.filtration_state("closing")
@@ -320,12 +321,22 @@ class Filtration(PoupoolActor):
         self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").off()
         # close the roller shutter
-        self.do_delay(5, "closed")
+        self.get_actor("Arduino").cover_close()
+
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_closing(self):
+        position = self.get_actor("Arduino").cover_position().get()
+        logger.debug("Cover position is %d" % position)
+        if position == 0:
+            self._proxy.closed()
+            raise StopRepeatException
 
     def on_exit_closing(self):
         logger.info("Exiting closing state")
         # stop the roller shutter
+        self.get_actor("Arduino").cover_stop()
 
+    @do_repeat()
     def on_enter_opening(self):
         logger.info("Entering opening state")
         self.__encoder.filtration_state("opening")
@@ -334,12 +345,22 @@ class Filtration(PoupoolActor):
         self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").off()
         # open the roller shutter
-        self.do_delay(5, "opened")
+        self.get_actor("Arduino").cover_open()
+
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_opening(self):
+        position = self.get_actor("Arduino").cover_position().get()
+        logger.debug("Cover position is %d" % position)
+        if position == 100:
+            self._proxy.opened()
+            raise StopRepeatException
 
     def on_exit_opening(self):
         logger.info("Exiting opening state")
+        # TODO I'm not quite sure why this is here!!!??? Needed? Bug?
         self.get_actor("Tank").set_mode("overflow")
         # stop the roller shutter
+        self.get_actor("Arduino").cover_stop()
 
     def on_enter_eco(self):
         logger.info("Entering eco state")
