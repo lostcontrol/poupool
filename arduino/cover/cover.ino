@@ -209,14 +209,15 @@ class Button {
     }
 
     void setup() {
+      constexpr InputDebounce::SwitchType type = InputDebounce::ST_NORMALLY_CLOSED;
       m_open.registerCallbacks(open_pressed, open_close_released);
-      m_open.setup(pins.button_open, DEBOUNCE_DELAY);
+      m_open.setup(pins.button_open, DEBOUNCE_DELAY, InputDebounce::PIM_INT_PULL_UP_RES, 0, type);
       m_close.registerCallbacks(close_pressed, open_close_released);
-      m_close.setup(pins.button_close, DEBOUNCE_DELAY);
+      m_close.setup(pins.button_close, DEBOUNCE_DELAY, InputDebounce::PIM_INT_PULL_UP_RES, 0, type);
       m_save_open.registerCallbacks(nullptr, save_open_close_released, save_open_pressed);
-      m_save_open.setup(pins.button_save_open, DEBOUNCE_DELAY);
+      m_save_open.setup(pins.button_save_open, DEBOUNCE_DELAY, InputDebounce::PIM_INT_PULL_UP_RES, 0, type);
       m_save_close.registerCallbacks(nullptr, save_open_close_released, save_close_pressed);
-      m_save_close.setup(pins.button_save_close, DEBOUNCE_DELAY);
+      m_save_close.setup(pins.button_save_close, DEBOUNCE_DELAY, InputDebounce::PIM_INT_PULL_UP_RES, 0, type);
     }
 
     void process(unsigned long now) {
