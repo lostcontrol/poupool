@@ -45,31 +45,33 @@ class Cover {
       pinMode(pins.cover_interrupt, INPUT_PULLUP);
 
       pinMode(pins.cover_close, OUTPUT);
+      digitalWrite(pins.cover_close, HIGH);
       pinMode(pins.cover_open, OUTPUT);
+      digitalWrite(pins.cover_open, HIGH);
     }
 
     void process_direction(unsigned long now) {
       if (m_direction != m_previous_direction) {
         switch (m_direction) {
           case Direction::OPEN:
-            digitalWrite(pins.cover_close, LOW);
+            digitalWrite(pins.cover_close, HIGH);
             delay(100);
-            digitalWrite(pins.cover_open, HIGH);
+            digitalWrite(pins.cover_open, LOW);
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
             m_previous_time = now;
             break;
           case Direction::CLOSE:
-            digitalWrite(pins.cover_open, LOW);
+            digitalWrite(pins.cover_open, HIGH);
             delay(100);
-            digitalWrite(pins.cover_close, HIGH);
+            digitalWrite(pins.cover_close, LOW);
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
             m_previous_time = now;
             break;
           case Direction::STOP:
-            digitalWrite(pins.cover_close, LOW);
-            digitalWrite(pins.cover_open, LOW);
+            digitalWrite(pins.cover_close, HIGH);
+            digitalWrite(pins.cover_open, HIGH);
             // Ensure the motor is stopped before saving the position
             delay(200);
             // Save the positions to EEPROM. Disable interrupts to ensure the values get not
