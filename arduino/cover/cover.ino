@@ -334,10 +334,10 @@ void setup()
   Serial.begin(9600);
 
   water.setup();
-  attachInterrupt(digitalPinToInterrupt(Water::pins.water_interrupt), water_isr, FALLING);
+  attachInterrupt(digitalPinToInterrupt(Water::pins.water_interrupt), water_isr, RISING);
 
   cover.setup();
-  attachInterrupt(digitalPinToInterrupt(Cover::pins.cover_interrupt), cover_isr, FALLING);
+  attachInterrupt(digitalPinToInterrupt(Cover::pins.cover_interrupt), cover_isr, RISING);
 
   button.setup();
 }
@@ -346,7 +346,7 @@ static void cover_isr() {
   static unsigned long last_interrupt_time = 0;
   auto interrupt_time = millis();
   // Debounce
-  if (interrupt_time - last_interrupt_time > 40)
+  if (interrupt_time - last_interrupt_time > 10)
   {
     cover.step();
   }
@@ -357,7 +357,7 @@ static void water_isr() {
   static unsigned long last_interrupt_time = 0;
   auto interrupt_time = millis();
   // Debounce
-  if (interrupt_time - last_interrupt_time > 40)
+  if (interrupt_time - last_interrupt_time > 50)
   {
     water.step();
   }
