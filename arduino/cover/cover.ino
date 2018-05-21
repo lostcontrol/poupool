@@ -86,18 +86,25 @@ class Cover {
 
     void ensure_consistency(unsigned long now) {
       if (m_direction != Direction::STOP) {
+        // Rotation/pulse check
         if (now - m_previous_time > 500) {
           const auto position = get_position();
-          // The motor is supposed to generate 3000 pulses/min so we should get around 40 pulses
-          // during 500 ms.
-          if (abs(position - m_previous_position) < 30) {
+          // The motor is supposed to generate 3000 pulses/min so we should get around 25 pulses
+          // during 500 ms. At startup, we have seen ~18 pulses for 500 ms and then 25 pulses.
+          if (abs(position - m_previous_position) < 10) {
             // Emergency stop
-            m_direction = Direction::STOP;
-            Serial.println(F("emergency stop"));
-            Serial.println(F("***"));
+            emergency_stop();
           }
           m_previous_position = position;
           m_previous_time = now;
+        }
+        // Position consistency
+        if (m_set_limits == SetLimit::NONE) {
+          const auto position = get_position();
+          if (position < m_position.close || position > m_position.open) {
+            // Emergency stop
+            emergency_stop();
+          }
         }
       }
     }
@@ -195,6 +202,13 @@ class Cover {
     };
 
   private:
+    void emergency_stop() {
+      // Emergency stop
+      m_direction = Direction::STOP;
+      Serial.println(F("emergency stop"));
+      Serial.println(F("***"));
+    }
+
     long get_position() const {
       // m_position.position is a long (4 bytes) which is updated in the ISR and read in the main
       // loop. We need to disable the interruptions when reading it in order to avoid getting
