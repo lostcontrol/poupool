@@ -110,12 +110,12 @@ class Cover {
       const auto position = get_position();
       switch (direction) {
         case Direction::OPEN:
-          if (m_set_limits || position < m_position.open) {
+          if (m_set_limits != SetLimit::NONE || position < m_position.open) {
             m_direction = Direction::OPEN;
           }
           break;
         case Direction::CLOSE:
-          if (m_set_limits || position > m_position.close) {
+          if (m_set_limits != SetLimit::NONE || position > m_position.close) {
             m_direction = Direction::CLOSE;
           }
           break;
@@ -129,15 +129,27 @@ class Cover {
       const auto position = get_position();
       switch (direction) {
         case Direction::OPEN:
-          m_set_limits = true;
-          m_position.open = position;
+          m_set_limits = SetLimit::OPEN;
           break;
         case Direction::CLOSE:
-          m_set_limits = true;
-          m_position.close = position;
+          m_set_limits = SetLimit::CLOSE;
           break;
         case Direction::STOP:
-          m_set_limits = false;
+          switch (m_set_limits) {
+            case SetLimit::OPEN:
+              m_position.open = position;
+              break;
+            case SetLimit::CLOSE:
+              m_position.close = position;
+              break;
+            case SetLimit::NONE:
+              break;
+          }
+          m_set_limits = SetLimit::NONE;
+          // Save settings to EEPROM. Update will not touch the EEPROM if the data is the same so
+          // it's safe to put it here.
+          InterruptGuard _();
+          EEPROM.updateBlock(0, m_position);
           break;
       }
     }
@@ -153,13 +165,13 @@ class Cover {
       switch (m_direction) {
         case Direction::OPEN:
           ++m_position.position;
-          if (!m_set_limits && m_position.position >= m_position.open) {
+          if (m_set_limits == SetLimit::NONE && m_position.position >= m_position.open) {
             m_direction = Direction::STOP;
           }
           break;
         case Direction::CLOSE:
           --m_position.position;
-          if (!m_set_limits && m_position.position <= m_position.close) {
+          if (m_set_limits == SetLimit::NONE && m_position.position <= m_position.close) {
             m_direction = Direction::STOP;
           }
           break;
@@ -178,6 +190,11 @@ class Cover {
     }
 
   private:
+    enum class SetLimit : byte {
+      OPEN, CLOSE, NONE,
+    };
+
+  private:
     long get_position() const {
       // m_position.position is a long (4 bytes) which is updated in the ISR and read in the main
       // loop. We need to disable the interruptions when reading it in order to avoid getting
@@ -192,7 +209,7 @@ class Cover {
     unsigned long m_previous_time = 0;
     Direction m_previous_direction = Direction::STOP;
     volatile Direction m_direction = Direction::STOP;
-    volatile bool m_set_limits = false;
+    volatile SetLimit m_set_limits = SetLimit::NONE;
 };
 
 class Button {
@@ -212,14 +229,16 @@ class Button {
 
     void setup() {
       constexpr InputDebounce::SwitchType type = InputDebounce::ST_NORMALLY_CLOSED;
+      constexpr unsigned long limits_delay = 2000;
+
       m_open.registerCallbacks(open_pressed, open_close_released);
       m_open.setup(pins.button_open, DEBOUNCE_DELAY, InputDebounce::PIM_INT_PULL_UP_RES, 0, type);
       m_close.registerCallbacks(close_pressed, open_close_released);
       m_close.setup(pins.button_close, DEBOUNCE_DELAY, InputDebounce::PIM_INT_PULL_UP_RES, 0, type);
       m_save_open.registerCallbacks(nullptr, save_open_close_released, save_open_pressed);
-      m_save_open.setup(pins.button_save_open, DEBOUNCE_DELAY, InputDebounce::PIM_INT_PULL_UP_RES, 0, type);
+      m_save_open.setup(pins.button_save_open, DEBOUNCE_DELAY, InputDebounce::PIM_INT_PULL_UP_RES, limits_delay, type);
       m_save_close.registerCallbacks(nullptr, save_open_close_released, save_close_pressed);
-      m_save_close.setup(pins.button_save_close, DEBOUNCE_DELAY, InputDebounce::PIM_INT_PULL_UP_RES, 0, type);
+      m_save_close.setup(pins.button_save_close, DEBOUNCE_DELAY, InputDebounce::PIM_INT_PULL_UP_RES, limits_delay, type);
     }
 
     void process(unsigned long now) {
@@ -242,11 +261,11 @@ class Button {
       s_cover->set_direction(Cover::Direction::STOP);
     }
 
-    static void save_open_pressed(uint8_t pin) {
+    static void save_open_pressed(uint8_t pin, unsigned long duration) {
       s_cover->set_limit(Cover::Direction::OPEN);
     }
 
-    static void save_close_pressed(uint8_t pin) {
+    static void save_close_pressed(uint8_t pin, unsigned long duration) {
       s_cover->set_limit(Cover::Direction::CLOSE);
     }
 
