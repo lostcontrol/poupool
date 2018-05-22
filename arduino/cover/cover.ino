@@ -113,7 +113,7 @@ class Cover {
       return m_direction;
     }
 
-    bool set_direction(Direction direction) {
+    void set_direction(Direction direction) {
       const auto position = get_position();
       switch (direction) {
         case Direction::OPEN:
@@ -295,7 +295,7 @@ class Button {
     InputDebounce m_save_close;
 };
 
-static Cover* Button::s_cover = nullptr;
+Cover* Button::s_cover = nullptr;
 
 class Water {
   public:
