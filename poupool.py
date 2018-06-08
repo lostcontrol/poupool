@@ -272,6 +272,8 @@ def test(args, devices):
     read_test(devices.get_sensor("temperature_air"))
     read_test(devices.get_sensor("temperature_ncc"))
     read_test(devices.get_sensor("tank"))
+    read_test(devices.get_sensor("ph"))
+    read_test(devices.get_sensor("orp"))
 
 
 def main(args, devices):
