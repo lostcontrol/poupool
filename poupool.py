@@ -339,3 +339,7 @@ if __name__ == '__main__':
         # Turn off all the devices on exit
         for device in itertools.chain(devices.get_pumps(), devices.get_valves()):
             device.off()
+        # Ensure all the pins are configured back as inputs
+        if not args.fake_devices:
+            import RPi.GPIO as GPIO
+            GPIO.cleanup()
