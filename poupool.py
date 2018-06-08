@@ -264,7 +264,7 @@ def test(args, devices):
 
     toggle_test(devices.get_valve("light"))
 
-    toggle_test(devices.get_valve("heater"))
+    # toggle_test(devices.get_valve("heater"))
     toggle_test(devices.get_valve("heating"))
 
     read_test(devices.get_sensor("temperature_pool"))
