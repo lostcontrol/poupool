@@ -45,7 +45,7 @@ def setup_gpio(registry, gpio):
 
 
 def setup_rpi(registry):
-    from controller.device import TempSensorDevice, TankSensorDevice, ArduinoDevice, EZOSensorDevice
+    from controller.device import TempSensorDevice, TankSensorDevice, ArduinoDevice
 
     # Relay
     import RPi.GPIO as GPIO
@@ -57,67 +57,12 @@ def setup_rpi(registry):
     # With a gain of 2/3 and a sensor output of 0.25V-5V, the values should be around 83 and 1665
     registry.add_sensor(TankSensorDevice("tank", adc, 0, 2 / 3, 83, 1665))
 
-    from controller.device import Device, SensorDevice
-
-    class FakeRandomSensor(SensorDevice):
-        def __init__(self, name, min, max):
-            super().__init__(name)
-            self.__min = min
-            self.__max = max
-
-        @property
-        def value(self):
-            import random
-            return random.uniform(self.__min, self.__max)
-
-    class FakeArduino(Device):
-
-        def __init__(self, name):
-            super().__init__(name)
-            self.__cover_position = 0
-            self.__cover_direction = 0
-            self.__water_counter = 0
-
-        @property
-        def cover_position(self):
-            if self.__cover_direction == 1:
-                self.__cover_position += 40
-            elif self.__cover_direction == -1:
-                self.__cover_position -= 40
-            self.__cover_position = min(max(self.__cover_position, 0), 100)
-            return self.__cover_position
-
-        def cover_open(self):
-            self.__cover_direction = 1
-
-        def cover_close(self):
-            self.__cover_direction = -1
-
-        def cover_stop(self):
-            self.__cover_direction = 0
-
-        @property
-        def water_counter(self):
-            self.__water_counter += 1
-            return self.__water_counter
-
-        def off(self):
-            self.cover_stop()
-
-
-#     # pH, ORP
-#     registry.add_sensor(EZOSensorDevice("ph", "/dev/ezo_ph"))
-#     registry.add_sensor(EZOSensorDevice("orp", "/dev/ezo_orp"))
-#
-#     # Arduino (cover, water)
-#     registry.add_valve(ArduinoDevice("arduino", "/dev/arduino"))
-
     # pH, ORP
-    registry.add_sensor(FakeRandomSensor("ph", 6.5, 8))
-    registry.add_sensor(FakeRandomSensor("orp", 640, 800))
+    registry.add_sensor(EZOSensorDevice("ph", "/dev/ezo_ph"))
+    registry.add_sensor(EZOSensorDevice("orp", "/dev/ezo_orp"))
 
-    # Arduino
-    registry.add_valve(FakeArduino("arduino"))
+    # Arduino (cover, water)
+    registry.add_valve(ArduinoDevice("arduino", "/dev/arduino"))
 
     # 1-wire
     # 28-031634d04aff
