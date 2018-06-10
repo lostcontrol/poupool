@@ -45,7 +45,7 @@ def setup_gpio(registry, gpio):
 
 
 def setup_rpi(registry):
-    from controller.device import TempSensorDevice, TankSensorDevice, ArduinoDevice
+    from controller.device import TempSensorDevice, TankSensorDevice, ArduinoDevice, EZOSensorDevice
 
     # Relay
     import RPi.GPIO as GPIO
