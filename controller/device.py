@@ -123,7 +123,6 @@ class TempSensorDevice(SensorDevice):
 
     @property
     def value(self):
-        data = None
         # Retry up to 3 times
         try:
             for _ in range(3):
@@ -131,19 +130,21 @@ class TempSensorDevice(SensorDevice):
                 if len(raw) == 2:
                     crc, data = raw
                     if crc.endswith("YES"):
-                        break
+                        logger.debug("Temp sensor raw data: %s" % str(data))
+                        # CRC valid, read the data
+                        match = TempSensorDevice.CRE.search(data)
+                        temperature = int(match.group(1)) / 1000. + self.__offset if match else None
+                        # Range check, sometimes bad values pass the CRC check
+                        if -20 < temperature < 80:
+                            return temperature
+                        else:
+                            logger.debug("Temp outside range: %f" % temperature)
                     else:
                         logger.debug("Bad CRC: %s" % str(raw))
                 time.sleep(0.1)
-            else:
-                return None
         except OSError:
             logger.exception("Unable to read temperature (%s)" % self.name)
-            return None
-        logger.debug("Temp sensor raw data: %s" % str(data))
-        # CRC valid, read the data
-        match = TempSensorDevice.CRE.search(data)
-        return int(match.group(1)) / 1000. + self.__offset if match else None
+        return None
 
 
 class TankSensorDevice(SensorDevice):
