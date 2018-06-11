@@ -1,6 +1,7 @@
 // Requires CmdParser, InputDebounce and EEPROMex
 // Uncomment _EEPROMEX_DEBUG in EEPROMex.cpp to avoid the max EEPROM write limit
 
+#include <avr/wdt.h>
 #include <CmdParser.hpp>
 #include <InputDebounce.h>
 #include <EEPROMex.h>
@@ -24,9 +25,9 @@ class Cover {
     } pins = Pins{};
 
     struct Position {
-      volatile long position = 0;
-      volatile long close = 0;
-      volatile long open = 0;
+      long position = 0;
+      long close = 0;
+      long open = 0;
     };
 
     enum class Direction : byte {
@@ -38,7 +39,9 @@ class Cover {
     }
 
     void reset() {
-      m_position = {};
+      m_position.position = 0;
+      m_position.close = 0;
+      m_position.open = 0;
     }
 
     void setup() {
@@ -54,17 +57,17 @@ class Cover {
       if (m_direction != m_previous_direction) {
         switch (m_direction) {
           case Direction::OPEN:
-            digitalWrite(pins.cover_close, HIGH);
+            digitalWrite(pins.cover_close, LOW);
             delay(100);
-            digitalWrite(pins.cover_open, LOW);
+            digitalWrite(pins.cover_open, HIGH);
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
             m_previous_time = now;
             break;
           case Direction::CLOSE:
-            digitalWrite(pins.cover_open, HIGH);
+            digitalWrite(pins.cover_open, LOW);
             delay(100);
-            digitalWrite(pins.cover_close, LOW);
+            digitalWrite(pins.cover_close, HIGH);
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
             m_previous_time = now;
@@ -73,10 +76,10 @@ class Cover {
             digitalWrite(pins.cover_close, HIGH);
             digitalWrite(pins.cover_open, HIGH);
             // Ensure the motor is stopped before saving the position
-            delay(200);
+            delay(500);
             // Save the positions to EEPROM. Disable interrupts to ensure the values get not
             // updated by ISR during the process
-            InterruptGuard _();
+            InterruptGuard _{};
             EEPROM.updateBlock(0, m_position);
             break;
         }
@@ -155,7 +158,7 @@ class Cover {
           m_set_limits = SetLimit::NONE;
           // Save settings to EEPROM. Update will not touch the EEPROM if the data is the same so
           // it's safe to put it here.
-          InterruptGuard _();
+          InterruptGuard _{};
           EEPROM.updateBlock(0, m_position);
           break;
       }
@@ -213,12 +216,12 @@ class Cover {
       // m_position.position is a long (4 bytes) which is updated in the ISR and read in the main
       // loop. We need to disable the interruptions when reading it in order to avoid getting
       // inconsistent values (e.g. half of the bytes updated by the ISR)
-      InterruptGuard _();
+      InterruptGuard _{};
       return m_position.position;
     }
 
   private:
-    Position m_position;
+    volatile Position m_position;
     long m_previous_position = 0;
     unsigned long m_previous_time = 0;
     Direction m_previous_direction = Direction::STOP;
@@ -308,7 +311,7 @@ class Water {
     }
 
     unsigned long get_counter() const {
-      InterruptGuard _();
+      InterruptGuard _{};
       return m_water_counter;
     }
 
@@ -320,10 +323,75 @@ class Water {
     volatile unsigned long m_water_counter = 0;
 };
 
+class HeartBeat {
+  public:
+    HeartBeat(int limit, int led = LED_BUILTIN) : m_led{led}, m_limit{limit} {}
+
+    void setup() {
+      pinMode(m_led, OUTPUT);
+    }
+
+    void tick() {
+      if (++m_counter > m_limit) {
+        digitalWrite(m_led, m_state ? HIGH : LOW);
+        m_state = !m_state;
+        m_counter = 0;
+      }
+    }
+
+  private:
+    const int m_led;
+    const int m_limit;
+    int m_counter = 0;
+    bool m_state = false;
+};
+
+template<typename T, int S>
+class ReadBuffer {
+  public:
+    bool add(byte b) {
+      if (b == '\r') {
+        // Ignore carriage return
+        return false;
+      } else if (m_position == (S - 1)) {
+        // If the buffer is full, we write a null character
+        // and let CmdParser deal with it.
+        m_buffer[m_position++] = 0;
+        return true;
+      } else if (b == '\n') {
+        // CmdParser requires a null character at the end.
+        m_buffer[m_position++] = 0;
+        return true;
+      } else {
+        m_buffer[m_position++] = b;
+        return false;
+      }
+    }
+
+    void clear() {
+      memset(m_buffer, 0, S * sizeof(T));
+      m_position = 0;
+    }
+
+    T* get_buffer() const {
+      return m_buffer;
+    }
+
+    constexpr int get_size() const {
+      return S;
+    }
+
+  private:
+    int m_position = 0;
+    T m_buffer[S] = {0};
+};
+
+ReadBuffer<uint8_t, 32> buffer;
 CmdParser cmdParser;
 Water water;
 Cover cover;
 Button button{&cover};
+HeartBeat heartbeat{5000};
 
 void setup()
 {
@@ -340,6 +408,11 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(Cover::pins.cover_interrupt), cover_isr, RISING);
 
   button.setup();
+
+  heartbeat.setup();
+
+  // Activate watchdog
+  wdt_enable(WDTO_1S);
 }
 
 static void cover_isr() {
@@ -366,12 +439,16 @@ static void water_isr() {
 
 void loop()
 {
+  heartbeat.tick();
+
+  // Refresh watchdog
+  wdt_reset();
+
   // Read from serial
   if (Serial.available() > 0) {
     // Use own buffer from serial input
-    CmdBuffer<32> buffer;
-    if (buffer.readFromSerial(&Serial, 30000)) {
-      if (cmdParser.parseCmd(&buffer) != CMDPARSER_ERROR) {
+    if (buffer.add(Serial.read())) {
+      if (cmdParser.parseCmd(buffer.get_buffer(), buffer.get_size()) != CMDPARSER_ERROR) {
         if (cmdParser.equalCommand("open")) {
           Serial.println(F("open"));
           cover.set_direction(Cover::Direction::OPEN);
@@ -394,11 +471,9 @@ void loop()
           Serial.println(F("reset"));
           cover.reset();
         }
-        Serial.println(F("***"));
-      } else {
-        Serial.println(F("error"));
-        Serial.println(F("***"));
       }
+      Serial.println(F("***"));
+      buffer.clear();
     }
   }
 
