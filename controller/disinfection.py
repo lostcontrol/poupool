@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class PWM(PoupoolActor):
 
-    def __init__(self, name, pump, period=10):
+    def __init__(self, name, pump, period=60):
         super().__init__()
         self.__name = name
         self.__pump = pump
@@ -36,7 +36,7 @@ class PWM(PoupoolActor):
             duty_off = self.__period - duty_on
             duty = duty_on if self.__state else duty_off
             # Only print every 5 seconds
-            if int(now) % 5 == 0:
+            if int(now) % 10 == 0:
                 logger.debug("%s duty (on/off): %.1f/%.1f state: %d duration: %.1f" %
                              (self.__name, duty_on, duty_off, self.__state, self.__duration))
             if self.__state:
@@ -201,4 +201,4 @@ class Disinfection(PoupoolActor):
     def on_enter_running_waiting(self):
         logger.info("Entering waiting state")
         self.__encoder.disinfection_state("waiting")
-        self._proxy.do_delay(10, "measure")
+        self._proxy.do_delay(5 * 60, "measure")
