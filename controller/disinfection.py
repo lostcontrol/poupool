@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class PWM(PoupoolActor):
 
-    def __init__(self, name, pump, period=60):
+    def __init__(self, name, pump, period=300):
         super().__init__()
         self.__name = name
         self.__pump = pump
@@ -25,7 +25,7 @@ class PWM(PoupoolActor):
         self.__security_reset = datetime.now() + timedelta(days=1)
         self.value = 0.0
 
-    @repeat(delay=1)
+    @repeat(delay=5)
     def do_run(self):
         now = time.time()
         if self.__last:
@@ -35,10 +35,8 @@ class PWM(PoupoolActor):
             duty_on = self.value * self.__period
             duty_off = self.__period - duty_on
             duty = duty_on if self.__state else duty_off
-            # Only print every 5 seconds
-            if int(now) % 10 == 0:
-                logger.debug("%s duty (on/off): %.1f/%.1f state: %d duration: %.1f" %
-                             (self.__name, duty_on, duty_off, self.__state, self.__duration))
+            logger.debug("%s duty (on/off): %.1f/%.1f state: %d duration: %.1f" %
+                         (self.__name, duty_on, duty_off, self.__state, self.__duration))
             if self.__state:
                 self.__security_duration.update(datetime.now())
                 if self.__duration > duty_on:
