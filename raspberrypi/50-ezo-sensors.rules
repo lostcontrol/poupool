@@ -1,2 +1,2 @@
-ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", ATTRS{serial}=="DA00TN9K", SYMLINK+="ezo_ph"
-ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", ATTRS{serial}=="DA00TN8M", SYMLINK+="ezo_orp"
+ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", ATTRS{serial}=="DA00TN9K", SYMLINK+="ezo_ph", TAG+="systemd"
+ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", ATTRS{serial}=="DA00TN8M", SYMLINK+="ezo_orp", TAG+="systemd"

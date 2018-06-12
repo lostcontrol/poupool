@@ -5,13 +5,19 @@
 Description=Poupool
 After=multi-user.target
 Requires=mosquitto.service
+# External devices
+Wants=dev-arduino.device
+After=dev-arduino.device
+Wants=dev-ezo_ph.device
+After=dev-ezo_ph.device
+Wants=dev-ezo_orp.device
+After=dev-ezo_orp.device
 
 [Service]
 Type=simple
 User=pi
 ExecStart=/home/pi/poupool/env/bin/python /home/pi/poupool/poupool.py \
-            --log-config=/home/pi/poupool/logging-file.conf \
-            --no-disinfection
+            --log-config=/home/pi/poupool/logging-file.conf
 WorkingDirectory=/home/pi/poupool
 Restart=on-failure
 
