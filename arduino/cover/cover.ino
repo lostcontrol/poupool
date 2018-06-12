@@ -222,11 +222,12 @@ class Cover {
 
   private:
     volatile Position m_position;
+    volatile Direction m_direction = Direction::STOP;
+    volatile SetLimit m_set_limits = SetLimit::NONE;
+
     long m_previous_position = 0;
     unsigned long m_previous_time = 0;
     Direction m_previous_direction = Direction::STOP;
-    volatile Direction m_direction = Direction::STOP;
-    volatile SetLimit m_set_limits = SetLimit::NONE;
 };
 
 class Button {
@@ -358,6 +359,9 @@ class ReadBuffer {
         // and let CmdParser deal with it.
         m_buffer[m_position++] = 0;
         return true;
+      } else if (m_position >= S) {
+        // Ignore, need to call clear()
+        return true;
       } else if (b == '\n') {
         // CmdParser requires a null character at the end.
         m_buffer[m_position++] = 0;
@@ -373,7 +377,7 @@ class ReadBuffer {
       m_position = 0;
     }
 
-    T* get_buffer() const {
+    T* get_buffer() {
       return m_buffer;
     }
 
