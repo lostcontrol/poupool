@@ -397,7 +397,7 @@ class Filtration(PoupoolActor):
         self.__eco_mode.set_current(self.__eco_mode.stir_duration)
         self.__disinfection_start()
         if not self.__eco_mode.elapsed_on():
-            self.__devices.get_pump("variable").speed(1)
+            self.__devices.get_pump("variable").speed(3)
             self.__devices.get_pump("boost").on()
         else:
             self._proxy.eco_normal()
