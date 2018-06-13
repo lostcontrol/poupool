@@ -76,7 +76,7 @@ class Heater(PoupoolActor):
 class Heating(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
-    HYSTERESIS_DOWN = 0.5
+    HYSTERESIS_DOWN = 0.0
     HYSTERESIS_UP = 0.5
     RECOVER_PERIOD = 20 * 60
 
