@@ -3,7 +3,7 @@ sitemap default label="Menu principal"
     Frame label="Maison" {
         Text label="Poupool" icon="outdoorlight" {
             Frame label="Mode" icon="computer" {
-                Switch item=Poupool_Mode icon="settings" mappings=[eco="Eco", standby="Veille", overflow="Débordement"]
+                Selection item=Poupool_Mode icon="settings" mappings=[eco="Eco", standby="Veille", overflow="Débordement"]
                 Text item=Poupool_State icon="info"
                 Setpoint item=Poupool_Heating_Setpoint icon="temperature" minValue=10 maxValue=30 step=0.5
                 Text item=Poupool_Temperature_Pool icon="temperature"
