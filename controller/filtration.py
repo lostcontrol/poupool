@@ -469,14 +469,18 @@ class Filtration(PoupoolActor):
     def on_enter_eco_heating(self):
         logger.info("Entering eco_heating state")
         self.__encoder.filtration_state("eco_heating")
-        self.__eco_mode.set_current(self.__eco_mode.on_duration)
+        self.__eco_mode.clear()
         self.__disinfection_start()
         self.__devices.get_pump("variable").speed(2)
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco_heating(self):
+        now = datetime.now()
         # We are running at speed 2 so count a bit more than 1 for the filteration
-        self.__eco_mode.update(datetime.now(), 1.1)
+        self.__eco_mode.update(now, 1.1)
+        # Check if we have to reset the filtration per day counter but do not react
+        # since heating has an higher priority.
+        self.__eco_mode.check_reset(now)
 
     def on_exit_eco_heating(self):
         self.get_actor("Heating").wait()
