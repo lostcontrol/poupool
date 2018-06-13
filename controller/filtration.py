@@ -395,8 +395,8 @@ class Filtration(PoupoolActor):
         logger.info("Entering eco_stir state")
         self.__encoder.filtration_state("eco_stir")
         self.__eco_mode.set_current(self.__eco_mode.stir_duration)
-        self.__disinfection_start()
         if not self.__eco_mode.elapsed_on():
+            self.__actor_stop("Disinfection")
             self.__devices.get_pump("variable").speed(3)
             self.__devices.get_pump("boost").on()
         else:
@@ -416,12 +416,14 @@ class Filtration(PoupoolActor):
 
     def on_exit_eco_stir(self):
         self.__devices.get_pump("boost").off()
+        self.__devices.get_pump("variable").speed(1)
 
     @do_repeat()
     def on_enter_eco_normal(self):
         logger.info("Entering eco_normal state")
         self.__encoder.filtration_state("eco_normal")
         self.__eco_mode.set_current(self.__eco_mode.on_duration)
+        self.__disinfection_start()
         self.__devices.get_pump("variable").speed(1)
 
     @repeat(delay=STATE_REFRESH_DELAY)
@@ -446,7 +448,7 @@ class Filtration(PoupoolActor):
         logger.info("Entering eco_tank state")
         self.__encoder.filtration_state("eco_tank")
         self.__eco_mode.set_current(self.__eco_mode.tank_duration)
-        self.__disinfection_start()
+        self.__actor_stop("Disinfection")
         self.__devices.get_valve("tank").on()
 
     @repeat(delay=STATE_REFRESH_DELAY)
@@ -468,6 +470,7 @@ class Filtration(PoupoolActor):
         logger.info("Entering eco_heating state")
         self.__encoder.filtration_state("eco_heating")
         self.__eco_mode.set_current(self.__eco_mode.on_duration)
+        self.__disinfection_start()
         self.__devices.get_pump("variable").speed(2)
 
     @repeat(delay=STATE_REFRESH_DELAY)
