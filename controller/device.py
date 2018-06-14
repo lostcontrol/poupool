@@ -159,11 +159,17 @@ class TankSensorDevice(SensorDevice):
 
     @property
     def value(self):
-        values = 0
-        for i in range(10):
-            values += self.__adc.read_adc(self.__channel, gain=self.__gain)
-            time.sleep(0.05)
-        value = values / 10
+        values = []
+        for _ in range(10):
+            try:
+                values.append(self.__adc.read_adc(self.__channel, gain=self.__gain))
+                time.sleep(0.05)
+            except OSError:
+                logger.exception("Unable to read ADC %s" % self.name)
+                time.sleep(0.5)
+        # In case we got really no readings, we return 0 in order for the system to go into
+        # emergency stop.
+        value = sum(values) / len(values) if values else 0
         logger.debug("Tank sensor average ADC=%.2f" % value)
         return constrain(mapping(value, self.__low, self.__high, 0, 100), 0, 100)
 
