@@ -44,7 +44,7 @@ String Poupool_Disinfection_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/
 String Poupool_Disinfection_FreeChlorine "Chlore libre" {mqtt=">[poupool:/settings/disinfection/free_chlorine:command:*:${command}]", autoupdate="false"}
 Number Poupool_Disinfection_PH_Setpoint "pH consigne [%.1f]" {mqtt="<[poupool:/settings/disinfection/ph/setpoint:state:default],>[poupool:/settings/disinfection/ph/setpoint:command:*:default]"}
 Number Poupool_Disinfection_PH_Pterm "pH valeur P [%.2f]" {mqtt="<[poupool:/settings/disinfection/ph/pterm:state:default],>[poupool:/settings/disinfection/ph/pterm:command:*:default]"}
-Number Poupool_Disinfection_PH "pH [%.1f]" {mqtt="<[poupool:/status/disinfection/ph/value:state:default]"}
+Number Poupool_Disinfection_PH "pH [%.2f]" {mqtt="<[poupool:/status/disinfection/ph/value:state:default]"}
 Number Poupool_Disinfection_ORP_Setpoint "ORP consigne [%d]" (Poupool_Disinfection_ORP_Measurement) {mqtt="<[poupool:/status/disinfection/orp/setpoint:state:default]"}
 Number Poupool_Disinfection_ORP_Pterm "ORP valeur P [%.2f]" {mqtt="<[poupool:/settings/disinfection/orp/pterm:state:default],>[poupool:/settings/disinfection/orp/pterm:command:*:default]"}
 Number Poupool_Disinfection_ORP "ORP [%d]" (Poupool_Disinfection_ORP_Measurement) {mqtt="<[poupool:/status/disinfection/orp/value:state:default]"}
