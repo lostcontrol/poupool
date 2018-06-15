@@ -43,6 +43,9 @@ sitemap default label="Menu principal"
                     }
                     Frame label="Statistiques" icon="info" {
                         Text label="Températures" icon="temperature" {
+                            Frame label="Température piscine (24h)" {
+                                Chart item=Poupool_Temperature_Pool period=d refresh=60000
+                            }
                             Frame label="Températures (24h)" {
                                 Chart item=Poupool_Temperature period=d refresh=60000
                             }
