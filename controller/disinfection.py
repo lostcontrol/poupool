@@ -21,7 +21,7 @@ class PWM(PoupoolActor):
         self.__duration = 0
         self.__state = False
         self.__security_duration = Timer("PWM for %s" % name)
-        self.__security_duration.delay = timedelta(seconds=3600)
+        self.__security_duration.delay = timedelta(hours=2)
         self.__security_reset = datetime.now() + timedelta(days=1)
         self.value = 0.0
 
