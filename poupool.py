@@ -5,6 +5,8 @@ import logging
 import logging.config
 import argparse
 import itertools
+import signal
+import sys
 
 from controller.arduino import Arduino
 from controller.filtration import Filtration
@@ -221,6 +223,10 @@ def test(args, devices):
     read_test(devices.get_sensor("orp"))
 
 
+# Main running flag
+running = True
+
+
 def main(args, devices):
     dispatcher = Dispatcher()
 
@@ -249,9 +255,14 @@ def main(args, devices):
 
     mqtt.do_start()
 
-    # Wait forever
-    while True:
-        time.sleep(1000)
+    # Wait forever or until SIGTERM is caught
+    while running:
+        time.sleep(1)
+
+
+def sigterm_handler(signo, stack_frame):
+    global running
+    running = False
 
 
 if __name__ == '__main__':
@@ -270,6 +281,9 @@ if __name__ == '__main__':
     else:
         logging.error("Log configuration file (%s) cannot be used" % args.log_config)
 
+    # Handle SIGTERM nicely. It is used by systemd to stop us.
+    signal.signal(signal.SIGTERM, sigterm_handler)
+
     devices = DeviceRegistry()
     try:
         if args.fake_devices:
@@ -281,8 +295,9 @@ if __name__ == '__main__':
         else:
             main(args, devices)
     except KeyboardInterrupt:
-        pykka.ActorRegistry.stop_all()
+        pass
     finally:
+        pykka.ActorRegistry.stop_all()
         # Turn off all the devices on exit
         for device in itertools.chain(devices.get_pumps(), devices.get_valves()):
             device.off()
