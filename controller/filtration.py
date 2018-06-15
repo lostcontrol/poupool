@@ -122,6 +122,7 @@ class Filtration(PoupoolActor):
               {"name": "overflow", "initial": "normal", "children": [
                   "boost",
                   "normal"]},
+              "comfort",
               "reload",
               {"name": "wash", "initial": "backwash", "children": [
                   "backwash",
@@ -148,7 +149,8 @@ class Filtration(PoupoolActor):
                                       initial="stop", before_state_change=[self.__before_state_change])
         # Transitions
         # Eco
-        self.__machine.add_transition("eco", ["standby", "overflow", "opening"], "closing")
+        self.__machine.add_transition(
+            "eco", ["standby", "overflow", "comfort", "opening"], "closing")
         # Special transition from stop to eco because we need to start the tank FSM. However, we
         # cannot start it on_exit of stop because when going from stop to wintering, the tank will
         # remain in the stop state.
@@ -164,17 +166,19 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("opened", "opening_overflow", "overflow_boost")
         # Standby
         self.__machine.add_transition("standby", ["eco", "closing"], "opening_standby")
-        self.__machine.add_transition("standby", ["overflow", "reload"], "standby")
+        self.__machine.add_transition("standby", ["overflow", "comfort", "reload"], "standby")
         self.__machine.add_transition("standby", "standby_boost", "standby_normal")
         # Overflow
         self.__machine.add_transition(
             "overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
         self.__machine.add_transition(
-            "overflow", ["standby", "reload"], "overflow", unless="tank_is_low")
+            "overflow", ["standby", "comfort", "reload"], "overflow", unless="tank_is_low")
         self.__machine.add_transition("overflow", "overflow_boost", "overflow_normal")
+        # Heat + overflow
+        self.__machine.add_transition("comfort", ["standby", "overflow"], "comfort")
         # Stop
         self.__machine.add_transition(
-            "stop", ["eco", "standby", "overflow", "opening", "closing", "wash", "wintering"], "stop")
+            "stop", ["eco", "standby", "overflow", "comfort", "opening", "closing", "wash", "wintering"], "stop")
         # (Back)wash
         self.__machine.add_transition(
             "wash", ["eco_normal", "eco_waiting"], "wash", conditions="tank_is_high")
@@ -542,6 +546,28 @@ class Filtration(PoupoolActor):
         factor = 1 if self.__speed_standby > 0 else 0
         self.__eco_mode.update(now, factor)
 
+    @do_repeat()
+    def on_enter_comfort(self):
+        logger.info("Entering comfort state")
+        self.__encoder.filtration_state("comfort")
+        self.__devices.get_valve("gravity").off()
+        self.__devices.get_valve("tank").on()
+        self.__devices.get_pump("variable").speed(2)
+        self.__devices.get_pump("boost").off()
+        self.__disinfection_start()
+
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_comfort(self):
+        now = datetime.now()
+        self.__eco_mode.update(now, 1)
+        actor = self.get_actor("Heating")
+        if not actor.is_forcing().get() and not actor.is_recovering().get():
+            actor.force()
+
+    def on_exit_comfort(self):
+        logger.info("Exiting comfort state")
+        self.get_actor("Heating").wait()
+
     def on_enter_overflow(self):
         logger.info("Entering overflow state")
         self.__disinfection_start()
@@ -574,7 +600,7 @@ class Filtration(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_overflow_normal(self):
         now = datetime.now()
-        self.__eco_mode.update(now, 2)
+        self.__eco_mode.update(now, 2 if self.__speed_overflow > 2 else 1)
 
     def on_enter_wash(self):
         logger.info("Entering wash state")

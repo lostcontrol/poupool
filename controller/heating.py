@@ -80,7 +80,7 @@ class Heating(PoupoolActor):
     HYSTERESIS_UP = 0.5
     RECOVER_PERIOD = 20 * 60
 
-    states = ["stop", "waiting", "heating", "recovering"]
+    states = ["stop", "waiting", "heating", "forcing", "recovering"]
 
     def __init__(self, temperature, encoder, devices):
         super().__init__()
@@ -93,10 +93,12 @@ class Heating(PoupoolActor):
         self.__machine = PoupoolModel(model=self, states=Heating.states, initial="stop")
 
         self.__machine.add_transition("wait", "stop", "waiting")
-        self.__machine.add_transition("heat", "waiting", "heating",
+        self.__machine.add_transition("heat", ["stop", "waiting"], "heating",
                                       conditions="filtration_allow_heating")
-        self.__machine.add_transition("stop", ["waiting", "heating", "recovering"], "stop")
-        self.__machine.add_transition("wait", "heating", "recovering")
+        self.__machine.add_transition("force", ["stop", "waiting"], "forcing")
+        self.__machine.add_transition(
+            "stop", ["waiting", "heating", "forcing", "recovering"], "stop")
+        self.__machine.add_transition("wait", ["heating", "forcing"], "recovering")
         self.__machine.add_transition("wait", "recovering", "waiting")
 
     def __read_temperature(self):
@@ -168,9 +170,19 @@ class Heating(PoupoolActor):
             raise StopRepeatException
 
     def on_exit_heating(self):
+        logger.info("Exiting heating state")
         self.__devices.get_valve("heating").off()
         actor = self.get_actor("Filtration")
         actor.eco()
+
+    def on_enter_forcing(self):
+        logger.info("Entering forcing state")
+        self.__encoder.heating_state("heating")
+        self.__devices.get_valve("heating").on()
+
+    def on_exit_forcing(self):
+        logger.info("Exiting forcing state")
+        self.__devices.get_valve("heating").off()
 
     def on_enter_recovering(self):
         logger.info("Entering recovering state")
