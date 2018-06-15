@@ -57,14 +57,15 @@ class PWM(PoupoolActor):
 
 class PController(object):
 
-    def __init__(self, pterm=0.1):
+    def __init__(self, pterm=0.1, scale=1.0):
         self.setpoint = 0
         self.current = 0
         self.pterm = pterm
+        self.__scale = scale
 
     def compute(self):
         error = self.setpoint - self.current
-        return constrain(self.pterm * error, 0, 1)
+        return constrain((self.pterm * self.__scale) * error, 0, 1)
 
 
 class Disinfection(PoupoolActor):
@@ -98,7 +99,7 @@ class Disinfection(PoupoolActor):
         self.__ph_controller.setpoint = 7
         # ORP
         self.__orp_measures = []
-        self.__orp_controller = PController(pterm=0.01)
+        self.__orp_controller = PController(pterm=1.0, scale=0.01)
         self.__orp_controller.setpoint = 700
         # Chlorine
         self.__cl = PWM.start("cl", self.__devices.get_pump("cl")).proxy()
@@ -177,11 +178,11 @@ class Disinfection(PoupoolActor):
         self.__encoder.disinfection_state("adjusting")
         # pH
         ph = sum(self.__ph_measures) / len(self.__ph_measures)
-        self.__encoder.disinfection_ph_value("%.1f" % ph)
+        self.__encoder.disinfection_ph_value("%.2f" % ph)
         self.__ph_controller.current = ph
         ph_feedback = self.__ph_controller.compute()
         self.__encoder.disinfection_ph_feedback(int(round(ph_feedback * 100)))
-        logger.info("pH: %.1f feedback: %.2f" % (ph, ph_feedback))
+        logger.info("pH: %.2f feedback: %.2f" % (ph, ph_feedback))
         self.__ph.value = ph_feedback
         # ORP/Chlorine
         orp = sum(self.__orp_measures) / len(self.__orp_measures)
