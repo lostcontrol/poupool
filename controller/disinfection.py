@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class PWM(PoupoolActor):
 
-    def __init__(self, name, pump, period=300):
+    def __init__(self, name, pump, period=120):
         super().__init__()
         self.__name = name
         self.__pump = pump
@@ -25,7 +25,7 @@ class PWM(PoupoolActor):
         self.__security_reset = datetime.now() + timedelta(days=1)
         self.value = 0.0
 
-    @repeat(delay=5)
+    @repeat(delay=4)
     def do_run(self):
         now = time.time()
         if self.__last:
@@ -103,7 +103,7 @@ class Disinfection(PoupoolActor):
         self.__orp_controller.setpoint = 700
         # Chlorine
         self.__cl = PWM.start("cl", self.__devices.get_pump("cl")).proxy()
-        self.__free_chlorine = "mid"
+        self.__free_chlorine = "low"
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Disinfection.states, initial="stop")
 
@@ -165,11 +165,11 @@ class Disinfection(PoupoolActor):
         self.__ph_measures = []
         self.__orp_measures = []
 
-    @repeat(delay=2)
+    @repeat(delay=30)
     def do_repeat_running_measuring(self):
         self.__ph_measures.append(self.__devices.get_sensor("ph").value)
         self.__orp_measures.append(self.__devices.get_sensor("orp").value)
-        if len(self.__ph_measures) > 2:
+        if len(self.__ph_measures) > 3:
             self._proxy.adjust()
             raise StopRepeatException
 
@@ -200,4 +200,4 @@ class Disinfection(PoupoolActor):
     def on_enter_running_waiting(self):
         logger.info("Entering waiting state")
         self.__encoder.disinfection_state("treating")
-        self._proxy.do_delay(5 * 60, "measure")
+        self._proxy.do_delay(4 * 60, "measure")
