@@ -4,6 +4,7 @@ import logging
 import re
 import serial
 import io
+import subprocess
 from abc import abstractmethod
 from .util import mapping, constrain
 
@@ -220,6 +221,10 @@ class ArduinoDevice(Device):
 
     def __init__(self, name, port):
         super().__init__(name)
+        # Disable hangup-on-close to avoid having the Arduino resetting when closing the
+        # connection. Useful for debugging and to avoid interrupting a move.
+        # https://playground.arduino.cc/Main/DisablingAutoResetOnSerialConnection
+        subprocess.check_call(["stty", "-F", port, "-hupcl"])
         self.__serial = serial.Serial(port, baudrate=9600, timeout=0.1)
         self.__sio = io.TextIOWrapper(io.BufferedRWPair(self.__serial, self.__serial))
 
