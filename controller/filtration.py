@@ -518,6 +518,7 @@ class Filtration(PoupoolActor):
     def on_enter_standby_boost(self):
         logger.info("Entering standby boost state")
         self.__encoder.filtration_state("standby_boost")
+        self.__devices.get_valve("tank").on()
         self.__devices.get_pump("boost").on()
         self.__devices.get_pump("variable").speed(3)
         self._proxy.do_delay(self.__boost_duration.total_seconds(), "standby")
