@@ -38,6 +38,8 @@ sitemap default label="Menu principal"
                     }
                     Frame label="Désinfection" icon="water" {
                         Text item=Poupool_Disinfection_State icon="info"
+                        Text item=Poupool_Disinfection_PH icon="water"
+                        Text item=Poupool_Disinfection_ORP icon="water"
                     }
                     Frame label="Statistiques" icon="info" {
                         Text label="Températures" icon="temperature" {
