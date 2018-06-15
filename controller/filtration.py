@@ -336,7 +336,9 @@ class Filtration(PoupoolActor):
         position = self.get_actor("Arduino").cover_position().get()
         logger.debug("Cover position is %d" % position)
         if position == 0:
-            self._proxy.closed()
+            # Because of roundings, the cover might still need to move just a little more.
+            # We wait a bit more before exiting the state.
+            self._proxy.do_delay(2, "closed")
             raise StopRepeatException
 
     def on_exit_closing(self):
@@ -360,7 +362,9 @@ class Filtration(PoupoolActor):
         position = self.get_actor("Arduino").cover_position().get()
         logger.debug("Cover position is %d" % position)
         if position == 100:
-            self._proxy.opened()
+            # Because of roundings, the cover might still need to move just a little more.
+            # We wait a bit more before exiting the state.
+            self._proxy.do_delay(2, "opened")
             raise StopRepeatException
 
     def on_exit_opening(self):
