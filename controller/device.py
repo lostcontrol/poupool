@@ -254,20 +254,26 @@ class ArduinoDevice(Device):
 
     def __send(self, value):
         # flush buffer (should be empty but we can receive an "emergency stop")
+        logger.debug("Flushing read buffer")
         read = self.__sio.readline()
         while not read.strip() == "":
             logger.error("Unexpected buffer content: %s" % read.strip())
             read = self.__sio.readline()
         # send
+        logger.debug("Writing '%s' to serial port" % value)
         self.__sio.write(value + "\n")
         self.__sio.flush()
         # receive
+        logger.debug("Reading response")
         response = None
+        counter = 0
         read = self.__sio.readline()
-        while not read.startswith("***"):
+        while not read.startswith("***") and counter < 20:
             # Only keep the last line of the response
             response = read.strip()
             read = self.__sio.readline()
+            counter += 1
+        logger.debug("Received response")
         if read.strip() == "***" and response.startswith(value):
             return response
         else:
