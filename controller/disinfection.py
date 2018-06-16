@@ -25,7 +25,13 @@ class PWM(PoupoolActor):
         self.__security_reset = datetime.now() + timedelta(days=1)
         self.value = 0.0
 
-    @repeat(delay=4)
+    def do_cancel(self):
+        # Clear the security duration counter and last time during a pause
+        self.__security_duration.clear()
+        self.__last = None
+        super().do_cancel()
+
+    @repeat(delay=1)
     def do_run(self):
         now = time.time()
         if self.__last:
@@ -35,8 +41,9 @@ class PWM(PoupoolActor):
             duty_on = self.value * self.__period
             duty_off = self.__period - duty_on
             duty = duty_on if self.__state else duty_off
-            logger.debug("%s duty (on/off): %.1f/%.1f state: %d duration: %.1f" %
-                         (self.__name, duty_on, duty_off, self.__state, self.__duration))
+            if int(now) % 10 == 0:
+                logger.debug("%s duty (on/off): %.1f/%.1f state: %d duration: %.1f" %
+                             (self.__name, duty_on, duty_off, self.__state, self.__duration))
             if self.__state:
                 self.__security_duration.update(datetime.now())
                 if self.__duration > duty_on:
@@ -147,10 +154,12 @@ class Disinfection(PoupoolActor):
         self._proxy.do_delay(300, "run")
 
     def on_enter_running(self):
+        logger.info("Entering running state")
         self.__ph.do_run()
         self.__cl.do_run()
 
     def on_exit_running(self):
+        logger.info("Exiting running state")
         self.__ph.value = 0
         self.__cl.value = 0
         self.__ph.do_cancel()
