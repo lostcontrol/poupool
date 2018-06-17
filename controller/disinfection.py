@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class PWM(PoupoolActor):
 
-    def __init__(self, name, pump, period=120):
+    def __init__(self, name, pump, period=120, min_runtime=6):
         super().__init__()
         self.__name = name
         self.__pump = pump
@@ -23,6 +23,7 @@ class PWM(PoupoolActor):
         self.__security_duration = Timer("PWM for %s" % name)
         self.__security_duration.delay = timedelta(hours=2)
         self.__security_reset = datetime.now() + timedelta(days=1)
+        self.__min_runtime = min_runtime
         self.value = 0.0
 
     def do_cancel(self):
@@ -39,6 +40,11 @@ class PWM(PoupoolActor):
             self.__duration += diff
             self.__duration = constrain(self.__duration, 0, self.__period)
             duty_on = self.value * self.__period
+            # Avoid short commutations
+            if duty_on < self.__min_runtime:
+                duty_on = 0
+            elif duty_on > self.__period - self.__min_runtime:
+                duty_on = self.__period
             duty_off = self.__period - duty_on
             duty = duty_on if self.__state else duty_off
             if int(now) % 10 == 0:
