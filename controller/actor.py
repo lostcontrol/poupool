@@ -3,7 +3,7 @@ import transitions
 #from transitions.extensions import HierarchicalGraphMachine as Machine
 from transitions.extensions import HierarchicalMachine as Machine
 import time
-import datetime
+from datetime import datetime
 import logging
 import functools
 import re
@@ -64,10 +64,10 @@ class PoupoolModel(Machine):
         self.__state_time = None
 
     def __update_state_time(self):
-        self.__state_time = datetime.datetime.now()
+        self.__state_time = datetime.now()
 
     def get_time_in_state(self):
-        return datetime.datetime.now() - self.__state_time
+        return datetime.now() - self.__state_time
 
 
 class PoupoolActor(pykka.ThreadingActor):
@@ -94,13 +94,14 @@ class PoupoolActor(pykka.ThreadingActor):
     def do_delay(self, delay, method, *args, **kwargs):
         assert type(method) == str
         self.__delay_counter += 1
-        self.do_delay_internal(self.__delay_counter, delay, method, *args, **kwargs)
+        end = time.time() + delay
+        self.do_delay_internal(self.__delay_counter, end, method, *args, **kwargs)
 
-    def do_delay_internal(self, counter, delay, method, *args, **kwargs):
+    def do_delay_internal(self, counter, end, method, *args, **kwargs):
         if counter == self.__delay_counter:
-            if delay > 0:
+            if (end - time.time()) > 0:
                 time.sleep(0.1)
-                self._proxy.do_delay_internal(counter, delay - 0.1, method, *args, **kwargs)
+                self._proxy.do_delay_internal(counter, end, method, *args, **kwargs)
             else:
                 func = getattr(self._proxy, method)
                 func(*args, **kwargs)
