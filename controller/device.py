@@ -190,31 +190,38 @@ class EZOSensorDevice(SensorDevice):
         else:
             logger.error("Unable to disable continuous readings for %s" % name)
 
+    def __reconnect(self):
+        self.__serial.close()
+        time.sleep(5)
+        self.__serial.open()
+
     @property
     def value(self):
-        try:
-            # This can block for up to ~1000ms
-            value = self.__send("R")
-            return float(value) if value else None
-        except SensorError:
-            logger.exception("Unable to read sensor %s" % self.name)
-            return None
+        # This can block for up to ~1000ms
+        value = self.__send("R")
+        return float(value) if value else None
 
     def __send(self, value):
-        # send
-        self.__sio.write(value + "\r")
-        self.__sio.flush()
-        # receive
-        response = None
-        read = self.__sio.readline()
-        while not read.startswith("*"):
-            # Only keep the last line of the response
-            response = read.strip()
+        try:
+            # send
+            self.__sio.write(value + "\r")
+            self.__sio.flush()
+            # receive
+            response = None
             read = self.__sio.readline()
-        if read.strip() == "*OK":
-            return response
-        else:
-            raise SensorError("Bad response: %s" % read.strip())
+            while not read.startswith("*"):
+                # Only keep the last line of the response
+                response = read.strip()
+                read = self.__sio.readline()
+            if read.strip() == "*OK":
+                return response
+            else:
+                logger.error("Bad response: %s" % read.strip())
+        except Exception:
+            # We catch everything in the hope that we recover with a reconnect.
+            logger.exception("Serial sensor %s had an error. Reconnecting..." % self.name)
+            self.__reconnect()
+        return None
 
 
 class ArduinoDevice(Device):
@@ -227,6 +234,11 @@ class ArduinoDevice(Device):
         subprocess.check_call(["stty", "-F", port, "-hupcl"])
         self.__serial = serial.Serial(port, baudrate=9600, timeout=0.1)
         self.__sio = io.TextIOWrapper(io.BufferedRWPair(self.__serial, self.__serial))
+
+    def __reconnect(self):
+        self.__serial.close()
+        time.sleep(5)
+        self.__serial.open()
 
     @property
     def cover_position(self):
@@ -253,28 +265,34 @@ class ArduinoDevice(Device):
         self.cover_stop()
 
     def __send(self, value):
-        # flush buffer (should be empty but we can receive an "emergency stop")
-        logger.debug("Flushing read buffer")
-        read = self.__sio.readline()
-        while not read.strip() == "":
-            logger.error("Unexpected buffer content: %s" % read.strip())
+        try:
+            # flush buffer (should be empty but we can receive an "emergency stop")
+            logger.debug("Flushing read buffer")
             read = self.__sio.readline()
-        # send
-        logger.debug("Writing '%s' to serial port" % value)
-        self.__sio.write(value + "\n")
-        self.__sio.flush()
-        # receive
-        logger.debug("Reading response")
-        response = None
-        counter = 0
-        read = self.__sio.readline()
-        while not read.startswith("***") and counter < 20:
-            # Only keep the last line of the response
-            response = read.strip()
+            while not read.strip() == "":
+                logger.error("Unexpected buffer content: %s" % read.strip())
+                read = self.__sio.readline()
+            # send
+            logger.debug("Writing '%s' to serial port" % value)
+            self.__sio.write(value + "\n")
+            self.__sio.flush()
+            # receive
+            logger.debug("Reading response")
+            response = None
+            counter = 0
             read = self.__sio.readline()
-            counter += 1
-        logger.debug("Received response")
-        if read.strip() == "***" and response.startswith(value):
-            return response
-        else:
-            raise SensorError("Bad response: %s" % read.strip())
+            while not read.startswith("***") and counter < 20:
+                # Only keep the last line of the response
+                response = read.strip()
+                read = self.__sio.readline()
+                counter += 1
+            logger.debug("Received response")
+            if read.strip() == "***" and response.startswith(value):
+                return response
+            else:
+                logger.error("Bad response: %s" % read.strip())
+        except Exception:
+            # We catch everything in the hope that we recover with a reconnect.
+            logger.exception("Serial sensor %s had an error. Reconnecting..." % self.name)
+            self.__reconnect()
+        return None
