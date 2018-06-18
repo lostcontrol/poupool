@@ -40,9 +40,10 @@ class PWM(PoupoolActor):
             self.__duration += diff
             self.__duration = constrain(self.__duration, 0, self.__period)
             duty_on = self.value * self.__period
-            # Avoid short commutations
-            if duty_on < self.__min_runtime:
-                duty_on = 0
+            # Avoid short commutations. If below min_runtime but higher than zero we run at
+            # min_runtime. If higher than period - min_runtime, we run at period (max)
+            if duty_on != 0 and duty_on < self.__min_runtime:
+                duty_on = self.__min_runtime
             elif duty_on > self.__period - self.__min_runtime:
                 duty_on = self.__period
             duty_off = self.__period - duty_on
