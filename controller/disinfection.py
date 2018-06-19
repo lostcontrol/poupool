@@ -181,11 +181,11 @@ class Disinfection(PoupoolActor):
         self.__ph_measures = []
         self.__orp_measures = []
 
-    @repeat(delay=30)
+    @repeat(delay=20)
     def do_repeat_running_measuring(self):
         self.__ph_measures.append(self.__devices.get_sensor("ph").value)
         self.__orp_measures.append(self.__devices.get_sensor("orp").value)
-        if len(self.__ph_measures) > 3:
+        if len(self.__ph_measures) > 2:
             self._proxy.adjust()
             raise StopRepeatException
 
@@ -216,4 +216,4 @@ class Disinfection(PoupoolActor):
     def on_enter_running_waiting(self):
         logger.info("Entering waiting state")
         self.__encoder.disinfection_state("treating")
-        self._proxy.do_delay(4 * 60, "measure")
+        self._proxy.do_delay(2 * 60, "measure")
