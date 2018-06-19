@@ -17,6 +17,10 @@ class Timer(object):
     def duration(self):
         return self.__duration
 
+    @duration.setter
+    def duration(self, value):
+        self.__duration = value
+
     @property
     def remaining(self):
         return max(timedelta(), self.__delay - self.__duration)

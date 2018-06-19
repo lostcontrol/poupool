@@ -202,8 +202,11 @@ class Filtration(PoupoolActor):
             self._proxy.eco()
 
     def duration(self, value):
+        current_duration = self.__eco_mode.filtration.duration
         self.__eco_mode.daily = timedelta(seconds=value)
         logger.info("Duration for daily filtration set to: %s" % self.__eco_mode.daily)
+        # Restore today's elapsed duration
+        self.__eco_mode.filtration.duration = current_duration
         self.__reload_eco()
 
     def period(self, value):
