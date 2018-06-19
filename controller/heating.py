@@ -172,8 +172,9 @@ class Heating(PoupoolActor):
     def on_exit_heating(self):
         logger.info("Exiting heating state")
         self.__devices.get_valve("heating").off()
-        actor = self.get_actor("Filtration")
-        actor.eco()
+        # Only change the filtration state if we are running in eco_heating state
+        if self.filtration_allow_heating():
+            self.get_actor("Filtration").eco()
 
     def on_enter_forcing(self):
         logger.info("Entering forcing state")
