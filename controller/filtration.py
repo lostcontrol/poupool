@@ -331,7 +331,6 @@ class Filtration(PoupoolActor):
     def on_enter_closing(self):
         logger.info("Entering closing state")
         self.__encoder.filtration_state("closing")
-        self.__actor_stop("Disinfection")
         # stop the pumps to avoid perturbation in the water while shutter is moving
         self.__devices.get_valve("gravity").on()
         self.__devices.get_pump("boost").off()
@@ -537,10 +536,8 @@ class Filtration(PoupoolActor):
         logger.info("Entering standby state")
         self.__encoder.filtration_state("standby")
         if self.__speed_standby > 0:
-            self.__disinfection_start()
             self.__devices.get_valve("tank").on()
         else:
-            self.__actor_stop("Disinfection")
             self.__devices.get_valve("tank").off()
         self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").speed(self.__speed_standby)
@@ -559,7 +556,6 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("tank").on()
         self.__devices.get_pump("variable").speed(2)
         self.__devices.get_pump("boost").off()
-        self.__disinfection_start()
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_comfort(self):
@@ -595,12 +591,6 @@ class Filtration(PoupoolActor):
             self.__devices.get_pump("boost").on()
         else:
             self.__devices.get_pump("boost").off()
-        # Only start disinfection if the speed is 1 or 2 to have an approriate
-        # flow for measurement
-        if 0 < speed < 3:
-            self.__disinfection_start()
-        else:
-            self.__actor_stop("Disinfection")
 
     def on_exit_overflow_normal(self):
         logger.info("Exiting overflow state")
