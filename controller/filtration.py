@@ -553,7 +553,7 @@ class Filtration(PoupoolActor):
         logger.info("Entering comfort state")
         self.__encoder.filtration_state("comfort")
         self.__devices.get_valve("gravity").off()
-        self.__devices.get_valve("tank").on()
+        self.__devices.get_valve("tank").off()
         self.__devices.get_pump("variable").speed(2)
         self.__devices.get_pump("boost").off()
 
