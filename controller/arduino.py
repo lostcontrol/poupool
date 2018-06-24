@@ -54,5 +54,9 @@ class Arduino(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_run(self):
         # Water counter
-        self.__water_counter = self.__arduino.water_counter
-        self.__encoder.water_counter(self.__water_counter)
+        value = self.__arduino.water_counter
+        if value is not None:
+            self.__water_counter = value
+            self.__encoder.water_counter(value)
+        else:
+            logger.error("Unable to read water counter. Not updating the value")

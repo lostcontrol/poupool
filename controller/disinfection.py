@@ -85,6 +85,7 @@ class PController(object):
 class Disinfection(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
+    SAMPLES = 3
 
     curves = {
         "low": lambda x: -45.162 * x + 1002,         # 0.8
@@ -106,6 +107,7 @@ class Disinfection(PoupoolActor):
         self.__is_disable = disable
         self.__encoder = encoder
         self.__devices = devices
+        self.__measurement_counter = 0
         # pH
         self.__ph_measures = []
         self.__ph = PWM.start("pH", self.__devices.get_pump("ph")).proxy()
@@ -180,12 +182,24 @@ class Disinfection(PoupoolActor):
         self.__encoder.disinfection_state("measuring")
         self.__ph_measures = []
         self.__orp_measures = []
+        self.__measurement_counter = 0
 
     @repeat(delay=20)
     def do_repeat_running_measuring(self):
-        self.__ph_measures.append(self.__devices.get_sensor("ph").value)
-        self.__orp_measures.append(self.__devices.get_sensor("orp").value)
-        if len(self.__ph_measures) > 2:
+        if len(self.__ph_measures) < Disinfection.SAMPLES:
+            value = self.__devices.get_sensor("ph").value
+            if value:
+                self.__ph_measures.append(value)
+        if len(self.__orp_measures) < Disinfection.SAMPLES:
+            value = self.__devices.get_sensor("orp").value
+            if value:
+                self.__orp_measures.append(value)
+        self.__measurement_counter += 1
+        if self.__measurement_counter > 6:
+            logger.error("Unable to get enough samples. Stopping disinfection")
+            self._proxy.stop()
+            raise StopRepeatException
+        if len(self.__ph_measures) + len(self.__orp_measures) >= 2 * Disinfection.SAMPLES:
             self._proxy.adjust()
             raise StopRepeatException
 
