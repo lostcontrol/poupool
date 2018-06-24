@@ -175,6 +175,8 @@ class Disinfection(PoupoolActor):
         self.__cl.do_cancel()
         self.__devices.get_pump("ph").off()
         self.__devices.get_pump("cl").off()
+        self.__encoder.disinfection_cl_feedback(0)
+        self.__encoder.disinfection_orp_feedback(0)
 
     @do_repeat()
     def on_enter_running_measuring(self):
