@@ -42,7 +42,8 @@ class Swim(PoupoolActor):
     def filtration_allow_swim(self):
         actor = self.get_actor("Filtration")
         is_wintering = actor.is_wintering_waiting().get() or actor.is_wintering_stir().get()
-        return actor.is_overflow_normal().get() or is_wintering
+        is_opened = actor.is_overflow_normal().get() or actor.is_standby_normal().get() or actor.is_comfort().get()
+        return is_opened or is_wintering
 
     def on_enter_stop(self):
         logger.info("Entering stop state")
