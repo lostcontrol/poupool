@@ -165,14 +165,14 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("opened", "opening_standby", "standby_boost")
         self.__machine.add_transition("opened", "opening_overflow", "overflow_boost")
         # Standby
-        self.__machine.add_transition("standby", ["eco", "closing"], "opening_standby")
+        self.__machine.add_transition(
+            "standby", ["eco", "closing"], "opening_standby", unless="tank_is_low")
         self.__machine.add_transition("standby", ["overflow", "comfort", "reload"], "standby")
         self.__machine.add_transition("standby", "standby_boost", "standby_normal")
         # Overflow
         self.__machine.add_transition(
             "overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
-        self.__machine.add_transition(
-            "overflow", ["standby", "comfort", "reload"], "overflow", unless="tank_is_low")
+        self.__machine.add_transition("overflow", ["standby", "comfort", "reload"], "overflow")
         self.__machine.add_transition("overflow", "overflow_boost", "overflow_normal")
         # Heat + overflow
         self.__machine.add_transition("comfort", ["standby", "overflow"], "comfort")
