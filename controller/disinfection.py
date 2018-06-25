@@ -110,11 +110,13 @@ class Disinfection(PoupoolActor):
         self.__measurement_counter = 0
         # pH
         self.__ph_measures = []
+        self.__ph_enable = True
         self.__ph = PWM.start("pH", self.__devices.get_pump("ph")).proxy()
         self.__ph_controller = PController(pterm=-1.0)
         self.__ph_controller.setpoint = 7
         # ORP
         self.__orp_measures = []
+        self.__orp_enable = True
         self.__orp_controller = PController(pterm=1.0, scale=0.001)
         self.__orp_controller.setpoint = 700
         # Chlorine
@@ -129,6 +131,14 @@ class Disinfection(PoupoolActor):
         self.__machine.add_transition("measure", "running_waiting", "running_measuring")
         self.__machine.add_transition("adjust", "running_measuring", "running_adjusting")
         self.__machine.add_transition("wait", "running_adjusting", "running_waiting")
+
+    def ph_enable(self, value):
+        self.__ph_enable = value
+        logger.info("pH adjustment is %sabled" % ("en" if value else "dis"))
+
+    def orp_enable(self, value):
+        self.__orp_enable = value
+        logger.info("ORP adjustment is %sabled" % ("en" if value else "dis"))
 
     def ph_setpoint(self, value):
         self.__ph_controller.setpoint = value
@@ -212,7 +222,7 @@ class Disinfection(PoupoolActor):
         ph = sum(self.__ph_measures) / len(self.__ph_measures)
         self.__encoder.disinfection_ph_value("%.2f" % ph)
         self.__ph_controller.current = ph
-        ph_feedback = self.__ph_controller.compute()
+        ph_feedback = self.__ph_controller.compute() if self.__ph_enable else 0
         self.__encoder.disinfection_ph_feedback(int(round(ph_feedback * 100)))
         logger.info("pH: %.2f feedback: %.2f" % (ph, ph_feedback))
         self.__ph.value = ph_feedback
@@ -222,7 +232,7 @@ class Disinfection(PoupoolActor):
         orp_setpoint = self.curves[self.__free_chlorine](ph)
         self.__orp_controller.setpoint = orp_setpoint
         self.__orp_controller.current = orp
-        cl_feedback = self.__orp_controller.compute()
+        cl_feedback = self.__orp_controller.compute() if self.__orp_enable else 0
         self.__encoder.disinfection_cl_feedback(int(round(cl_feedback * 100)))
         self.__encoder.disinfection_orp_setpoint(int(orp_setpoint))
         logger.info("ORP: %d setpoint: %d feedback: %.2f" % (orp, orp_setpoint, cl_feedback))

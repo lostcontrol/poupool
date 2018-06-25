@@ -7,6 +7,10 @@ def between(minimum, maximum):
     return lambda x: minimum <= float(x) <= maximum
 
 
+def to_bool(x):
+    return x.lower() in ("true", "1", "y", "yes", "on")
+
+
 def to_int(x):
     return int(float(x))
 
@@ -45,9 +49,11 @@ class Dispatcher(object):
             "/settings/heater/setpoint": (heater, between(0, 30), lambda x: "setpoint", to_float),
             "/settings/heating/setpoint": (heating, between(10, 30), lambda x: "setpoint", to_float),
             "/settings/heating/start_hour": (heating, between(0, 23), lambda x: "start_hour", to_int),
+            "/settings/disinfection/ph/enable": (disinfection, lambda x: x in ("ON", "OFF"), lambda x: "ph_enable", to_bool),
             "/settings/disinfection/ph/setpoint": (disinfection, between(6, 8), lambda x: "ph_setpoint", to_float),
             "/settings/disinfection/ph/pterm": (disinfection, between(0, 10), lambda x: "ph_pterm", to_float),
             "/settings/disinfection/free_chlorine": (disinfection, lambda x: x in ("low", "mid", "mid_high", "high"), lambda x: "free_chlorine", to_string),
+            "/settings/disinfection/orp/enable": (disinfection, lambda x: x in ("ON", "OFF"), lambda x: "orp_enable", to_bool),
             "/settings/disinfection/orp/pterm": (disinfection, between(0, 10), lambda x: "orp_pterm", to_float),
         }
 

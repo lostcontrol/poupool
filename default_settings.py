@@ -45,9 +45,11 @@ def main():
     publish("/settings/heater/setpoint", "3.0")
     publish("/settings/heating/setpoint", "26.0")
     publish("/settings/heating/start_hour", "1")
+    publish("/settings/disinfection/ph/enable", "ON")
     publish("/settings/disinfection/ph/setpoint", "7")
     publish("/settings/disinfection/ph/pterm", "1.0")
     publish("/settings/disinfection/free_chlorine", "low")
+    publish("/settings/disinfection/orp/enable", "ON")
     publish("/settings/disinfection/orp/pterm", "1.0")
 
     print("\n**** Missing default parameters ***")
