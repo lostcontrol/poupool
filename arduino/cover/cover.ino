@@ -18,6 +18,11 @@ class InterruptGuard {
 
 class Cover {
   public:
+    // When stopped the motor still runs for ~500ms or so. We need to account for this
+    // otherwise we get drift. This is the maximum amount of steps the motor is allowed
+    // to go past the end points.
+    static constexpr long MAX_PULSE_MARGIN = 100;
+
     static constexpr struct Pins {
       static constexpr byte cover_interrupt = 2;
       static constexpr byte cover_open = 4;
@@ -57,6 +62,7 @@ class Cover {
       if (m_direction != m_previous_direction) {
         switch (m_direction) {
           case Direction::OPEN:
+            m_running_direction = Direction::OPEN;
             digitalWrite(pins.cover_close, LOW);
             delay(100);
             digitalWrite(pins.cover_open, HIGH);
@@ -65,6 +71,7 @@ class Cover {
             m_previous_time = now;
             break;
           case Direction::CLOSE:
+            m_running_direction = Direction::CLOSE;
             digitalWrite(pins.cover_open, LOW);
             delay(100);
             digitalWrite(pins.cover_close, HIGH);
@@ -104,7 +111,7 @@ class Cover {
         // Position consistency
         if (m_set_limits == SetLimit::NONE) {
           const auto position = get_position();
-          if (position < m_position.close || position > m_position.open) {
+          if (position < (m_position.close - MAX_PULSE_MARGIN) || position > (m_position.open + MAX_PULSE_MARGIN)) {
             // Emergency stop
             emergency_stop();
           }
@@ -172,7 +179,7 @@ class Cover {
     }
 
     void step() {
-      switch (m_direction) {
+      switch (m_running_direction) {
         case Direction::OPEN:
           ++m_position.position;
           if (m_set_limits == SetLimit::NONE && m_position.position >= m_position.open) {
@@ -223,6 +230,7 @@ class Cover {
   private:
     volatile Position m_position;
     volatile Direction m_direction = Direction::STOP;
+    volatile Direction m_running_direction = Direction::STOP;
     volatile SetLimit m_set_limits = SetLimit::NONE;
 
     long m_previous_position = 0;
