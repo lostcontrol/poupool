@@ -30,7 +30,7 @@ class Dispatcher(object):
 
     def register(self, filtration, swim, light, heater, heating, disinfection):
         self.__mapping = {
-            "/settings/mode": (filtration, lambda x: x in ("stop", "eco", "standby", "overflow", "comfort", "wash", "wintering"), lambda x: x, None),
+            "/settings/mode": (filtration, lambda x: x in ("stop", "eco", "standby", "overflow", "comfort", "sweep", "wash", "wintering"), lambda x: x, None),
             "/settings/filtration/duration": (filtration, between(1, 172800), lambda x: "duration", to_int),
             "/settings/filtration/period": (filtration, between(1, 10), lambda x: "period", to_int),
             "/settings/filtration/reset_hour": (filtration, between(0, 23), lambda x: "reset_hour", to_int),

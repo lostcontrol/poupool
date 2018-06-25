@@ -82,7 +82,7 @@ sitemap default label="Menu principal"
                 }
                 Text label="Paramètres" icon="settings" {
                     Frame label="Mode étendu" icon="computer" {
-                       Switch item=Poupool_Mode icon="settings" mappings=[stop="Stop", wash="Contre-lavage", wintering="Hivernage"]
+                       Switch item=Poupool_Mode icon="settings" mappings=[stop="Stop", sweep="Balai", wash="Contre-lavage", wintering="Hivernage"]
                        Text item=Poupool_State icon="info"
                     }
                     Frame label="Paramètres" icon="settings" {

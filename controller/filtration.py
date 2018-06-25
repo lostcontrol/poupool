@@ -123,6 +123,7 @@ class Filtration(PoupoolActor):
                   "boost",
                   "normal"]},
               "comfort",
+              "sweep",
               "reload",
               {"name": "wash", "initial": "backwash", "children": [
                   "backwash",
@@ -167,18 +168,21 @@ class Filtration(PoupoolActor):
         # Standby
         self.__machine.add_transition(
             "standby", ["eco", "closing"], "opening_standby", unless="tank_is_low")
-        self.__machine.add_transition("standby", ["overflow", "comfort", "reload"], "standby")
+        self.__machine.add_transition(
+            "standby", ["overflow", "comfort", "sweep", "reload"], "standby")
         self.__machine.add_transition("standby", "standby_boost", "standby_normal")
         # Overflow
         self.__machine.add_transition(
             "overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
         self.__machine.add_transition("overflow", ["standby", "comfort", "reload"], "overflow")
         self.__machine.add_transition("overflow", "overflow_boost", "overflow_normal")
-        # Heat + overflow
+        # Comfort
         self.__machine.add_transition("comfort", ["standby", "overflow"], "comfort")
+        # Sweep
+        self.__machine.add_transition("sweep", "standby", "sweep")
         # Stop
         self.__machine.add_transition(
-            "stop", ["eco", "standby", "overflow", "comfort", "opening", "closing", "wash", "wintering"], "stop")
+            "stop", ["eco", "standby", "overflow", "comfort", "sweep", "opening", "closing", "wash", "wintering"], "stop")
         # (Back)wash
         self.__machine.add_transition(
             "wash", ["eco_normal", "eco_waiting"], "wash", conditions="tank_is_high")
@@ -547,6 +551,17 @@ class Filtration(PoupoolActor):
         now = datetime.now()
         factor = 1 if self.__speed_standby > 0 else 0
         self.__eco_mode.update(now, factor)
+
+    def on_enter_sweep(self):
+        logger.info("Entering sweep state")
+        self.__encoder.filtration_state("sweep")
+        self.__devices.get_valve("gravity").on()
+        self.__devices.get_valve("tank").off()
+        self.__devices.get_pump("variable").speed(3)
+        self.__devices.get_pump("boost").off()
+
+    def on_exit_sweep(self):
+        logger.info("Exiting sweep state")
 
     @do_repeat()
     def on_enter_comfort(self):
