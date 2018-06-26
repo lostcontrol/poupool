@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class PWM(PoupoolActor):
 
-    def __init__(self, name, pump, period=120, min_runtime=6):
+    def __init__(self, name, pump, period=120, min_runtime=3):
         super().__init__()
         self.__name = name
         self.__pump = pump
