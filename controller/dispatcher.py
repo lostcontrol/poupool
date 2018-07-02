@@ -36,6 +36,7 @@ class Dispatcher(object):
             "/settings/filtration/reset_hour": (filtration, between(0, 23), lambda x: "reset_hour", to_int),
             "/settings/filtration/tank_percentage": (filtration, between(0, 0.5), lambda x: "tank_percentage", to_float),
             "/settings/filtration/stir_duration": (filtration, between(0, 10 * 60), lambda x: "stir_duration", to_int),
+            "/settings/filtration/stir_period": (filtration, between(0, 7200), lambda x: "stir_period", to_int),
             "/settings/filtration/boost_duration": (filtration, between(0, 10 * 60), lambda x: "boost_duration", to_int),
             "/settings/filtration/backwash/period": (filtration, between(0, 90), lambda x: "backwash_period", to_int),
             "/settings/filtration/backwash/backwash_duration": (filtration, between(0, 300), lambda x: "backwash_backwash_duration", to_int),

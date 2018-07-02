@@ -68,12 +68,10 @@ class EcoMode(object):
         self.tank_duration = self.tank_percentage * self.on_duration
         if self.tank_duration < timedelta(minutes=1):
             self.tank_duration = timedelta(minutes=1)
-        if self.on_duration > self.stir_duration:
-            self.on_duration -= self.stir_duration
         if self.on_duration > self.tank_duration:
             self.on_duration -= self.tank_duration
-        logger.info("Duration stir: %s on: %s tank: %s off: %s" %
-                    (self.stir_duration, self.on_duration, self.tank_duration, self.off_duration))
+        logger.info("Duration on: %s tank: %s off: %s" %
+                    (self.on_duration, self.tank_duration, self.off_duration))
 
     def set_current(self, duration):
         self.current.delay = duration
@@ -100,6 +98,55 @@ class EcoMode(object):
         return False
 
 
+class StirMode(object):
+
+    def __init__(self, devices):
+        self.__devices = devices
+        self.__stir_state = False
+        self.__current = Timer("stir")
+        self.__period = timedelta(seconds=3600)
+        self.__duration = timedelta(seconds=120)
+
+    def stir_period(self, value):
+        period = timedelta(seconds=value)
+        if period > timedelta() and period < self.__duration:
+            logger.error("Stir period must be greater than stir duration!!!")
+        else:
+            self.__period = period
+            logger.info("Stir period set to: %s" % self.__period)
+
+    def stir_duration(self, value):
+        duration = timedelta(seconds=value)
+        if self.__period > timedelta() and self.__period < duration:
+            logger.error("Stir period must be greater than stir duration!!!")
+        else:
+            self.__duration = duration
+            logger.info("Stir duration set to: %s" % self.__duration)
+
+    def __pause(self):
+        self.__stir_state = False
+        self.__current.delay = max(timedelta(), self.__period - self.__duration)
+        self.__devices.get_pump("boost").off()
+        logger.info("Stir deactivated for %s" % self.__current.delay)
+
+    def __stir(self):
+        self.__stir_state = True
+        self.__current.delay = self.__duration
+        self.__devices.get_pump("boost").on()
+        logger.info("Stir activated for %s" % self.__current.delay)
+
+    def clear(self):
+        self.__pause()
+
+    def update(self, now):
+        self.__current.update(now)
+        if self.__period > timedelta() and self.__current.elapsed():
+            if self.__stir_state:
+                self.__pause()
+            else:
+                self.__stir()
+
+
 class Filtration(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
@@ -111,7 +158,6 @@ class Filtration(PoupoolActor):
                   "overflow"]},
               {"name": "eco", "initial": "compute", "children": [
                   "compute",
-                  "stir",
                   "normal",
                   "tank",
                   "heating",
@@ -138,6 +184,7 @@ class Filtration(PoupoolActor):
         self.__devices = devices
         # Parameters
         self.__eco_mode = EcoMode(encoder)
+        self.__stir_mode = StirMode(devices)
         self.__boost_duration = timedelta(minutes=5)
         self.__speed_standby = 1
         self.__speed_overflow = 4
@@ -158,8 +205,7 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("eco", "stop", "eco", before=["tank_start", "heating_start"])
         self.__machine.add_transition("eco", ["eco_heating", "reload", "wash_rinse"], "eco")
         self.__machine.add_transition("closed", "closing", "eco")
-        self.__machine.add_transition("eco_stir", ["eco_compute", "eco_waiting"], "eco_stir")
-        self.__machine.add_transition("eco_normal", "eco_stir", "eco_normal")
+        self.__machine.add_transition("eco_normal", ["eco_compute", "eco_waiting"], "eco_normal")
         self.__machine.add_transition("eco_tank", "eco_normal", "eco_tank", unless="tank_is_low")
         self.__machine.add_transition("eco_heating", ["eco_waiting", "eco_normal"], "eco_heating")
         self.__machine.add_transition("eco_waiting", ["eco_compute", "eco_tank"], "eco_waiting")
@@ -224,9 +270,10 @@ class Filtration(PoupoolActor):
         self.__reload_eco()
 
     def stir_duration(self, value):
-        self.__eco_mode.stir_duration = timedelta(seconds=value)
-        logger.info("Duration for pool stirring in eco set to: %s" % self.__eco_mode.stir_duration)
-        self.__reload_eco()
+        self.__stir_mode.stir_duration(value)
+
+    def stir_period(self, value):
+        self.__stir_mode.stir_period(value)
 
     def reset_hour(self, value):
         self.__eco_mode.reset_hour = value
@@ -402,37 +449,9 @@ class Filtration(PoupoolActor):
         if self.__eco_mode.off_duration.total_seconds() > 0:
             self._proxy.do_delay(10, "eco_waiting")
         elif self.__eco_mode.on_duration.total_seconds() > 0:
-            self._proxy.do_delay(10, "eco_stir")
+            self._proxy.do_delay(10, "eco_normal")
         else:
             self._proxy.do_delay(10, "eco_waiting")
-
-    @do_repeat()
-    def on_enter_eco_stir(self):
-        logger.info("Entering eco_stir state")
-        self.__encoder.filtration_state("eco_stir")
-        self.__eco_mode.set_current(self.__eco_mode.stir_duration)
-        if not self.__eco_mode.elapsed_on():
-            self.__actor_stop("Disinfection")
-            self.__devices.get_pump("variable").speed(3)
-            self.__devices.get_pump("boost").on()
-        else:
-            self._proxy.eco_normal()
-            raise StopRepeatException
-
-    @repeat(delay=STATE_REFRESH_DELAY)
-    def do_repeat_eco_stir(self):
-        now = datetime.now()
-        self.__eco_mode.update(now)
-        if self.__eco_mode.check_reset(now):
-            self.__reload_eco()
-            raise StopRepeatException
-        if self.__eco_mode.elapsed_on():
-            self._proxy.eco_normal()
-            raise StopRepeatException
-
-    def on_exit_eco_stir(self):
-        self.__devices.get_pump("boost").off()
-        self.__devices.get_pump("variable").speed(1)
 
     @do_repeat()
     def on_enter_eco_normal(self):
@@ -508,6 +527,7 @@ class Filtration(PoupoolActor):
         self.__eco_mode.set_current(self.__eco_mode.off_duration)
         self.__actor_stop("Disinfection")
         self.__devices.get_pump("variable").off()
+        self.__stir_mode.clear()
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco_waiting(self):
@@ -520,8 +540,15 @@ class Filtration(PoupoolActor):
             self.__reload_eco()
             raise StopRepeatException
         if self.__eco_mode.elapsed_off():
-            self._proxy.eco_stir()
+            self._proxy.eco_normal()
             raise StopRepeatException
+        # Update the stir mode at the end so we do not switch the boost pumps
+        # for nothing.
+        self.__stir_mode.update(now)
+
+    def on_exit_eco_waiting(self):
+        logger.info("Exiting eco_waiting state")
+        self.__stir_mode.clear()
 
     def on_enter_standby(self):
         logger.info("Entering standby state")
