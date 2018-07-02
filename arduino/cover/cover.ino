@@ -18,10 +18,13 @@ class InterruptGuard {
 
 class Cover {
   public:
-    // When stopped the motor still runs for ~500ms or so. We need to account for this
-    // otherwise we get drift. This is the maximum amount of steps the motor is allowed
-    // to go past the end points.
-    static constexpr long MAX_PULSE_MARGIN = 100;
+    // When stopped the motor still runs for 2-3 seconds in some cases. We need to account
+    // for this otherwise we get drift.
+    static constexpr unsigned long MAX_RUNNING_MARGIN_IN_MS = 3000;
+    // How fast the motor is spinning.
+    static constexpr unsigned long PULSES_PER_SECOND = 50;
+    // This is the maximum amount of steps the motor is allowed to go past the end points.
+    static constexpr long MAX_PULSE_MARGIN = PULSES_PER_SECOND * MAX_RUNNING_MARGIN_IN_MS / 1000;
 
     static constexpr struct Pins {
       static constexpr byte cover_interrupt = 2;
@@ -69,6 +72,8 @@ class Cover {
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
             m_previous_time = now;
+            // Cancel a potential stop event
+            m_do_stop_time = 0;
             break;
           case Direction::CLOSE:
             m_running_direction = Direction::CLOSE;
@@ -78,19 +83,33 @@ class Cover {
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
             m_previous_time = now;
+            // Cancel a potential stop event
+            m_do_stop_time = 0;
             break;
           case Direction::STOP:
             digitalWrite(pins.cover_close, HIGH);
             digitalWrite(pins.cover_open, HIGH);
-            // Ensure the motor is stopped before saving the position
-            delay(500);
-            // Save the positions to EEPROM. Disable interrupts to ensure the values get not
-            // updated by ISR during the process
-            InterruptGuard _{};
-            EEPROM.updateBlock(0, m_position);
+            // Trigger delayed stop event. The cover might run for up to 3 seconds after we
+            // stopped the motor so we cannot save the position directly to the EEPROM. We
+            // trigger an event here and will write the position 3 seconds later.
+            m_do_stop_time = now;
             break;
         }
         m_previous_direction = m_direction;
+      }
+    }
+
+    void process_stop(unsigned long now) {
+      if (m_do_stop_time) {
+        if (now - m_do_stop_time > MAX_RUNNING_MARGIN_IN_MS) {
+          m_do_stop_time = 0;
+          // Also stop counting pulses
+          m_running_direction = Direction::STOP;
+          // Save the positions to EEPROM. Disable interrupts to ensure the values get not
+          // updated by ISR during the process
+          InterruptGuard _{};
+          EEPROM.updateBlock(0, m_position);
+        }
       }
     }
 
@@ -235,6 +254,7 @@ class Cover {
 
     long m_previous_position = 0;
     unsigned long m_previous_time = 0;
+    unsigned long m_do_stop_time = 0;
     Direction m_previous_direction = Direction::STOP;
 };
 
@@ -497,4 +517,5 @@ void loop()
   // Action
   cover.process_direction(now);
   cover.ensure_consistency(now);
+  cover.process_stop(now);
 }
