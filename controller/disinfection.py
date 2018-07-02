@@ -16,7 +16,7 @@ class PWM(PoupoolActor):
         super().__init__()
         self.__name = name
         self.__pump = pump
-        self.__period = period
+        self.period = period
         self.__last = None
         self.__duration = 0
         self.__state = False
@@ -38,15 +38,15 @@ class PWM(PoupoolActor):
         if self.__last:
             diff = now - self.__last
             self.__duration += diff
-            self.__duration = constrain(self.__duration, 0, self.__period)
-            duty_on = self.value * self.__period
+            self.__duration = constrain(self.__duration, 0, self.period)
+            duty_on = self.value * self.period
             # Avoid short commutations. If below min_runtime but higher than zero we run at
             # min_runtime. If higher than period - min_runtime, we run at period (max)
             if duty_on != 0 and duty_on < self.__min_runtime:
                 duty_on = self.__min_runtime
-            elif duty_on > self.__period - self.__min_runtime:
-                duty_on = self.__period
-            duty_off = self.__period - duty_on
+            elif duty_on > self.period - self.__min_runtime:
+                duty_on = self.period
+            duty_off = self.period - duty_on
             duty = duty_on if self.__state else duty_off
             if int(now) % 10 == 0:
                 logger.debug("%s duty (on/off): %.1f/%.1f state: %d duration: %.1f" %
@@ -97,6 +97,7 @@ class Disinfection(PoupoolActor):
     states = [
         "stop",
         "waiting",
+        "constant",
         {"name": "running", "initial": "measuring", "children": [
             "measuring",
             "adjusting",
@@ -121,13 +122,15 @@ class Disinfection(PoupoolActor):
         self.__orp_controller.setpoint = 700
         # Chlorine
         self.__cl = PWM.start("cl", self.__devices.get_pump("cl")).proxy()
+        self.__cl_constant = 0.5
         self.__free_chlorine = "low"
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Disinfection.states, initial="stop")
 
         self.__machine.add_transition("run", "stop", "waiting", unless="is_disable")
         self.__machine.add_transition("run", "waiting", "running")
-        self.__machine.add_transition("stop", ["waiting", "running"], "stop")
+        self.__machine.add_transition("stop", ["constant", "waiting", "running"], "stop")
+        self.__machine.add_transition("constant", ["stop", "waiting", "running"], "constant")
         self.__machine.add_transition("measure", "running_waiting", "running_measuring")
         self.__machine.add_transition("adjust", "running_measuring", "running_adjusting")
         self.__machine.add_transition("wait", "running_adjusting", "running_waiting")
@@ -143,6 +146,10 @@ class Disinfection(PoupoolActor):
     def ph_setpoint(self, value):
         self.__ph_controller.setpoint = value
         logger.info("pH setpoint set to: %f" % self.__ph_controller.setpoint)
+
+    def cl_constant(self, value):
+        self.__cl_constant = value
+        logger.info("Chlore constant value set to: %f" % self.__cl_constant)
 
     def free_chlorine(self, value):
         if value in self.curves:
@@ -166,19 +173,6 @@ class Disinfection(PoupoolActor):
     def on_enter_stop(self):
         logger.info("Entering stop state")
         self.__encoder.disinfection_state("stop")
-
-    def on_enter_waiting(self):
-        logger.info("Entering waiting state")
-        self.__encoder.disinfection_state("waiting")
-        self._proxy.do_delay(15 * 60, "run")
-
-    def on_enter_running(self):
-        logger.info("Entering running state")
-        self.__ph.do_run()
-        self.__cl.do_run()
-
-    def on_exit_running(self):
-        logger.info("Exiting running state")
         self.__ph.value = 0
         self.__cl.value = 0
         self.__ph.do_cancel()
@@ -186,7 +180,30 @@ class Disinfection(PoupoolActor):
         self.__devices.get_pump("ph").off()
         self.__devices.get_pump("cl").off()
         self.__encoder.disinfection_cl_feedback(0)
-        self.__encoder.disinfection_orp_feedback(0)
+        self.__encoder.disinfection_ph_feedback(0)
+
+    def on_enter_waiting(self):
+        logger.info("Entering waiting state")
+        self.__encoder.disinfection_state("waiting")
+        self._proxy.do_delay(15 * 60, "run")
+
+    @do_repeat()
+    def on_enter_constant(self):
+        logger.info("Entering constant state")
+        self.__encoder.disinfection_state("constant")
+        self.__cl.period = 600
+        self.__cl.do_run()
+
+    @repeat(delay=10)
+    def do_repeat_constant(self):
+        self.__encoder.disinfection_cl_feedback(int(round(self.__cl_constant)))
+        self.__cl.value = self.__cl_constant / 100.
+
+    def on_enter_running(self):
+        logger.info("Entering running state")
+        self.__ph.do_run()
+        self.__cl.period = 120
+        self.__cl.do_run()
 
     @do_repeat()
     def on_enter_running_measuring(self):

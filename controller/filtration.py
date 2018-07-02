@@ -633,10 +633,13 @@ class Filtration(PoupoolActor):
             self.__devices.get_pump("boost").on()
         else:
             self.__devices.get_pump("boost").off()
+        # Use a constant chlorine flow
+        self.get_actor("Disinfection").constant()
 
     def on_exit_overflow_normal(self):
         logger.info("Exiting overflow state")
         self.__actor_stop("Swim")
+        self.__actor_stop("Disinfection")
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_overflow_normal(self):

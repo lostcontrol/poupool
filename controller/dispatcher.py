@@ -50,6 +50,7 @@ class Dispatcher(object):
             "/settings/heater/setpoint": (heater, between(0, 30), lambda x: "setpoint", to_float),
             "/settings/heating/setpoint": (heating, between(10, 30), lambda x: "setpoint", to_float),
             "/settings/heating/start_hour": (heating, between(0, 23), lambda x: "start_hour", to_int),
+            "/settings/disinfection/cl/constant": (disinfection, between(0, 10), lambda x: "cl_constant", to_float),
             "/settings/disinfection/ph/enable": (disinfection, lambda x: x in ("ON", "OFF"), lambda x: "ph_enable", to_bool),
             "/settings/disinfection/ph/setpoint": (disinfection, between(6, 8), lambda x: "ph_setpoint", to_float),
             "/settings/disinfection/ph/pterm": (disinfection, between(0, 10), lambda x: "ph_pterm", to_float),

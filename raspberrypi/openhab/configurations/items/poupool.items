@@ -47,6 +47,7 @@ Switch Poupool_Disinfection_PH_Enable "pH régulation activée" {mqtt="<[poupool
 Number Poupool_Disinfection_PH_Setpoint "pH consigne [%.1f]" {mqtt="<[poupool:/settings/disinfection/ph/setpoint:state:default],>[poupool:/settings/disinfection/ph/setpoint:command:*:default]"}
 Number Poupool_Disinfection_PH_Pterm "pH valeur P [%.2f]" {mqtt="<[poupool:/settings/disinfection/ph/pterm:state:default],>[poupool:/settings/disinfection/ph/pterm:command:*:default]"}
 Number Poupool_Disinfection_PH "pH [%.2f]" {mqtt="<[poupool:/status/disinfection/ph/value:state:default]"}
+Number Poupool_Disinfection_Cl_Constant "Chlore pourcentage constant [%.1f]" {mqtt="<[poupool:/settings/disinfection/cl/constant:state:default],>[poupool:/settings/disinfection/cl/constant:command:*:default]"}
 Switch Poupool_Disinfection_ORP_Enable "ORP régulation activée" {mqtt="<[poupool:/settings/disinfection/orp/enable:state:default],>[poupool:/settings/disinfection/orp/enable:command:*:default]"}
 Number Poupool_Disinfection_ORP_Setpoint "ORP consigne [%d]" (Poupool_Disinfection_ORP_Measurement) {mqtt="<[poupool:/status/disinfection/orp/setpoint:state:default]"}
 Number Poupool_Disinfection_ORP_Pterm "ORP valeur P [%.2f]" {mqtt="<[poupool:/settings/disinfection/orp/pterm:state:default],>[poupool:/settings/disinfection/orp/pterm:command:*:default]"}
