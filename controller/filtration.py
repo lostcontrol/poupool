@@ -17,7 +17,7 @@ class EcoMode(object):
         self.filtration = Timer("filtration")
         self.current = Timer("current")
         self.reset_hour = 0
-        self.period = 3
+        self.__period = 3
         self.tank_percentage = 0.1
         self.daily = timedelta(hours=10)
         self.period_duration = timedelta(hours=1)
@@ -37,6 +37,19 @@ class EcoMode(object):
         if self.__next_reset < tm:
             self.__next_reset += timedelta(days=1)
 
+    def __recompute_period_duration(self):
+        self.period_duration = self.filtration.delay / self.period
+        assert self.period_duration > timedelta()
+
+    @property
+    def period(self):
+        return self.__period
+
+    @period.setter
+    def period(self, value):
+        self.__period = value
+        self.__recompute_period_duration()
+
     @property
     def daily(self):
         return self.filtration.delay
@@ -44,8 +57,7 @@ class EcoMode(object):
     @daily.setter
     def daily(self, value):
         self.filtration.delay = value
-        self.period_duration = value / self.period
-        assert self.period_duration > timedelta()
+        self.__recompute_period_duration()
 
     def clear(self):
         self.filtration.clear()
