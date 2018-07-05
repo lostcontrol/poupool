@@ -69,10 +69,10 @@ class EcoMode(object):
         remaining_duration = max(timedelta(), self.filtration.delay - self.filtration.duration)
         assert self.period_duration > timedelta()
         remaining_periods = max(1, int(remaining_duration / self.period_duration))
-        remaining_time = self.reset_hour - datetime.now()
+        remaining_time = max(timedelta(), self.reset_hour - datetime.now())
         logger.info("Remaining duration: %s periods: %d time: %s" %
                     (remaining_duration, remaining_periods, remaining_time))
-        self.on_duration = remaining_duration / remaining_periods
+        self.on_duration = min(remaining_time, remaining_duration / remaining_periods)
         if self.on_duration < timedelta(hours=1):
             self.on_duration = timedelta(hours=1)
         self.off_duration = (remaining_time - remaining_duration) / remaining_periods
