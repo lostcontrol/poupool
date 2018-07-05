@@ -2,6 +2,7 @@ import pykka
 from datetime import datetime, timedelta
 import time
 import logging
+from astral import Astral
 from .actor import PoupoolModel
 from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat, do_repeat
@@ -118,6 +119,8 @@ class StirMode(object):
         self.__current = Timer("stir")
         self.__period = timedelta(seconds=3600)
         self.__duration = timedelta(seconds=120)
+        # TODO Do not hard code this
+        self.__astral = Astral()["Bern"]
 
     def stir_period(self, value):
         period = timedelta(seconds=value)
@@ -152,11 +155,15 @@ class StirMode(object):
 
     def update(self, now):
         self.__current.update(now)
-        if self.__period > timedelta() and self.__current.elapsed():
-            if self.__stir_state:
-                self.__pause()
-            else:
-                self.__stir()
+        # We only activate the stir mode if the sun elevation is greater than ~20°.
+        # No need to stir at night, this mode is meant to lower the solar cover
+        # temperature.
+        if self.__astral.solar_elevation() >= 20:
+            if self.__period > timedelta() and self.__current.elapsed():
+                if self.__stir_state:
+                    self.__pause()
+                else:
+                    self.__stir()
 
 
 class Filtration(PoupoolActor):
