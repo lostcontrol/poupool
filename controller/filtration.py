@@ -687,6 +687,8 @@ class Filtration(PoupoolActor):
         self._proxy.do_delay(self.__backwash_rinse_duration.total_seconds(), "eco")
 
     def on_exit_wash_rinse(self):
+        logger.info("Exiting rinse state")
+        self.__devices.get_pump("variable").speed(1)
         self.__backwash_last = datetime.now()
         self.__encoder.filtration_backwash_last(self.__backwash_last.strftime("%c"), retain=True)
 
