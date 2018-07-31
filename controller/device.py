@@ -290,7 +290,7 @@ class ArduinoDevice(Device):
             if read.strip() == "***" and response.startswith(value):
                 return response
             else:
-                logger.error("Bad response: %s" % read.strip())
+                logger.error("Bad response: %s %s" % (response, read.strip()))
         except Exception:
             # We catch everything in the hope that we recover with a reconnect.
             logger.exception("Serial sensor %s had an error. Reconnecting..." % self.name)
