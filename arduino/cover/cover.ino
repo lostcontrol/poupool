@@ -138,10 +138,6 @@ class Cover {
       }
     }
 
-    Direction get_direction() const {
-      return m_direction;
-    }
-
     void set_direction(Direction direction) {
       const auto position = get_position();
       switch (direction) {
