@@ -498,7 +498,13 @@ void loop()
         } else if (cmdParser.equalCommand("reset")) {
           Serial.println(F("reset"));
           cover.reset();
+        } else {
+          Serial.print(F("error command "));
+          Serial.println(reinterpret_cast<char*>(buffer.get_buffer()));
         }
+      } else {
+        Serial.print(F("error parser "));
+        Serial.println(reinterpret_cast<char*>(buffer.get_buffer()));
       }
       Serial.println(F("***"));
       buffer.clear();
