@@ -1,8 +1,8 @@
-// Requires CmdParser, InputDebounce and EEPROMex
+// Requires InputDebounce and EEPROMex
 // Uncomment _EEPROMEX_DEBUG in EEPROMex.cpp to avoid the max EEPROM write limit
 
+#include <string.h>
 #include <avr/wdt.h>
-#include <CmdParser.hpp>
 #include <InputDebounce.h>
 #include <EEPROMex.h>
 
@@ -401,7 +401,7 @@ class ReadBuffer {
       m_position = 0;
     }
 
-    T* get_buffer() {
+    operator const T*() {
       return m_buffer;
     }
 
@@ -414,8 +414,7 @@ class ReadBuffer {
     T m_buffer[S] = {0};
 };
 
-ReadBuffer<uint8_t, 32> buffer;
-CmdParser cmdParser;
+ReadBuffer<char, 32> buffer;
 Water water;
 Cover cover;
 Button button{&cover};
@@ -476,35 +475,30 @@ void loop()
   if (Serial.available() > 0) {
     // Use own buffer from serial input
     if (buffer.add(Serial.read())) {
-      if (cmdParser.parseCmd(buffer.get_buffer(), buffer.get_size()) != CMDPARSER_ERROR) {
-        if (cmdParser.equalCommand("open")) {
-          Serial.println(F("open"));
-          cover.set_direction(Cover::Direction::OPEN);
-        } else if (cmdParser.equalCommand("close")) {
-          Serial.println(F("close"));
-          cover.set_direction(Cover::Direction::CLOSE);
-        } else if (cmdParser.equalCommand("stop")) {
-          Serial.println(F("stop"));
-          cover.set_direction(Cover::Direction::STOP);
-        } else if (cmdParser.equalCommand("position")) {
-          Serial.print(F("position "));
-          Serial.println(cover.get_position_percentage());
-        } else if (cmdParser.equalCommand("water")) {
-          Serial.print(F("water "));
-          Serial.println(water.get_counter());
-        } else if (cmdParser.equalCommand("debug")) {
-          Serial.println(F("debug"));
-          cover.debug();
-        } else if (cmdParser.equalCommand("reset")) {
-          Serial.println(F("reset"));
-          cover.reset();
-        } else {
-          Serial.print(F("error command "));
-          Serial.println(reinterpret_cast<char*>(buffer.get_buffer()));
-        }
+      if (strcmp(buffer, "open") == 0) {
+        Serial.println(F("open"));
+        cover.set_direction(Cover::Direction::OPEN);
+      } else if (strcmp(buffer, "close") == 0) {
+        Serial.println(F("close"));
+        cover.set_direction(Cover::Direction::CLOSE);
+      } else if (strcmp(buffer, "stop") == 0) {
+        Serial.println(F("stop"));
+        cover.set_direction(Cover::Direction::STOP);
+      } else if (strcmp(buffer, "position") == 0) {
+        Serial.print(F("position "));
+        Serial.println(cover.get_position_percentage());
+      } else if (strcmp(buffer, "water") == 0) {
+        Serial.print(F("water "));
+        Serial.println(water.get_counter());
+      } else if (strcmp(buffer, "debug") == 0) {
+        Serial.println(F("debug"));
+        cover.debug();
+      } else if (strcmp(buffer, "reset") == 0) {
+        Serial.println(F("reset"));
+        cover.reset();
       } else {
-        Serial.print(F("error parser "));
-        Serial.println(reinterpret_cast<char*>(buffer.get_buffer()));
+        Serial.print(F("error command "));
+        Serial.println(buffer);
       }
       Serial.println(F("***"));
       buffer.clear();
