@@ -537,7 +537,9 @@ class Filtration(PoupoolActor):
         self.__eco_mode.check_reset(now)
 
     def on_exit_eco_heating(self):
-        self.get_actor("Heating").wait()
+        actor = self.get_actor("Heating")
+        if actor.is_heating().get():
+            actor.wait()
 
     @do_repeat()
     def on_enter_eco_waiting(self):

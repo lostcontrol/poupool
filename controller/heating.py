@@ -78,7 +78,7 @@ class Heating(PoupoolActor):
     STATE_REFRESH_DELAY = 10
     HYSTERESIS_DOWN = 0.0
     HYSTERESIS_UP = 0.5
-    RECOVER_PERIOD = 20 * 60
+    RECOVER_PERIOD = 5 * 60
 
     states = ["stop", "waiting", "heating", "forcing", "recovering"]
 
@@ -99,7 +99,7 @@ class Heating(PoupoolActor):
         self.__machine.add_transition(
             "stop", ["waiting", "heating", "forcing", "recovering"], "stop")
         self.__machine.add_transition("wait", ["heating", "forcing"], "recovering")
-        self.__machine.add_transition("wait", "recovering", "waiting")
+        self.__machine.add_transition("recover_done", "recovering", "waiting")
 
     def __read_temperature(self):
         return self.__temperature.get_temperature("temperature_pool").get()
@@ -188,4 +188,4 @@ class Heating(PoupoolActor):
     def on_enter_recovering(self):
         logger.info("Entering recovering state")
         self.__encoder.heating_state("recovering")
-        self.do_delay(Heating.RECOVER_PERIOD, "wait")
+        self.do_delay(Heating.RECOVER_PERIOD, "recover_done")
