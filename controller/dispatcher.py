@@ -48,6 +48,7 @@ class Dispatcher(object):
             "/settings/swim/timer": (swim, between(1, 60), lambda x: "timer", to_int),
             "/settings/light/mode": (light, lambda x: x in ("stop", "on"), lambda x: x, None),
             "/settings/heater/setpoint": (heater, between(0, 30), lambda x: "setpoint", to_float),
+            "/settings/heating/enable": (heating, lambda x: x in ("ON", "OFF"), lambda x: "enable", to_bool),
             "/settings/heating/setpoint": (heating, between(10, 30), lambda x: "setpoint", to_float),
             "/settings/heating/start_hour": (heating, between(0, 23), lambda x: "start_hour", to_int),
             "/settings/disinfection/cl/constant": (disinfection, between(0, 10), lambda x: "cl_constant", to_float),

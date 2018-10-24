@@ -84,6 +84,7 @@ class Heating(PoupoolActor):
 
     def __init__(self, temperature, encoder, devices):
         super().__init__()
+        self.__enable = True
         self.__temperature = temperature
         self.__encoder = encoder
         self.__devices = devices
@@ -103,6 +104,10 @@ class Heating(PoupoolActor):
 
     def __read_temperature(self):
         return self.__temperature.get_temperature("temperature_pool").get()
+
+    def enable(self, value):
+        self.__enable = value
+        logger.info("Heating is %sabled" % ("en" if value else "dis"))
 
     def setpoint(self, value):
         self.__setpoint = value
@@ -145,7 +150,7 @@ class Heating(PoupoolActor):
     def do_repeat_waiting(self):
         now = datetime.now()
         if now >= self.__next_start:
-            if self.filtration_ready_for_heating():
+            if self.__enable and self.filtration_ready_for_heating():
                 if self.check_before_on():
                     self.get_actor("Filtration").eco_heating()
                     self._proxy.heat()
@@ -164,7 +169,7 @@ class Heating(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_heating(self):
         temperature = self.__read_temperature()
-        if temperature >= self.__setpoint + Heating.HYSTERESIS_UP:
+        if temperature >= self.__setpoint + Heating.HYSTERESIS_UP or not self.__enable:
             self.__next_start += timedelta(days=1)
             self._proxy.wait()
             raise StopRepeatException
