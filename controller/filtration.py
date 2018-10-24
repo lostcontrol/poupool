@@ -233,8 +233,9 @@ class Filtration(PoupoolActor):
         # Standby
         self.__machine.add_transition(
             "standby", ["eco", "closing"], "opening_standby", unless="tank_is_low")
-        self.__machine.add_transition(
-            "standby", ["overflow", "comfort", "sweep", "reload"], "standby")
+        self.__machine.add_transition("standby", ["overflow", "sweep", "reload"], "standby")
+        self.__machine.add_transition("standby", "comfort", "standby",
+                                      unless="pump_stopped_in_standby")
         self.__machine.add_transition("standby", "standby_boost", "standby_normal")
         # Overflow
         self.__machine.add_transition(
@@ -353,6 +354,9 @@ class Filtration(PoupoolActor):
 
     def tank_is_high(self):
         return self.get_actor("Tank").is_high().get()
+
+    def pump_stopped_in_standby(self):
+        return self.__speed_standby == 0
 
     def __start_backwash(self):
         diff = datetime.now() - self.__backwash_last
