@@ -197,8 +197,9 @@ class Filtration(PoupoolActor):
                   "stir",
                   "waiting"]}]
 
-    def __init__(self, encoder, devices):
+    def __init__(self, temperature, encoder, devices):
         super().__init__()
+        self.__temperature = temperature
         self.__encoder = encoder
         self.__devices = devices
         # Parameters
@@ -221,7 +222,8 @@ class Filtration(PoupoolActor):
         # Special transition from stop to eco because we need to start the tank FSM. However, we
         # cannot start it on_exit of stop because when going from stop to wintering, the tank will
         # remain in the stop state.
-        self.__machine.add_transition("eco", "stop", "eco", before=["tank_start", "heating_start"])
+        self.__machine.add_transition("eco", "stop", "eco", before=[
+                                      "arduino_start", "tank_start", "heating_start"])
         self.__machine.add_transition("eco", ["eco_heating", "reload", "wash_rinse"], "eco")
         self.__machine.add_transition("closed", "closing", "eco")
         self.__machine.add_transition("eco_normal", ["eco_compute", "eco_waiting"], "eco_normal")
@@ -349,6 +351,11 @@ class Filtration(PoupoolActor):
         if heating.is_stop().get():
             heating.wait()
 
+    def arduino_start(self):
+        arduino = self.get_actor("Arduino")
+        if arduino.is_stop().get():
+            arduino.run()
+
     def tank_is_low(self):
         return self.get_actor("Tank").is_low().get()
 
@@ -396,10 +403,6 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("backwash").off()
         self.__devices.get_valve("tank").off()
         self.__devices.get_valve("drain").off()
-
-    def on_exit_stop(self):
-        logger.info("Exiting stop state")
-        self.__actor_run("Arduino")
 
     @do_repeat()
     def on_enter_closing(self):
@@ -702,18 +705,25 @@ class Filtration(PoupoolActor):
         logger.info("Entering wintering state")
         self.get_actor("Heater").wait()
         # open the roller shutter
+        self.get_actor("Arduino").cover_open()
 
+    @do_repeat()
     def on_enter_wintering_waiting(self):
         logger.info("Entering wintering waiting state")
         self.__encoder.filtration_state("wintering_waiting")
-        # self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").off()
-        self._proxy.do_delay(3 * 3600, "wintering_stir")
+
+    @repeat(delay=2 * 60)
+    def do_repeat_wintering_waiting(self):
+        if self.__machine.get_time_in_state() > timedelta(hours=3):
+            temperature = self.__temperature.get_temperature("temperature_air").get()
+            if temperature <= 5:
+                self._proxy.wintering_stir()
+                raise StopRepeatException
 
     def on_enter_wintering_stir(self):
         logger.info("Entering wintering stir state")
         self.__encoder.filtration_state("wintering_stir")
-        # self.__devices.get_pump("boost").on()
         self.__devices.get_pump("variable").speed(1)
         self._proxy.do_delay(30 * 60, "wintering_waiting")
 

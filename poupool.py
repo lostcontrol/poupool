@@ -233,15 +233,15 @@ def main(args, devices):
     mqtt = Mqtt.start(dispatcher).proxy()
     encoder = Encoder(mqtt)
 
-    filtration = Filtration.start(encoder, devices).proxy()
-    swim = Swim.start(encoder, devices).proxy()
-    tank = Tank.start(encoder, devices).proxy()
-    disinfection = Disinfection.start(encoder, devices, args.no_disinfection).proxy()
-
     sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_local"),
                devices.get_sensor("temperature_air"), devices.get_sensor("temperature_ncc")]
     temperature = Temperature.start(encoder, sensors).proxy()
     temperature.do_read()
+
+    filtration = Filtration.start(temperature, encoder, devices).proxy()
+    swim = Swim.start(encoder, devices).proxy()
+    tank = Tank.start(encoder, devices).proxy()
+    disinfection = Disinfection.start(encoder, devices, args.no_disinfection).proxy()
 
     switch = devices.get_valve("heater")
     heater = Heater.start(temperature, switch).proxy()
