@@ -35,7 +35,7 @@ class PWM(PoupoolActor):
     @repeat(delay=1)
     def do_run(self):
         now = time.time()
-        if self.__last:
+        if self.__last is not None:
             diff = now - self.__last
             self.__duration += diff
             self.__duration = constrain(self.__duration, 0, self.period)
@@ -217,11 +217,11 @@ class Disinfection(PoupoolActor):
     def do_repeat_running_measuring(self):
         if len(self.__ph_measures) < Disinfection.SAMPLES:
             value = self.__devices.get_sensor("ph").value
-            if value:
+            if value is not None:
                 self.__ph_measures.append(value)
         if len(self.__orp_measures) < Disinfection.SAMPLES:
             value = self.__devices.get_sensor("orp").value
-            if value:
+            if value is not None:
                 self.__orp_measures.append(value)
         self.__measurement_counter += 1
         if self.__measurement_counter > 6:

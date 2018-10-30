@@ -42,7 +42,7 @@ class Timer(object):
         self.__duration = timedelta()
 
     def update(self, now, factor=1):
-        if self.__last:
+        if self.__last is not None:
             self.__duration += factor * (now - self.__last)
             remaining = max(timedelta(), self.delay - self.__duration)
             if self.__last_print + timedelta(seconds=20) <= now:

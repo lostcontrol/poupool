@@ -25,7 +25,7 @@ class Temperature(PoupoolActor):
             # In order to avoid reading the temperature again from different actors, we cache the
             # results in a map. Other actors can then get the values from here.
             self.__temperatures[sensor.name] = value
-            if value:
+            if value is not None:
                 rounded = round(value, 1)
                 logger.debug("Temperature (%s) is %.1f°C" % (sensor.name, rounded))
                 f = getattr(self.__encoder, sensor.name)
