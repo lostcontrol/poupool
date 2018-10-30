@@ -44,6 +44,7 @@ def main():
     publish("/status/filtration/backwash/last", datetime.datetime.now().strftime("%c"))
     publish("/settings/light/mode", "stop")
     publish("/settings/heater/setpoint", "3.0")
+    publish("/settings/heating/enable", "ON")
     publish("/settings/heating/setpoint", "26.0")
     publish("/settings/heating/start_hour", "1")
     publish("/settings/disinfection/cl/constant", "0.5")
