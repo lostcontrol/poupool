@@ -704,6 +704,7 @@ class Filtration(PoupoolActor):
     def on_enter_wintering(self):
         logger.info("Entering wintering state")
         self.get_actor("Heater").wait()
+        self.get_actor("Swim").wintering()
         # open the roller shutter
         self.get_actor("Arduino").cover_open()
 

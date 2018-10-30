@@ -239,7 +239,7 @@ def main(args, devices):
     temperature.do_read()
 
     filtration = Filtration.start(temperature, encoder, devices).proxy()
-    swim = Swim.start(encoder, devices).proxy()
+    swim = Swim.start(temperature, encoder, devices).proxy()
     tank = Tank.start(encoder, devices).proxy()
     disinfection = Disinfection.start(encoder, devices, args.no_disinfection).proxy()
 
