@@ -2,7 +2,6 @@ import pykka
 import time
 import logging
 from datetime import datetime, timedelta
-#from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor
 from .actor import PoupoolModel
 from .actor import StopRepeatException, repeat, do_repeat
@@ -129,7 +128,7 @@ class Heating(PoupoolActor):
 
     def filtration_allow_heating(self):
         actor = self.get_actor("Filtration")
-        return actor.is_eco_heating().get()
+        return actor.is_heating_running().get()
 
     def check_before_on(self):
         temperature = self.__read_temperature()
@@ -152,7 +151,7 @@ class Heating(PoupoolActor):
         if now >= self.__next_start:
             if self.__enable and self.filtration_ready_for_heating():
                 if self.check_before_on():
-                    self.get_actor("Filtration").eco_heating()
+                    self.get_actor("Filtration").heat()
                     self._proxy.heat()
                     raise StopRepeatException
                 else:
@@ -177,9 +176,9 @@ class Heating(PoupoolActor):
     def on_exit_heating(self):
         logger.info("Exiting heating state")
         self.__devices.get_valve("heating").off()
-        # Only change the filtration state if we are running in eco_heating state
+        # Only change the filtration state if we are running in heating_running state
         if self.filtration_allow_heating():
-            self.get_actor("Filtration").eco()
+            self.get_actor("Filtration").heating_delay()
 
     def on_enter_forcing(self):
         logger.info("Entering forcing state")

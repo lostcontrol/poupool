@@ -179,8 +179,13 @@ class Filtration(PoupoolActor):
                   "compute",
                   "normal",
                   "tank",
-                  "heating",
                   "waiting"]},
+              {"name": "heating", "initial": "running", "children": [
+                  "running",
+                  {"name": "delay", "initial": "none", "children": [
+                      "none",
+                      "standby",
+                      "overflow"]}]},
               {"name": "standby", "initial": "normal", "children": [
                   "boost",
                   "normal"]},
@@ -224,15 +229,20 @@ class Filtration(PoupoolActor):
         # remain in the stop state.
         self.__machine.add_transition("eco", "stop", "eco", before=[
                                       "arduino_start", "tank_start", "heating_start"])
-        self.__machine.add_transition("eco", ["eco_heating", "reload", "wash_rinse"], "eco")
+        self.__machine.add_transition("eco", ["reload", "wash_rinse"], "eco")
         self.__machine.add_transition("closed", "closing", "eco")
         self.__machine.add_transition("eco_normal", ["eco_compute", "eco_waiting"], "eco_normal")
         self.__machine.add_transition("eco_tank", "eco_normal", "eco_tank", unless="tank_is_low")
-        self.__machine.add_transition("eco_heating", ["eco_waiting", "eco_normal"], "eco_heating")
+        self.__machine.add_transition("heat", ["eco_waiting", "eco_normal"], "heating")
+        self.__machine.add_transition("heating_delay", "heating", "heating_delay_none")
+        self.__machine.add_transition("heating_delayed", "heating_delay_none", "eco")
         self.__machine.add_transition("eco_waiting", ["eco_compute", "eco_tank"], "eco_waiting")
         self.__machine.add_transition("opened", "opening_standby", "standby_boost")
         self.__machine.add_transition("opened", "opening_overflow", "overflow_boost")
         # Standby
+        self.__machine.add_transition("standby", "heating_running", "heating_delay_standby")
+        self.__machine.add_transition("heating_delayed", "heating_delay_standby",
+                                      "opening_standby", unless="tank_is_low")
         self.__machine.add_transition(
             "standby", ["eco", "closing"], "opening_standby", unless="tank_is_low")
         self.__machine.add_transition("standby", ["overflow", "sweep", "reload"], "standby")
@@ -240,6 +250,9 @@ class Filtration(PoupoolActor):
                                       unless="pump_stopped_in_standby")
         self.__machine.add_transition("standby", "standby_boost", "standby_normal")
         # Overflow
+        self.__machine.add_transition("overflow", "heating_running", "heating_delay_overflow")
+        self.__machine.add_transition("heating_delayed", "heating_delay_overflow",
+                                      "opening_overflow", unless="tank_is_low")
         self.__machine.add_transition(
             "overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
         self.__machine.add_transition("overflow", ["standby", "comfort", "reload"], "overflow")
@@ -250,7 +263,7 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("sweep", "standby", "sweep")
         # Stop
         self.__machine.add_transition(
-            "stop", ["eco", "standby", "overflow", "comfort", "sweep", "opening", "closing", "wash", "wintering"], "stop")
+            "stop", ["eco", "heating", "standby", "overflow", "comfort", "sweep", "opening", "closing", "wash", "wintering"], "stop")
         # (Back)wash
         self.__machine.add_transition(
             "wash", ["eco_normal", "eco_waiting"], "wash", conditions="tank_is_high")
@@ -265,7 +278,7 @@ class Filtration(PoupoolActor):
         # since there is actually no state change). So we jump to the reload state and back to
         # workaround this.
         self.__machine.add_transition("reload", ["eco", "standby", "overflow"], "reload")
-        #self.__machine.get_graph().draw("filtration.png", prog="dot")
+        # self.__machine.get_graph().draw("filtration.png", prog="dot")
 
     def __reload_eco(self):
         if self.is_eco(allow_substates=True):
@@ -527,15 +540,15 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("tank").off()
 
     @do_repeat()
-    def on_enter_eco_heating(self):
-        logger.info("Entering eco_heating state")
-        self.__encoder.filtration_state("eco_heating")
+    def on_enter_heating_running(self):
+        logger.info("Entering heating_running state")
+        self.__encoder.filtration_state("heating_running")
         self.__eco_mode.clear()
         self.__disinfection_start()
         self.__devices.get_pump("variable").speed(2)
 
     @repeat(delay=STATE_REFRESH_DELAY)
-    def do_repeat_eco_heating(self):
+    def do_repeat_heating_running(self):
         now = datetime.now()
         # We are running at speed 2 so count a bit more than 1 for the filteration
         self.__eco_mode.update(now, 1.1)
@@ -543,10 +556,25 @@ class Filtration(PoupoolActor):
         # since heating has an higher priority.
         self.__eco_mode.check_reset(now)
 
-    def on_exit_eco_heating(self):
+    def on_exit_heating_running(self):
         actor = self.get_actor("Heating")
         if actor.is_heating().get():
             actor.wait()
+
+    def on_enter_heating_delay(self):
+        logger.info("Entering heating_delay state")
+        self.__encoder.filtration_state("heating_delay")
+
+    def on_enter_heating_delay_none(self):
+        # The heat pump manual says it runs the main pump for 30 seconds after the heat pump has
+        # switched off. We go for 60 seconds here to be sure (and since it is easy to do it)
+        self._proxy.do_delay(60, "heating_delayed")
+
+    def on_enter_heating_delay_standby(self):
+        self._proxy.do_delay(30, "heating_delayed")
+
+    def on_enter_heating_delay_overflow(self):
+        self._proxy.do_delay(30, "heating_delayed")
 
     @do_repeat()
     def on_enter_eco_waiting(self):
