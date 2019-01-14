@@ -14,7 +14,7 @@ class Tank(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
 
-    states = ["stop", "low", "normal", "high"]
+    states = ["halt", "low", "normal", "high"]
 
     hysteresis = 5
     levels_too_low = 10
@@ -33,18 +33,18 @@ class Tank(PoupoolActor):
         self.__devices = devices
         self.levels = self.levels_eco
         # Initialize the state machine
-        self.__machine = PoupoolModel(model=self, states=Tank.states, initial="stop")
+        self.__machine = PoupoolModel(model=self, states=Tank.states, initial="halt")
 
-        self.__machine.add_transition("low", "stop", "low")
+        self.__machine.add_transition("low", "halt", "low")
         self.__machine.add_transition("low", "normal", "low")
-        self.__machine.add_transition("normal", "stop", "normal")
+        self.__machine.add_transition("normal", "halt", "normal")
         self.__machine.add_transition("normal", "low", "normal")
         self.__machine.add_transition("normal", "high", "normal")
-        self.__machine.add_transition("high", "stop", "high")
+        self.__machine.add_transition("high", "halt", "high")
         self.__machine.add_transition("high", "normal", "high")
-        self.__machine.add_transition("stop", "low", "stop")
-        self.__machine.add_transition("stop", "normal", "stop")
-        self.__machine.add_transition("stop", "high", "stop")
+        self.__machine.add_transition("halt", "low", "halt")
+        self.__machine.add_transition("halt", "normal", "halt")
+        self.__machine.add_transition("halt", "high", "halt")
 
     def __get_tank_height(self):
         height = self.__devices.get_sensor("tank").value
@@ -56,9 +56,9 @@ class Tank(PoupoolActor):
         logger.info("Tank level set to %s" % mode)
         self.levels = self.levels_eco if mode is "eco" else self.levels_overflow
 
-    def on_enter_stop(self):
-        logger.info("Entering stop state")
-        self.__encoder.tank_state("stop")
+    def on_enter_halt(self):
+        logger.info("Entering halt state")
+        self.__encoder.tank_state("halt")
         self.__devices.get_valve("main").off()
 
     @do_repeat()
@@ -72,7 +72,7 @@ class Tank(PoupoolActor):
         # Security feature: stop if we stay too long in this state
         if self.__machine.get_time_in_state() > datetime.timedelta(hours=6):
             logger.warning("Tank TOO LONG in low state, stopping")
-            self.get_actor("Filtration").stop()
+            self.get_actor("Filtration").halt()
             raise StopRepeatException
         height = self.__get_tank_height()
         if height >= self.levels["low"] + self.hysteresis:
@@ -80,7 +80,7 @@ class Tank(PoupoolActor):
             raise StopRepeatException
         elif height < self.levels_too_low:
             logger.warning("Tank TOO LOW, stopping: %d" % height)
-            self.get_actor("Filtration").stop()
+            self.get_actor("Filtration").halt()
             raise StopRepeatException
 
     @do_repeat()

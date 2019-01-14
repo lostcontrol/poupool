@@ -30,7 +30,7 @@ class Dispatcher(object):
 
     def register(self, filtration, swim, light, heater, heating, disinfection):
         self.__mapping = {
-            "/settings/mode": (filtration, lambda x: x in ("stop", "eco", "standby", "overflow", "comfort", "sweep", "wash", "wintering"), lambda x: x, None),
+            "/settings/mode": (filtration, lambda x: x in ("halt", "eco", "standby", "overflow", "comfort", "sweep", "wash", "wintering"), lambda x: x, None),
             "/settings/filtration/duration": (filtration, between(1, 172800), lambda x: "duration", to_int),
             "/settings/filtration/period": (filtration, between(1, 10), lambda x: "period", to_int),
             "/settings/filtration/reset_hour": (filtration, between(0, 23), lambda x: "reset_hour", to_int),
@@ -44,9 +44,9 @@ class Dispatcher(object):
             "/status/filtration/backwash/last": (filtration, lambda x: True, lambda x: "backwash_last", to_string),
             "/settings/filtration/speed/standby": (filtration, between(0, 1), lambda x: "speed_standby", to_int),
             "/settings/filtration/speed/overflow": (filtration, between(1, 4), lambda x: "speed_overflow", to_int),
-            "/settings/swim/mode": (swim, lambda x: x in ("stop", "timed", "continuous"), lambda x: x, None),
+            "/settings/swim/mode": (swim, lambda x: x in ("halt", "timed", "continuous"), lambda x: x, None),
             "/settings/swim/timer": (swim, between(1, 60), lambda x: "timer", to_int),
-            "/settings/light/mode": (light, lambda x: x in ("stop", "on"), lambda x: x, None),
+            "/settings/light/mode": (light, lambda x: x in ("halt", "on"), lambda x: x, None),
             "/settings/heater/setpoint": (heater, between(0, 30), lambda x: "setpoint", to_float),
             "/settings/heating/enable": (heating, lambda x: x in ("ON", "OFF"), lambda x: "enable", to_bool),
             "/settings/heating/setpoint": (heating, between(10, 30), lambda x: "setpoint", to_float),

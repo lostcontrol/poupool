@@ -170,7 +170,7 @@ class Filtration(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
 
-    states = ["stop",
+    states = ["halt",
               "closing",
               {"name": "opening", "children": [
                   "standby",
@@ -219,15 +219,15 @@ class Filtration(PoupoolActor):
         self.__backwash_last = datetime.fromtimestamp(0)
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Filtration.states,
-                                      initial="stop", before_state_change=[self.__before_state_change])
+                                      initial="halt", before_state_change=[self.__before_state_change])
         # Transitions
         # Eco
         self.__machine.add_transition(
             "eco", ["standby", "overflow", "comfort", "opening"], "closing")
-        # Special transition from stop to eco because we need to start the tank FSM. However, we
-        # cannot start it on_exit of stop because when going from stop to wintering, the tank will
-        # remain in the stop state.
-        self.__machine.add_transition("eco", "stop", "eco", before=[
+        # Special transition from halt to eco because we need to start the tank FSM. However, we
+        # cannot start it on_exit of halt because when going from halt to wintering, the tank will
+        # remain in the halt state.
+        self.__machine.add_transition("eco", "halt", "eco", before=[
                                       "arduino_start", "tank_start", "heating_start"])
         self.__machine.add_transition("eco", ["reload", "wash_rinse"], "eco")
         self.__machine.add_transition("closed", "closing", "eco")
@@ -263,13 +263,13 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("sweep", "standby", "sweep")
         # Stop
         self.__machine.add_transition(
-            "stop", ["eco", "heating", "standby", "overflow", "comfort", "sweep", "opening", "closing", "wash", "wintering"], "stop")
+            "halt", ["eco", "heating", "standby", "overflow", "comfort", "sweep", "opening", "closing", "wash", "wintering"], "halt")
         # (Back)wash
         self.__machine.add_transition(
             "wash", ["eco_normal", "eco_waiting"], "wash", conditions="tank_is_high")
         self.__machine.add_transition("rinse", "wash_backwash", "wash_rinse")
         # Wintering
-        self.__machine.add_transition("wintering", "stop", "wintering")
+        self.__machine.add_transition("wintering", "halt", "wintering")
         self.__machine.add_transition("wintering_waiting", "wintering_stir", "wintering_waiting")
         self.__machine.add_transition("wintering_stir", "wintering_waiting", "wintering_stir")
         # Hack to reload settings. Often the pumps/valves are set in the on_enter callback. In some
@@ -356,17 +356,17 @@ class Filtration(PoupoolActor):
 
     def tank_start(self):
         tank = self.get_actor("Tank")
-        if tank.is_stop().get():
+        if tank.is_halt().get():
             tank.normal()
 
     def heating_start(self):
         heating = self.get_actor("Heating")
-        if heating.is_stop().get():
+        if heating.is_halt().get():
             heating.wait()
 
     def arduino_start(self):
         arduino = self.get_actor("Arduino")
-        if arduino.is_stop().get():
+        if arduino.is_halt().get():
             arduino.run()
 
     def tank_is_low(self):
@@ -396,20 +396,20 @@ class Filtration(PoupoolActor):
 
     def __actor_run(self, name):
         actor = self.get_actor(name)
-        if actor.is_stop().get():
+        if actor.is_halt().get():
             actor.run()
 
-    def __actor_stop(self, name):
+    def __actor_halt(self, name):
         actor = self.get_actor(name)
-        if not actor.is_stop().get():
-            actor.stop()
+        if not actor.is_halt().get():
+            actor.halt()
 
-    def on_enter_stop(self):
-        logger.info("Entering stop state")
-        self.__encoder.filtration_state("stop")
-        self.__actor_stop("Disinfection")
-        self.__actor_stop("Tank")
-        self.__actor_stop("Arduino")
+    def on_enter_halt(self):
+        logger.info("Entering halt state")
+        self.__encoder.filtration_state("halt")
+        self.__actor_halt("Disinfection")
+        self.__actor_halt("Tank")
+        self.__actor_halt("Arduino")
         self.__devices.get_pump("variable").off()
         self.__devices.get_pump("boost").off()
         self.__devices.get_valve("gravity").off()
@@ -447,7 +447,7 @@ class Filtration(PoupoolActor):
     def on_enter_opening(self):
         logger.info("Entering opening state")
         self.__encoder.filtration_state("opening")
-        self.__actor_stop("Disinfection")
+        self.__actor_halt("Disinfection")
         # stop the pumps to avoid perturbation in the water while shutter is moving
         self.__devices.get_valve("gravity").on()
         self.__devices.get_pump("boost").off()
@@ -474,7 +474,7 @@ class Filtration(PoupoolActor):
 
     def on_enter_eco(self):
         logger.info("Entering eco state")
-        self.__actor_stop("Light")
+        self.__actor_halt("Light")
         self.__devices.get_valve("drain").off()
         self.__devices.get_valve("gravity").on()
         self.__devices.get_valve("tank").off()
@@ -522,7 +522,7 @@ class Filtration(PoupoolActor):
         logger.info("Entering eco_tank state")
         self.__encoder.filtration_state("eco_tank")
         self.__eco_mode.set_current(self.__eco_mode.tank_duration)
-        self.__actor_stop("Disinfection")
+        self.__actor_halt("Disinfection")
         self.__devices.get_valve("tank").on()
 
     @repeat(delay=STATE_REFRESH_DELAY)
@@ -581,7 +581,7 @@ class Filtration(PoupoolActor):
         logger.info("Entering eco_waiting state")
         self.__encoder.filtration_state("eco_waiting")
         self.__eco_mode.set_current(self.__eco_mode.off_duration)
-        self.__actor_stop("Disinfection")
+        self.__actor_halt("Disinfection")
         self.__devices.get_pump("variable").off()
         self.__stir_mode.clear()
 
@@ -694,8 +694,8 @@ class Filtration(PoupoolActor):
 
     def on_exit_overflow_normal(self):
         logger.info("Exiting overflow state")
-        self.__actor_stop("Swim")
-        self.__actor_stop("Disinfection")
+        self.__actor_halt("Swim")
+        self.__actor_halt("Disinfection")
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_overflow_normal(self):
@@ -704,7 +704,7 @@ class Filtration(PoupoolActor):
 
     def on_enter_wash(self):
         logger.info("Entering wash state")
-        self.__actor_stop("Disinfection")
+        self.__actor_halt("Disinfection")
 
     def on_enter_wash_backwash(self):
         logger.info("Entering backwash state")
@@ -759,5 +759,5 @@ class Filtration(PoupoolActor):
 
     def on_exit_wintering(self):
         logger.info("Exiting wintering state")
-        self.__actor_stop("Heater")
-        self.__actor_stop("Swim")
+        self.__actor_halt("Heater")
+        self.__actor_halt("Swim")

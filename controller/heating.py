@@ -16,7 +16,7 @@ class Heater(PoupoolActor):
     HYSTERESIS_DOWN = 0.5
     HYSTERESIS_UP = 2.0
 
-    states = ["stop", "waiting", "heating"]
+    states = ["halt", "waiting", "heating"]
 
     def __init__(self, temperature, heater):
         super().__init__()
@@ -24,12 +24,12 @@ class Heater(PoupoolActor):
         self.__heater = heater
         self.__setpoint = 5.0
         # Initialize the state machine
-        self.__machine = PoupoolModel(model=self, states=Heating.states, initial="stop")
+        self.__machine = PoupoolModel(model=self, states=Heating.states, initial="halt")
 
         self.__machine.add_transition(
-            "wait", ["stop", "heating"], "waiting", conditions="has_heater")
+            "wait", ["halt", "heating"], "waiting", conditions="has_heater")
         self.__machine.add_transition("heat", "waiting", "heating")
-        self.__machine.add_transition("stop", ["waiting", "heating"], "stop")
+        self.__machine.add_transition("halt", ["waiting", "heating"], "halt")
 
     def __read_temperature(self):
         return self.__temperature.get_temperature("temperature_local").get()
@@ -41,8 +41,8 @@ class Heater(PoupoolActor):
         self.__setpoint = value
         logger.info("Setpoint set to %.1f" % self.__setpoint)
 
-    def on_enter_stop(self):
-        logger.info("Entering stop state")
+    def on_enter_halt(self):
+        logger.info("Entering halt state")
         self.__heater.off()
 
     @do_repeat()
@@ -79,7 +79,7 @@ class Heating(PoupoolActor):
     HYSTERESIS_UP = 0.5
     RECOVER_PERIOD = 5 * 60
 
-    states = ["stop", "waiting", "heating", "forcing", "recovering"]
+    states = ["halt", "waiting", "heating", "forcing", "recovering"]
 
     def __init__(self, temperature, encoder, devices):
         super().__init__()
@@ -90,14 +90,14 @@ class Heating(PoupoolActor):
         self.__next_start = datetime.now()
         self.__setpoint = 26.0
         # Initialize the state machine
-        self.__machine = PoupoolModel(model=self, states=Heating.states, initial="stop")
+        self.__machine = PoupoolModel(model=self, states=Heating.states, initial="halt")
 
-        self.__machine.add_transition("wait", "stop", "waiting")
-        self.__machine.add_transition("heat", ["stop", "waiting"], "heating",
+        self.__machine.add_transition("wait", "halt", "waiting")
+        self.__machine.add_transition("heat", ["halt", "waiting"], "heating",
                                       conditions="filtration_allow_heating")
-        self.__machine.add_transition("force", ["stop", "waiting"], "forcing")
+        self.__machine.add_transition("force", ["halt", "waiting"], "forcing")
         self.__machine.add_transition(
-            "stop", ["waiting", "heating", "forcing", "recovering"], "stop")
+            "halt", ["waiting", "heating", "forcing", "recovering"], "halt")
         self.__machine.add_transition("wait", ["heating", "forcing"], "recovering")
         self.__machine.add_transition("recover_done", "recovering", "waiting")
 
@@ -134,9 +134,9 @@ class Heating(PoupoolActor):
         temperature = self.__read_temperature()
         return (temperature - Heating.HYSTERESIS_DOWN) < self.__setpoint
 
-    def on_enter_stop(self):
-        logger.info("Entering stop state")
-        self.__encoder.heating_state("stop")
+    def on_enter_halt(self):
+        logger.info("Entering halt state")
+        self.__encoder.heating_state("halt")
         self.__devices.get_valve("heating").off()
 
     @do_repeat()

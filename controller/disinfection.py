@@ -95,7 +95,7 @@ class Disinfection(PoupoolActor):
     }
 
     states = [
-        "stop",
+        "halt",
         "waiting",
         "constant",
         {"name": "running", "initial": "measuring", "children": [
@@ -125,12 +125,12 @@ class Disinfection(PoupoolActor):
         self.__cl_constant = 0.5
         self.__free_chlorine = "low"
         # Initialize the state machine
-        self.__machine = PoupoolModel(model=self, states=Disinfection.states, initial="stop")
+        self.__machine = PoupoolModel(model=self, states=Disinfection.states, initial="halt")
 
-        self.__machine.add_transition("run", "stop", "waiting", unless="is_disable")
+        self.__machine.add_transition("run", "halt", "waiting", unless="is_disable")
         self.__machine.add_transition("run", "waiting", "running")
-        self.__machine.add_transition("stop", ["constant", "waiting", "running"], "stop")
-        self.__machine.add_transition("constant", ["stop", "waiting", "running"], "constant")
+        self.__machine.add_transition("halt", ["constant", "waiting", "running"], "halt")
+        self.__machine.add_transition("constant", ["halt", "waiting", "running"], "constant")
         self.__machine.add_transition("measure", "running_waiting", "running_measuring")
         self.__machine.add_transition("adjust", "running_measuring", "running_adjusting")
         self.__machine.add_transition("wait", "running_adjusting", "running_waiting")
@@ -170,9 +170,9 @@ class Disinfection(PoupoolActor):
     def is_disable(self):
         return self.__is_disable
 
-    def on_enter_stop(self):
-        logger.info("Entering stop state")
-        self.__encoder.disinfection_state("stop")
+    def on_enter_halt(self):
+        logger.info("Entering halt state")
+        self.__encoder.disinfection_state("halt")
         self.__ph.value = 0
         self.__cl.value = 0
         self.__ph.do_cancel()
@@ -226,7 +226,7 @@ class Disinfection(PoupoolActor):
         self.__measurement_counter += 1
         if self.__measurement_counter > 6:
             logger.error("Unable to get enough samples. Stopping disinfection")
-            self._proxy.stop()
+            self._proxy.halt()
             raise StopRepeatException
         if len(self.__ph_measures) + len(self.__orp_measures) >= 2 * Disinfection.SAMPLES:
             self._proxy.adjust()

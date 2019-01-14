@@ -15,7 +15,7 @@ class Swim(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
 
-    states = ["stop",
+    states = ["halt",
               "timed",
               "continuous",
               {"name": "wintering", "initial": "waiting", "children": [
@@ -29,20 +29,20 @@ class Swim(PoupoolActor):
         self.__devices = devices
         self.__timer = Timer("swim")
         # Initialize the state machine
-        self.__machine = PoupoolModel(model=self, states=Swim.states, initial="stop")
+        self.__machine = PoupoolModel(model=self, states=Swim.states, initial="halt")
 
-        self.__machine.add_transition("timed", "stop", "timed", conditions="filtration_allow_swim")
-        self.__machine.add_transition("wintering", "stop", "wintering",
+        self.__machine.add_transition("timed", "halt", "timed", conditions="filtration_allow_swim")
+        self.__machine.add_transition("wintering", "halt", "wintering",
                                       conditions="filtration_is_wintering")
         self.__machine.add_transition("wintering_stir", "wintering_waiting", "wintering_stir")
         self.__machine.add_transition("wintering_waiting", "wintering_stir", "wintering_waiting")
         self.__machine.add_transition("timed", "continuous", "timed",
                                       conditions="filtration_allow_swim")
-        self.__machine.add_transition("continuous", "stop", "continuous",
+        self.__machine.add_transition("continuous", "halt", "continuous",
                                       conditions="filtration_allow_swim")
         self.__machine.add_transition("continuous", "timed", "continuous",
                                       conditions="filtration_allow_swim")
-        self.__machine.add_transition("stop", ["timed", "continuous", "wintering"], "stop")
+        self.__machine.add_transition("halt", ["timed", "continuous", "wintering"], "halt")
 
     def timer(self, value):
         self.__timer.delay = timedelta(minutes=value)
@@ -57,9 +57,9 @@ class Swim(PoupoolActor):
         actor = self.get_actor("Filtration")
         return actor.is_wintering_waiting().get() or actor.is_wintering_stir().get()
 
-    def on_enter_stop(self):
-        logger.info("Entering stop state")
-        self.__encoder.swim_state("stop")
+    def on_enter_halt(self):
+        logger.info("Entering halt state")
+        self.__encoder.swim_state("halt")
         self.__devices.get_pump("swim").off()
 
     @do_repeat()
@@ -73,7 +73,7 @@ class Swim(PoupoolActor):
     def do_repeat_timed(self):
         self.__timer.update(datetime.now())
         if self.__timer.elapsed():
-            self._proxy.stop()
+            self._proxy.halt()
             raise StopRepeatException
 
     def on_enter_continuous(self):

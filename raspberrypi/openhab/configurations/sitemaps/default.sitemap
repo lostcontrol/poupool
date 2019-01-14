@@ -10,11 +10,11 @@ sitemap default label="Menu principal"
                 Text item=Poupool_Temperature_Air icon="temperature"
             }
             Frame label="Nage contre-courant" icon="socket" {
-                Switch item=Poupool_SwimMode icon="settings" mappings=[stop="Stop", timed="Temporisé", continuous="Continue"]
+                Switch item=Poupool_SwimMode icon="settings" mappings=[halt="Stop", timed="Temporisé", continuous="Continue"]
                 Text item=Poupool_SwimState icon="info"
             }
             Frame label="Lumières" icon="light" {
-                Switch item=Poupool_Light_Mode icon="settings" mappings=[stop="Stop", on="Allumé"]
+                Switch item=Poupool_Light_Mode icon="settings" mappings=[halt="Stop", on="Allumé"]
                 Text item=Poupool_Light_State icon="info"
             }
             Frame label="Plus d'options" icon="settings" {
@@ -82,7 +82,7 @@ sitemap default label="Menu principal"
                 }
                 Text label="Paramètres" icon="settings" {
                     Frame label="Mode étendu" icon="computer" {
-                       Switch item=Poupool_Mode icon="settings" mappings=[stop="Stop", sweep="Balai", wash="Contre-lavage", wintering="Hivernage"]
+                       Switch item=Poupool_Mode icon="settings" mappings=[halt="Stop", sweep="Balai", wash="Contre-lavage", wintering="Hivernage"]
                        Text item=Poupool_State icon="info"
                     }
                     Frame label="Paramètres" icon="settings" {

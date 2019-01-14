@@ -15,7 +15,7 @@ class Arduino(PoupoolActor):
 
     STATE_REFRESH_DELAY = 60
 
-    states = ["stop", "run"]
+    states = ["halt", "run"]
 
     def __init__(self, encoder, devices):
         super().__init__()
@@ -23,10 +23,10 @@ class Arduino(PoupoolActor):
         self.__arduino = devices.get_valve("arduino")
         self.__water_counter = 0
         # Initialize the state machine
-        self.__machine = PoupoolModel(model=self, states=Arduino.states, initial="stop")
+        self.__machine = PoupoolModel(model=self, states=Arduino.states, initial="halt")
 
-        self.__machine.add_transition("run", "stop", "run")
-        self.__machine.add_transition("stop", "run", "stop")
+        self.__machine.add_transition("run", "halt", "run")
+        self.__machine.add_transition("halt", "run", "halt")
 
     def cover_open(self):
         self.__arduino.cover_open()
@@ -43,8 +43,8 @@ class Arduino(PoupoolActor):
     def water_counter(self):
         return self.__water_counter
 
-    def on_enter_stop(self):
-        logger.info("Entering stop state")
+    def on_enter_halt(self):
+        logger.info("Entering halt state")
         self.cover_stop()
 
     @do_repeat()
