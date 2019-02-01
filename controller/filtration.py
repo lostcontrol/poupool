@@ -7,6 +7,7 @@ from .actor import PoupoolModel
 from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat, do_repeat
 from .util import round_timedelta, Timer
+from .config import config, as_list
 
 logger = logging.getLogger(__name__)
 
@@ -113,14 +114,16 @@ class EcoMode(object):
 
 class StirMode(object):
 
+    LOCATION = config["misc", "location"]
+    SOLAR_ELEVATION = int(config["misc", "solar_elevation"])
+
     def __init__(self, devices):
         self.__devices = devices
         self.__stir_state = False
         self.__current = Timer("stir")
         self.__period = timedelta(seconds=3600)
         self.__duration = timedelta(seconds=120)
-        # TODO Do not hard code this
-        self.__astral = Astral()["Bern"]
+        self.__astral = Astral()[StirMode.LOCATION]
 
     def stir_period(self, value):
         period = timedelta(seconds=value)
@@ -158,7 +161,7 @@ class StirMode(object):
         # We only activate the stir mode if the sun elevation is greater than ~20°.
         # No need to stir at night, this mode is meant to lower the solar cover
         # temperature.
-        if self.__astral.solar_elevation() >= 20:
+        if self.__astral.solar_elevation() >= StirMode.SOLAR_ELEVATION:
             if self.__period > timedelta() and self.__current.elapsed():
                 if self.__stir_state:
                     self.__pause()
@@ -169,6 +172,12 @@ class StirMode(object):
 class Filtration(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
+    HEATING_DELAY_TO_ECO = int(config["heating", "delay_to_eco"])
+    HEATING_DELAY_TO_OPEN = int(config["heating", "delay_to_open"])
+    WINTERING_PERIOD = int(config["wintering", "period"])
+    WINTERING_ONLY_BELOW = float(config["wintering", "only_below"])
+    WINTERING_DURATION = int(config["wintering", "duration"])
+    WINTERING_PUMP_SPEED = int(config["wintering", "pump_speed"])
 
     states = ["halt",
               "closing",
@@ -568,13 +577,13 @@ class Filtration(PoupoolActor):
     def on_enter_heating_delay_none(self):
         # The heat pump manual says it runs the main pump for 30 seconds after the heat pump has
         # switched off. We go for 60 seconds here to be sure (and since it is easy to do it)
-        self._proxy.do_delay(60, "heating_delayed")
+        self._proxy.do_delay(Filtration.HEATING_DELAY_TO_ECO, "heating_delayed")
 
     def on_enter_heating_delay_standby(self):
-        self._proxy.do_delay(30, "heating_delayed")
+        self._proxy.do_delay(Filtration.HEATING_DELAY_TO_OPEN, "heating_delayed")
 
     def on_enter_heating_delay_overflow(self):
-        self._proxy.do_delay(30, "heating_delayed")
+        self._proxy.do_delay(Filtration.HEATING_DELAY_TO_OPEN, "heating_delayed")
 
     @do_repeat()
     def on_enter_eco_waiting(self):
@@ -745,17 +754,17 @@ class Filtration(PoupoolActor):
 
     @repeat(delay=2 * 60)
     def do_repeat_wintering_waiting(self):
-        if self.__machine.get_time_in_state() > timedelta(hours=3):
+        if self.__machine.get_time_in_state() > timedelta(seconds=Filtration.WINTERING_PERIOD):
             temperature = self.__temperature.get_temperature("temperature_air").get()
-            if temperature <= 5:
+            if temperature <= Filtration.WINTERING_ONLY_BELOW:
                 self._proxy.wintering_stir()
                 raise StopRepeatException
 
     def on_enter_wintering_stir(self):
         logger.info("Entering wintering stir state")
         self.__encoder.filtration_state("wintering_stir")
-        self.__devices.get_pump("variable").speed(1)
-        self._proxy.do_delay(30 * 60, "wintering_waiting")
+        self.__devices.get_pump("variable").speed(Filtration.WINTERING_PUMP_SPEED)
+        self._proxy.do_delay(Filtration.WINTERING_DURATION, "wintering_waiting")
 
     def on_exit_wintering(self):
         logger.info("Exiting wintering state")

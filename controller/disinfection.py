@@ -6,11 +6,14 @@ from .actor import PoupoolModel
 from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat, do_repeat
 from .util import mapping, constrain, Timer
+from .config import config
 
 logger = logging.getLogger(__name__)
 
 
 class PWM(PoupoolActor):
+
+    SECURITY_DURATION = int(config["disinfection", "security_duration"])
 
     def __init__(self, name, pump, period=120, min_runtime=3):
         super().__init__()
@@ -21,7 +24,7 @@ class PWM(PoupoolActor):
         self.__duration = 0
         self.__state = False
         self.__security_duration = Timer("PWM for %s" % name)
-        self.__security_duration.delay = timedelta(hours=2)
+        self.__security_duration.delay = timedelta(hours=PWM.SECURITY_DURATION)
         self.__security_reset = datetime.now() + timedelta(days=1)
         self.__min_runtime = min_runtime
         self.value = 0.0
@@ -85,7 +88,12 @@ class PController(object):
 class Disinfection(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
-    SAMPLES = 3
+    SAMPLES = int(config["disinfection", "samples"])
+    START_DELAY = int(config["disinfection", "start_delay"])
+    WAITING_DELAY = int(config["disinfection", "waiting_delay"])
+    PH_PWM_PERIOD = int(config["disinfection", "ph_pwm_period"])
+    CL_PWM_PERIOD = int(config["disinfection", "cl_pwm_period"])
+    CL_PWM_PERIOD_CONSTANT = int(config["disinfection", "cl_pwm_period_constant"])
 
     curves = {
         "low": lambda x: -45.162 * x + 1002,         # 0.8
@@ -113,6 +121,7 @@ class Disinfection(PoupoolActor):
         self.__ph_measures = []
         self.__ph_enable = True
         self.__ph = PWM.start("pH", self.__devices.get_pump("ph")).proxy()
+        self.__ph.period = Disinfection.PH_PWM_PERIOD
         self.__ph_controller = PController(pterm=-1.0)
         self.__ph_controller.setpoint = 7
         # ORP
@@ -122,6 +131,7 @@ class Disinfection(PoupoolActor):
         self.__orp_controller.setpoint = 700
         # Chlorine
         self.__cl = PWM.start("cl", self.__devices.get_pump("cl")).proxy()
+        self.__cl.period = Disinfection.CL_PWM_PERIOD
         self.__cl_constant = 0.5
         self.__free_chlorine = "low"
         # Initialize the state machine
@@ -185,13 +195,13 @@ class Disinfection(PoupoolActor):
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
         self.__encoder.disinfection_state("waiting")
-        self._proxy.do_delay(20 * 60, "run")
+        self._proxy.do_delay(Disinfection.START_DELAY, "run")
 
     @do_repeat()
     def on_enter_constant(self):
         logger.info("Entering constant state")
         self.__encoder.disinfection_state("constant")
-        self.__cl.period = 600
+        self.__cl.period = Disinfection.CL_PWM_PERIOD_CONSTANT
         self.__cl.do_run()
 
     @repeat(delay=10)
@@ -202,7 +212,7 @@ class Disinfection(PoupoolActor):
     def on_enter_running(self):
         logger.info("Entering running state")
         self.__ph.do_run()
-        self.__cl.period = 120
+        self.__cl.period = Disinfection.CL_PWM_PERIOD
         self.__cl.do_run()
 
     @do_repeat()
@@ -259,4 +269,4 @@ class Disinfection(PoupoolActor):
     def on_enter_running_waiting(self):
         logger.info("Entering waiting state")
         self.__encoder.disinfection_state("treating")
-        self._proxy.do_delay(2 * 60, "measure")
+        self._proxy.do_delay(Disinfection.WAITING_DELAY, "measure")

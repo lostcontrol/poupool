@@ -6,6 +6,7 @@ import datetime
 from .actor import PoupoolActor
 from .actor import PoupoolModel
 from .actor import StopRepeatException, repeat, do_repeat
+from .config import config
 
 logger = logging.getLogger(__name__)
 
@@ -16,15 +17,15 @@ class Tank(PoupoolActor):
 
     states = ["halt", "low", "normal", "high"]
 
-    hysteresis = 5
-    levels_too_low = 10
+    hysteresis = int(config["tank", "hysteresis"])
+    levels_too_low = int(config["tank", "too_low"])
     levels_eco = {
-        "low": 30,
-        "high": 70,
+        "low": int(config["tank", "eco_low"]),
+        "high": int(config["tank", "eco_high"]),
     }
     levels_overflow = {
-        "low": 20,
-        "high": 60,
+        "low": int(config["tank", "overflow_low"]),
+        "high": int(config["tank", "overflow_high"]),
     }
 
     def __init__(self, encoder, devices):

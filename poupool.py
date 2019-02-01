@@ -20,30 +20,34 @@ from controller.encoder import Encoder
 from controller.mqtt import Mqtt
 from controller.temperature import Temperature
 from controller.device import DeviceRegistry
+from controller.config import config, as_list
 
 
 def setup_gpio(registry, gpio):
     from controller.device import SwitchDevice, PumpDevice
 
+    def create(device, name):
+        pins = as_list(config["pins", name])
+        return device(name, gpio, pins if len(pins) > 1 else pins[0])
+
     gpio.setmode(gpio.BOARD)
 
-    registry.add_pump(PumpDevice("variable", gpio, [37, 40, 38, 36]))
-    registry.add_pump(SwitchDevice("boost", gpio, 7))
-    registry.add_pump(SwitchDevice("swim", gpio, 11))
+    registry.add_pump(create(PumpDevice, "variable"))
+    registry.add_pump(create(SwitchDevice, "boost"))
+    registry.add_pump(create(SwitchDevice, "swim"))
 
-    registry.add_pump(SwitchDevice("ph", gpio, 22))
-    registry.add_pump(SwitchDevice("cl", gpio, 32))
+    registry.add_pump(create(SwitchDevice, "ph"))
+    registry.add_pump(create(SwitchDevice, "cl"))
 
-    registry.add_valve(SwitchDevice("gravity", gpio, 15))
-    registry.add_valve(SwitchDevice("backwash", gpio, 29))
-    registry.add_valve(SwitchDevice("tank", gpio, 33))
-    registry.add_valve(SwitchDevice("drain", gpio, 31))
-    registry.add_valve(SwitchDevice("main", gpio, 35))
+    registry.add_valve(create(SwitchDevice, "gravity"))
+    registry.add_valve(create(SwitchDevice, "backwash"))
+    registry.add_valve(create(SwitchDevice, "tank"))
+    registry.add_valve(create(SwitchDevice, "drain"))
+    registry.add_valve(create(SwitchDevice, "main"))
 
-    #registry.add_valve(SwitchDevice("heater", gpio, 18))
-    registry.add_valve(SwitchDevice("heating", gpio, 16))
+    registry.add_valve(create(SwitchDevice, "heating"))
 
-    registry.add_valve(SwitchDevice("light", gpio, 13))
+    registry.add_valve(create(SwitchDevice, "light"))
 
 
 def setup_rpi(registry):
@@ -57,24 +61,25 @@ def setup_rpi(registry):
     import Adafruit_ADS1x15
     adc = Adafruit_ADS1x15.ADS1015()
     # With a gain of 2/3 and a sensor output of 0.25V-5V, the values should be around 83 and 1665
-    registry.add_sensor(TankSensorDevice("tank", adc, 1, 2 / 3, 83, 1665))
+    params = ((int, "channel"), (float, "gain"), (int, "low"), (int, "high"))
+    registry.add_sensor(TankSensorDevice("tank", adc, *[t(config("adc", n)) for t, n in params]))
 
     # pH, ORP
-    registry.add_sensor(EZOSensorDevice("ph", "/dev/ezo_ph"))
-    registry.add_sensor(EZOSensorDevice("orp", "/dev/ezo_orp"))
+    registry.add_sensor(EZOSensorDevice("ph", config["serial", "ph"]))
+    registry.add_sensor(EZOSensorDevice("orp", config["serial", "orp"]))
 
     # Arduino (cover, water)
-    registry.add_valve(ArduinoDevice("arduino", "/dev/arduino"))
+    registry.add_valve(ArduinoDevice("arduino", config["serial", "arduino"]))
 
     # 1-wire
     # 28-031634d04aff
     # 28-0416350909ff
     # 28-031634d54bff
     # 28-041635088bff
-    registry.add_sensor(TempSensorDevice("temperature_pool", "28-031634d04aff"))
-    registry.add_sensor(TempSensorDevice("temperature_air", "28-0416350909ff"))
-    registry.add_sensor(TempSensorDevice("temperature_local", "28-031634d54bff"))
-    registry.add_sensor(TempSensorDevice("temperature_ncc", "28-041635088bff"))
+    registry.add_sensor(TempSensorDevice("temperature_pool", config["1-wire", "pool"]))
+    registry.add_sensor(TempSensorDevice("temperature_air", config["1-wire", "air"]))
+    registry.add_sensor(TempSensorDevice("temperature_local", config["1-wire", "local"]))
+    registry.add_sensor(TempSensorDevice("temperature_ncc", config["1-wire", "ncc"]))
 
 
 def setup_fake(registry):

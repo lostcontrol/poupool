@@ -7,6 +7,7 @@ from .actor import PoupoolActor
 from .actor import PoupoolModel
 from .actor import StopRepeatException, repeat, do_repeat
 from .util import Timer
+from .config import config
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,9 @@ logger = logging.getLogger(__name__)
 class Swim(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
+    WINTERING_PERIOD = int(config["wintering", "swim_period"])
+    WINTERING_ONLY_BELOW = float(config["wintering", "swim_only_below"])
+    WINTERING_DURATION = int(config["wintering", "swim_duration"])
 
     states = ["halt",
               "timed",
@@ -89,9 +93,9 @@ class Swim(PoupoolActor):
 
     @repeat(delay=2 * 60)
     def do_repeat_wintering_waiting(self):
-        if self.__machine.get_time_in_state() > timedelta(hours=3):
+        if self.__machine.get_time_in_state() > timedelta(seconds=Swim.WINTERING_PERIOD):
             temperature = self.__temperature.get_temperature("temperature_ncc").get()
-            if temperature <= 0:
+            if temperature <= Swim.WINTERING_ONLY_BELOW:
                 self._proxy.wintering_stir()
                 raise StopRepeatException
 
@@ -99,4 +103,4 @@ class Swim(PoupoolActor):
         logger.info("Entering wintering stir state")
         self.__encoder.swim_state("wintering_stir")
         self.__devices.get_pump("swim").on()
-        self._proxy.do_delay(1 * 60, "wintering_waiting")
+        self._proxy.do_delay(Swim.WINTERING_DURATION, "wintering_waiting")

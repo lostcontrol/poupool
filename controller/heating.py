@@ -6,6 +6,7 @@ from .actor import PoupoolActor
 from .actor import PoupoolModel
 from .actor import StopRepeatException, repeat, do_repeat
 from .util import Timer
+from .config import config
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +14,8 @@ logger = logging.getLogger(__name__)
 class Heater(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
-    HYSTERESIS_DOWN = 0.5
-    HYSTERESIS_UP = 2.0
+    HYSTERESIS_DOWN = float(config["heater", "hysteresis_down"])
+    HYSTERESIS_UP = float(config["heater", "hysteresis_up"])
 
     states = ["halt", "waiting", "heating"]
 
@@ -75,9 +76,9 @@ class Heater(PoupoolActor):
 class Heating(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
-    HYSTERESIS_DOWN = 0.0
-    HYSTERESIS_UP = 0.5
-    RECOVER_PERIOD = 5 * 60
+    HYSTERESIS_DOWN = float(config["heating", "hysteresis_down"])
+    HYSTERESIS_UP = float(config["heating", "hysteresis_up"])
+    RECOVER_PERIOD = int(config["heating", "recover_period"])
 
     states = ["halt", "waiting", "heating", "forcing", "recovering"]
 
