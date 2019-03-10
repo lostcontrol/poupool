@@ -51,7 +51,6 @@ def setup_gpio(registry, gpio):
 
     registry.add_pump(create(PumpDevice, "variable"))
     registry.add_pump(create(SwitchDevice, "boost"))
-    registry.add_pump(create(SwitchDevice, "swim"))
 
     registry.add_pump(create(SwitchDevice, "ph"))
     registry.add_pump(create(SwitchDevice, "cl"))
@@ -68,11 +67,17 @@ def setup_gpio(registry, gpio):
 
 
 def setup_rpi(registry):
-    from controller.device import TempSensorDevice, TankSensorDevice, ArduinoDevice, EZOSensorDevice
+    from controller.device import SwimPumpDevice, TempSensorDevice, TankSensorDevice, ArduinoDevice, EZOSensorDevice
 
     # Relay
     import RPi.GPIO as GPIO
     setup_gpio(registry, GPIO)
+
+    # Initialize I2C bus.
+    import board
+    import busio
+
+    i2c = busio.I2C(board.SCL, board.SDA)
 
     # ADC
     import Adafruit_ADS1x15
@@ -80,6 +85,11 @@ def setup_rpi(registry):
     # With a gain of 2/3 and a sensor output of 0.25V-5V, the values should be around 83 and 1665
     params = ((int, "channel"), (float, "gain"), (int, "low"), (int, "high"))
     registry.add_sensor(TankSensorDevice("tank", adc, *[t(config("adc", n)) for t, n in params]))
+
+    # DAC
+    import adafruit_mcp4725
+    dac = adafruit_mcp4725.MCP4725(i2c)
+    registry.add_pump(SwimPumpDevice("swim", GPIO, int(config["pins", "swim"]), dac))
 
     # pH, ORP
     registry.add_sensor(EZOSensorDevice("ph", config["serial", "ph"]))
@@ -100,7 +110,7 @@ def setup_rpi(registry):
 
 
 def setup_fake(registry):
-    from controller.device import Device, SensorDevice
+    from controller.device import Device, SensorDevice, SwimPumpDevice
 
     class FakeGpio(object):
         OUT = "OUT"
@@ -169,12 +179,20 @@ def setup_fake(registry):
         def off(self):
             self.cover_stop()
 
+    class FakeDAC(object):
+
+        def normalized_value(self, value):
+            print("Set DAC to %.2f" % value)
+
     # Relay
     GPIO = FakeGpio()
     setup_gpio(registry, GPIO)
 
     # ADC
     registry.add_sensor(FakeSensor("tank", 51.234))
+
+    # DAC
+    registry.add_pump(SwimPumpDevice("swim", GPIO, int(config["pins", "swim"]), FakeDAC()))
 
     # pH, ORP
     registry.add_sensor(FakeRandomSensor("ph", 6.5, 8))

@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class Swim(PoupoolActor):
 
-    STATE_REFRESH_DELAY = 10
+    STATE_REFRESH_DELAY = 1 # faster refresh rate because speed can change
     WINTERING_PERIOD = int(config["wintering", "swim_period"])
     WINTERING_ONLY_BELOW = float(config["wintering", "swim_only_below"])
     WINTERING_DURATION = int(config["wintering", "swim_duration"])
@@ -49,6 +49,7 @@ class Swim(PoupoolActor):
         self.__encoder = encoder
         self.__devices = devices
         self.__timer = Timer("swim")
+        self.__speed = 50
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Swim.states, initial="halt")
 
@@ -69,6 +70,10 @@ class Swim(PoupoolActor):
         self.__timer.delay = timedelta(minutes=value)
         logger.info("Timer for swim set to: %s" % self.__timer.delay)
 
+    def speed(self, value):
+        self.__speed = value
+        logger.info("Speed for swim pump set to: %d" % self.__speed)
+
     def filtration_allow_swim(self):
         actor = self.get_actor("Filtration")
         is_opened = actor.is_overflow_normal().get() or actor.is_standby_normal().get() or actor.is_comfort().get()
@@ -88,19 +93,23 @@ class Swim(PoupoolActor):
         logger.info("Entering timed state")
         self.__encoder.swim_state("timed")
         self.__timer.reset()
-        self.__devices.get_pump("swim").on()
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_timed(self):
+        self.__devices.get_pump("swim").speed(self.__speed)
         self.__timer.update(datetime.now())
         if self.__timer.elapsed():
             self._proxy.halt()
             raise StopRepeatException
 
+    @do_repeat()
     def on_enter_continuous(self):
         logger.info("Entering continuous state")
         self.__encoder.swim_state("continuous")
-        self.__devices.get_pump("swim").on()
+
+    @repeat(delay=STATE_REFRESH_DELAY)
+    def do_repeat_continuous(self):
+        self.__devices.get_pump("swim").speed(self.__speed)
 
     @do_repeat()
     def on_enter_wintering_waiting(self):

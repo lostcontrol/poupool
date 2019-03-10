@@ -12,6 +12,7 @@ sitemap default label="Menu principal"
             Frame label="Nage contre-courant" icon="socket" {
                 Switch item=Poupool_SwimMode icon="settings" mappings=[halt="Stop", timed="Temporisé", continuous="Continue"]
                 Text item=Poupool_SwimState icon="info"
+                Slider item=Poupool_SwimSpeed icon="info" minValue=10 maxValue=100
             }
             Frame label="Lumières" icon="light" {
                 Switch item=Poupool_Light_Mode icon="settings" mappings=[halt="Stop", on="Allumé"]

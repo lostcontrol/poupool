@@ -114,6 +114,32 @@ class PumpDevice(Device):
         self.__gpio.output(self.pins, values)
 
 
+class SwimPumpDevice(SwitchDevice):
+
+    def __init__(self, name, gpio, pins, dac):
+        super().__init__(name, gpio, pins)
+        self.__speed = -1
+        self.__dac = dac
+
+    def on(self):
+        self.speed(100)
+
+    def off(self):
+        self.speed(0)
+
+    def speed(self, value):
+        assert 0 <= value <= 100
+        if self.__speed == value:
+            return
+        if self.__speed <= 0 and value > 0:
+            super().on()
+        elif self.__speed != 0 and value == 0:
+            super().off()
+        self.__speed = value
+        logger.debug("Swim pump %s speed %d" % (self.name, self.__speed))
+        self.__dac.normalized_value(self.__speed / 100)
+
+
 class SensorDevice(Device):
 
     def __init__(self, name):
@@ -127,7 +153,7 @@ class SensorDevice(Device):
 
 class TempSensorDevice(SensorDevice):
 
-    CRE = re.compile(" t=(-?\d+)$")
+    CRE = re.compile(r" t=(-?\d+)$")
 
     def __init__(self, name, address, offset=0.0):
         super().__init__(name)

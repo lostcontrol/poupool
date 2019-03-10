@@ -63,6 +63,7 @@ class Dispatcher(object):
             "/settings/filtration/speed/overflow": (filtration, between(1, 4), lambda x: "speed_overflow", to_int),
             "/settings/swim/mode": (swim, lambda x: x in ("halt", "timed", "continuous"), lambda x: x, None),
             "/settings/swim/timer": (swim, between(1, 60), lambda x: "timer", to_int),
+            "/settings/swim/speed": (swim, between(1, 100), lambda x: "speed", to_int),
             "/settings/light/mode": (light, lambda x: x in ("halt", "on"), lambda x: x, None),
             "/settings/heater/setpoint": (heater, between(0, 30), lambda x: "setpoint", to_float),
             "/settings/heating/enable": (heating, lambda x: x in ("ON", "OFF"), lambda x: "enable", to_bool),

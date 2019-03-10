@@ -58,6 +58,7 @@ def main():
     publish("/settings/filtration/speed/overflow", 4)
     publish("/settings/swim/mode", "stop")
     publish("/settings/swim/timer", 5)
+    publish("/settings/swim/speed", 50)
     publish("/status/filtration/backwash/last", datetime.datetime.now().strftime("%c"))
     publish("/settings/light/mode", "stop")
     publish("/settings/heater/setpoint", "3.0")
