@@ -4,6 +4,7 @@ pyserial==3.4
 transitions==0.6.9
 astral==1.7.1
 RPi.GPIO==0.6.5
+adafruit-circuitpython-ads1x15==1.0.2
 adafruit-circuitpython-mcp4725==1.1.2
 pytest==4.3.0
 pytest-mock==1.10.1

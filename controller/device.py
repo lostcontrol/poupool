@@ -196,8 +196,8 @@ class TankSensorDevice(SensorDevice):
     def __init__(self, name, adc, channel, gain, low, high):
         super().__init__(name)
         self.__adc = adc
+        self.__adc.gain = gain
         self.__channel = channel
-        self.__gain = gain
         self.__low = low
         self.__high = high
 
@@ -206,7 +206,7 @@ class TankSensorDevice(SensorDevice):
         values = []
         for _ in range(10):
             try:
-                values.append(self.__adc.read_adc(self.__channel, gain=self.__gain))
+                values.append(self.__adc.read(self.__channel))
                 time.sleep(0.05)
             except OSError:
                 logger.exception("Unable to read ADC %s" % self.name)
