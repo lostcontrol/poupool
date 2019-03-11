@@ -135,9 +135,15 @@ class SwimPumpDevice(SwitchDevice):
             super().on()
         elif self.__speed != 0 and value == 0:
             super().off()
-        self.__speed = value
-        logger.debug("Swim pump %s speed %d" % (self.name, self.__speed))
-        self.__dac.normalized_value(self.__speed / 100)
+        for _ in range(3):
+            try:
+                self.__dac.normalized_value(value / 100)
+                self.__speed = value
+                logger.debug("Swim pump %s speed %d" % (self.name, value))
+                return
+            except OSError:
+                logger.exception("Unable to set %s pump speed" % self.name)
+                time.sleep(0.2)
 
 
 class SensorDevice(Device):

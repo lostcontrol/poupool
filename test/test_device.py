@@ -16,7 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import pytest
-from unittest.mock import call
+from unittest.mock import call, DEFAULT
 
 
 @pytest.fixture
@@ -69,3 +69,23 @@ class TestSwimPumpDevice:
             swim_pump_device.speed(50)
         gpio.output.assert_has_calls([call(PIN, True), call(PIN, False)])
         dac.normalized_value.assert_called_once_with(0.5)
+
+    def test_dac_throws_always(self, gpio, dac, swim_pump_device):
+        dac.normalized_value.side_effect = OSError()
+        swim_pump_device.speed(50)
+        gpio.output.assert_has_calls([call(PIN, True), call(PIN, False)])
+        dac.normalized_value.assert_called_with(0.5)
+        assert dac.normalized_value.call_count == 3
+
+    def test_dac_throws_once(self, gpio, dac, swim_pump_device):
+        def side_effect(value):
+            side_effect.counter += 1
+            if side_effect.counter == 1:
+                raise OSError()
+            return DEFAULT
+        side_effect.counter = 0
+        dac.normalized_value.side_effect = side_effect
+        swim_pump_device.speed(50)
+        gpio.output.assert_has_calls([call(PIN, True), call(PIN, False)])
+        dac.normalized_value.assert_called_with(0.5)
+        assert dac.normalized_value.call_count == 2
