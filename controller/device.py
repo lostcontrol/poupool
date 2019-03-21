@@ -137,7 +137,8 @@ class SwimPumpDevice(SwitchDevice):
             super().off()
         for _ in range(3):
             try:
-                self.__dac.normalized_value(value / 100)
+                if self.__dac is not None:
+                    self.__dac.normalized_value(value / 100)
                 self.__speed = value
                 logger.debug("Swim pump %s speed %d" % (self.name, value))
                 return

@@ -38,6 +38,12 @@ def swim_pump_device(gpio, dac):
     return SwimPumpDevice("swim", gpio, PIN, dac)
 
 
+@pytest.fixture
+def swim_pump_device_without_dac(gpio):
+    from controller.device import SwimPumpDevice
+    return SwimPumpDevice("swim", gpio, PIN, None)
+
+
 class TestSwimPumpDevice:
 
     def test_name(self, swim_pump_device):
@@ -52,6 +58,14 @@ class TestSwimPumpDevice:
         swim_pump_device.off()
         gpio.output.assert_has_calls([call(PIN, True), call(PIN, True)])
         dac.normalized_value.assert_called_once_with(0)
+
+    def test_on_without_dac(self, gpio, swim_pump_device_without_dac):
+        swim_pump_device_without_dac.on()
+        gpio.output.assert_has_calls([call(PIN, True), call(PIN, False)])
+
+    def test_off_without_dac(self, gpio, swim_pump_device_without_dac):
+        swim_pump_device_without_dac.off()
+        gpio.output.assert_has_calls([call(PIN, True), call(PIN, True)])
 
     @pytest.mark.parametrize("speed", range(0, 101, 25))
     def test_valid_speed(self, gpio, dac, swim_pump_device, speed):
