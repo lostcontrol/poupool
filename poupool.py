@@ -47,7 +47,7 @@ def setup_gpio(registry, gpio):
         pins = as_list(config["pins", name])
         return device(name, gpio, pins if len(pins) > 1 else pins[0])
 
-    gpio.setmode(gpio.BOARD)
+    gpio.setmode(gpio.BCM)
 
     registry.add_pump(create(PumpDevice, "variable"))
     registry.add_pump(create(SwitchDevice, "boost"))
