@@ -22,7 +22,7 @@ import re
 import serial
 import io
 import subprocess
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from .util import mapping, constrain
 
 logger = logging.getLogger(__name__)
@@ -147,7 +147,7 @@ class SwimPumpDevice(SwitchDevice):
                 time.sleep(0.2)
 
 
-class SensorDevice(Device):
+class SensorDevice(ABC, Device):
 
     def __init__(self, name):
         super().__init__(name)
