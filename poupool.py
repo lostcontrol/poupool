@@ -84,7 +84,7 @@ def setup_rpi(registry):
     adc = ADS.ADS1015(i2c)
     # With a gain of 2/3 and a sensor output of 0.25V-5V, the values should be around 83 and 1665
     params = ((int, "channel"), (float, "gain"), (int, "low"), (int, "high"))
-    registry.add_sensor(TankSensorDevice("tank", adc, *[t(config("adc", n)) for t, n in params]))
+    registry.add_sensor(TankSensorDevice("tank", adc, *[t(config["adc", n]) for t, n in params]))
 
     # DAC
     import adafruit_mcp4725
