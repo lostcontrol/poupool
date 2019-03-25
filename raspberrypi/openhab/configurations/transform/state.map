@@ -1,4 +1,5 @@
 -=<non d\u00E9fini>
+UNDEF=<non d\u00E9fini>
 halt=Stop
 opening=Ouverture en cours
 closing=Fermeture en cours

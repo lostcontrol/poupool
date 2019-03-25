@@ -1,0 +1,59 @@
+Bridge mqtt:broker:unsecure [ host="poupool", secure=false ] {
+    Thing topic poupool "Poupool" {
+    Channels:
+        Type string : Mode [ stateTopic="/settings/mode", commandTopic="/settings/mode" ]
+
+        Type string : Filtration_State [ stateTopic="/status/filtration/state" ]
+        Type number : Filtration_Duration [ stateTopic="/settings/filtration/duration", commandTopic="/settings/filtration/duration", transformationPattern="JS:divide3600.js", transformationPatternOut="JS:multiply3600.js", retained="true" ]
+        Type number : Filtration_Period [ stateTopic="/settings/filtration/period", commandTopic="/settings/filtration/period", retained="true" ]
+        Type number : Filtration_HourOfReset [ stateTopic="/settings/filtration/reset_hour", commandTopic="/settings/filtration/reset_hour", retained="true" ]
+        Type number : Filtration_BoostDuration [ stateTopic="/settings/filtration/boost_duration", commandTopic="/settings/filtration/boost_duration", retained="true" ]
+        Type number : Filtration_TankPercentage [ stateTopic="/settings/filtration/tank_percentage", commandTopic="/settings/filtration/tank_percentage", retained="true" ]
+        Type number : Filtration_StirDuration [ stateTopic="/settings/filtration/stir_duration", commandTopic="/settings/filtration/stir_duration", retained="true" ]
+        Type number : Filtration_StirPeriod [ stateTopic="/settings/filtration/stir_period", commandTopic="/settings/filtration/stir_period", retained="true" ]
+        Type number : Filtration_SpeedStandby [ stateTopic="/settings/filtration/speed/standby", commandTopic="/settings/filtration/speed/standby", retained="true" ]
+        Type number : Filtration_SpeedOverflow [ stateTopic="/settings/filtration/speed/overflow", commandTopic="/settings/filtration/speed/overflow", retained="true" ]
+        Type string : Filtration_NextEvent [ stateTopic="/status/filtration/next" ]
+        Type string : Filtration_RemainingDuration [ stateTopic="/status/filtration/remaining" ]
+
+        Type string : Tank_State [ stateTopic="/status/tank/state" ]
+        Type number : Tank_Height [ stateTopic="/status/tank/height" ]
+
+        Type number : Filtration_BackwashPeriod [ stateTopic="/settings/filtration/backwash/period", commandTopic="/settings/filtration/backwash/period", retained="true" ]
+        Type number : Filtration_BackwashBackwashDuration [ stateTopic="/settings/filtration/backwash/backwash_duration", commandTopic="/settings/filtration/backwash/backwash_duration", retained="true" ]
+        Type number : Filtration_BackwashRinseDuration [ stateTopic="/settings/filtration/backwash/rinse_duration", commandTopic="/settings/filtration/backwash/rinse_duration", retained="true" ]
+        Type string : Filtration_BackwashLast [ stateTopic="/status/filtration/backwash/last" ]
+
+        Type string : Swim_Mode [ commandTopic="/settings/swim/mode" ]
+        Type string : Swim_State [ stateTopic="/status/swim/state" ]
+        Type number : Swim_Timer [ stateTopic="/settings/swim/timer", commandTopic="/settings/swim/timer", retained="true" ]
+        Type number : Swim_Speed [ stateTopic="/settings/swim/speed", commandTopic="/settings/swim/speed", retained="true" ]
+
+        Type number : Temperature_Pool [ stateTopic="/status/temperature/pool" ]
+        Type number : Temperature_Air [ stateTopic="/status/temperature/air" ]
+        Type number : Temperature_Local [ stateTopic="/status/temperature/local" ]
+        Type number : Temperature_Ncc [ stateTopic="/status/temperature/ncc" ]
+
+        Type string : Heating_State [ stateTopic="/status/heating/state" ]
+        Type switch : Heating_Enable [ stateTopic="/settings/heating/enable", commandTopic="/settings/heating/enable", retained="true" ]
+        Type number : Heating_Setpoint [ stateTopic="/settings/heating/setpoint", commandTopic="/settings/heating/setpoint", retained="true" ]
+        Type number : Heating_HourOfStart [ stateTopic="/settings/heating/start_hour", commandTopic="/settings/heating/start_hour", retained="true" ]
+
+        Type string : Light_Mode [ commandTopic="/settings/light/mode" ]
+        Type string : Light_State [ stateTopic="/status/light/state" ]
+
+        Type string : Disinfection_State [ stateTopic="/status/disinfection/state" ]
+        Type string : Disinfection_FreeChlorine [ stateTopic="/settings/disinfection/free_chlorine", commandTopic="/settings/disinfection/free_chlorine", retained="true" ]
+        Type switch : Disinfection_PH_Enable [ stateTopic="/settings/disinfection/ph/enable", commandTopic="/settings/disinfection/ph/enable", retained="true" ]
+        Type number : Disinfection_PH_Setpoint [ stateTopic="/settings/disinfection/ph/setpoint", commandTopic="/settings/disinfection/ph/setpoint", retained="true" ]
+        Type number : Disinfection_PH_Pterm [ stateTopic="/settings/disinfection/ph/pterm", commandTopic="/settings/disinfection/ph/pterm", retained="true" ]
+        Type number : Disinfection_PH [ stateTopic="/status/disinfection/ph/value" ]
+        Type number : Disinfection_Cl_Constant [ stateTopic="/settings/disinfection/cl/constant", commandTopic="/settings/disinfection/cl/constant", retained="true" ]
+        Type switch : Disinfection_ORP_Enable [ stateTopic="/settings/disinfection/orp/enable", commandTopic="/settings/disinfection/orp/enable", retained="true" ]
+        Type number : Disinfection_ORP_Setpoint [ stateTopic="/status/disinfection/orp/setpoint" ]
+        Type number : Disinfection_ORP_Pterm [ stateTopic="/settings/disinfection/orp/pterm", commandTopic="/settings/disinfection/orp/pterm", retained="true" ]
+        Type number : Disinfection_ORP [ stateTopic="/status/disinfection/orp/value" ]
+        Type number : Disinfection_Feedback_PH [ stateTopic="/status/disinfection/ph/feedback" ]
+        Type number : Disinfection_Feedback_Cl [ stateTopic="/status/disinfection/cl/feedback" ]
+    }
+}

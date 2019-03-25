@@ -66,15 +66,15 @@ class Dispatcher(object):
             "/settings/swim/speed": (swim, between(1, 100), lambda x: "speed", to_int),
             "/settings/light/mode": (light, lambda x: x in ("halt", "on"), lambda x: x, None),
             "/settings/heater/setpoint": (heater, between(0, 30), lambda x: "setpoint", to_float),
-            "/settings/heating/enable": (heating, lambda x: x in ("ON", "OFF"), lambda x: "enable", to_bool),
+            "/settings/heating/enable": (heating, lambda x: x in ("0", "1"), lambda x: "enable", to_bool),
             "/settings/heating/setpoint": (heating, between(10, 30), lambda x: "setpoint", to_float),
             "/settings/heating/start_hour": (heating, between(0, 23), lambda x: "start_hour", to_int),
             "/settings/disinfection/cl/constant": (disinfection, between(0, 10), lambda x: "cl_constant", to_float),
-            "/settings/disinfection/ph/enable": (disinfection, lambda x: x in ("ON", "OFF"), lambda x: "ph_enable", to_bool),
+            "/settings/disinfection/ph/enable": (disinfection, lambda x: x in ("0", "1"), lambda x: "ph_enable", to_bool),
             "/settings/disinfection/ph/setpoint": (disinfection, between(6, 8), lambda x: "ph_setpoint", to_float),
             "/settings/disinfection/ph/pterm": (disinfection, between(0, 10), lambda x: "ph_pterm", to_float),
             "/settings/disinfection/free_chlorine": (disinfection, lambda x: x in ("low", "mid", "mid_high", "high"), lambda x: "free_chlorine", to_string),
-            "/settings/disinfection/orp/enable": (disinfection, lambda x: x in ("ON", "OFF"), lambda x: "orp_enable", to_bool),
+            "/settings/disinfection/orp/enable": (disinfection, lambda x: x in ("0", "1"), lambda x: "orp_enable", to_bool),
             "/settings/disinfection/orp/pterm": (disinfection, between(0, 10), lambda x: "orp_pterm", to_float),
         }
 

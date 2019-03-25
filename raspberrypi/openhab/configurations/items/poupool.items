@@ -2,57 +2,57 @@ Group Poupool_Temperature
 Group Poupool_Disinfection_ORP_Measurement
 Group Poupool_Disinfection_Feedback
 
-String Poupool_Mode "Mode" {mqtt=">[poupool:/settings/mode:command:*:${command}]", autoupdate="false"}
-String Poupool_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/filtration/state:state:default]"}
+String Poupool_Mode "Mode []" {channel="mqtt:topic:unsecure:poupool:Mode", autoupdate="false"}
 
-Number Poupool_Filtration_Duration "Durée journalière (heure) [%d]" {mqtt="<[poupool:/settings/filtration/duration:state:JS(divide3600.js)],>[poupool:/settings/filtration/duration:command:*:JS(multiply3600.js)]"}
-Number Poupool_Filtration_Period "Nombre de période(s) de filtration [%d]" {mqtt="<[poupool:/settings/filtration/period:state:default],>[poupool:/settings/filtration/period:command:*:default]"}
-Number Poupool_Filtration_HourOfReset "Heure de réinitialisation [%d]" {mqtt="<[poupool:/settings/filtration/reset_hour:state:default],>[poupool:/settings/filtration/reset_hour:command:*:default]"}
-Number Poupool_Filtration_BoostDuration "Durée boost sortie mode eco (secondes) [%d]" {mqtt="<[poupool:/settings/filtration/boost_duration:state:default],>[poupool:/settings/filtration/boost_duration:command:*:default]"}
-Number Poupool_Filtration_TankPercentage "Pourcentage filtration tampon [%.1f]" {mqtt="<[poupool:/settings/filtration/tank_percentage:state:default],>[poupool:/settings/filtration/tank_percentage:command:*:default]"}
-Number Poupool_Filtration_StirDuration "Durée brassage par période (secondes) [%d]" {mqtt="<[poupool:/settings/filtration/stir_duration:state:default],>[poupool:/settings/filtration/stir_duration:command:*:default]"}
-Number Poupool_Filtration_StirPeriod "Période brassage (secondes)" {mqtt="<[poupool:/settings/filtration/stir_period:state:default],>[poupool:/settings/filtration/stir_period:command:*:default]"}
-Number Poupool_Filtration_SpeedStandby "Vitesse pompe en veille" {mqtt="<[poupool:/settings/filtration/speed/standby:state:default],>[poupool:/settings/filtration/speed/standby:command:*:default]"}
-Number Poupool_Filtration_SpeedOverflow "Vitesse pompe en débordement" {mqtt="<[poupool:/settings/filtration/speed/overflow:state:default],>[poupool:/settings/filtration/speed/overflow:command:*:default]"}
-String Poupool_Filtration_NextEvent "Prochain événement [%s]" {mqtt="<[poupool:/status/filtration/next:state:default]"}
-String Poupool_Filtration_RemainingDuration "Durée journalière restante [%s]" {mqtt="<[poupool:/status/filtration/remaining:state:default]"}
+String Poupool_Filtration_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Filtration_State"}
+Number Poupool_Filtration_Duration "Durée journalière (heure) [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_Duration"}
+Number Poupool_Filtration_Period "Nombre de période(s) de filtration [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_Period"}
+Number Poupool_Filtration_HourOfReset "Heure de réinitialisation [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_HourOfReset"}
+Number Poupool_Filtration_BoostDuration "Durée boost sortie mode eco (secondes) [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_BoostDuration"}
+Number Poupool_Filtration_TankPercentage "Pourcentage filtration tampon [%.1f]" {channel="mqtt:topic:unsecure:poupool:Filtration_TankPercentage"}
+Number Poupool_Filtration_StirDuration "Durée brassage par période (secondes) [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_StirDuration"}
+Number Poupool_Filtration_StirPeriod "Période brassage (secondes)" {channel="mqtt:topic:unsecure:poupool:Filtration_StirPeriod"}
+Number Poupool_Filtration_SpeedStandby "Vitesse pompe en veille" {channel="mqtt:topic:unsecure:poupool:Filtration_SpeedStandby"}
+Number Poupool_Filtration_SpeedOverflow "Vitesse pompe en débordement" {channel="mqtt:topic:unsecure:poupool:Filtration_SpeedOverflow"}
+String Poupool_Filtration_NextEvent "Prochain événement [%s]" {channel="mqtt:topic:unsecure:poupool:Filtration_NextEvent"}
+String Poupool_Filtration_RemainingDuration "Durée journalière restante [%s]" {channel="mqtt:topic:unsecure:poupool:Filtration_RemainingDuration"}
 
-String Poupool_Tank_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/tank/state:state:default]"}
-Number Poupool_Tank_Height "Hauteur du tampon (%) [%d%%]" {mqtt="<[poupool:/status/tank/height:state:default]"}
+String Poupool_Tank_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Tank_State"}
+Number Poupool_Tank_Height "Hauteur du tampon (%) [%d%%]" {channel="mqtt:topic:unsecure:poupool:Tank_Height"}
 
-Number Poupool_Filtration_BackwashPeriod "Période de contre-lavage (jour) [%d]" {mqtt="<[poupool:/settings/filtration/backwash/period:state:default],>[poupool:/settings/filtration/backwash/period:command:*:default]"}
-Number Poupool_Filtration_BackwashBackwashDuration "Durée de contre-lavage (secondes) [%d]" {mqtt="<[poupool:/settings/filtration/backwash/backwash_duration:state:default],>[poupool:/settings/filtration/backwash/backwash_duration:command:*:default]"}
-Number Poupool_Filtration_BackwashRinseDuration "Durée de rinçage (secondes) [%d]" {mqtt="<[poupool:/settings/filtration/backwash/rinse_duration:state:default],>[poupool:/settings/filtration/backwash/rinse_duration:command:*:default]"}
-String Poupool_Filtration_BackwashLast "Dernier contre-lavage [%s]" {mqtt="<[poupool:/status/filtration/backwash/last:state:default]"}
+Number Poupool_Filtration_BackwashPeriod "Période de contre-lavage (jour) [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_BackwashPeriod"}
+Number Poupool_Filtration_BackwashBackwashDuration "Durée de contre-lavage (secondes) [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_BackwashBackwashDuration"}
+Number Poupool_Filtration_BackwashRinseDuration "Durée de rinçage (secondes) [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_BackwashRinseDuration"}
+String Poupool_Filtration_BackwashLast "Dernier contre-lavage [%s]" {channel="mqtt:topic:unsecure:poupool:Filtration_BackwashLast"}
 
-String Poupool_SwimMode "Mode" {mqtt=">[poupool:/settings/swim/mode:command:*:${command}]", autoupdate="false"}
-String Poupool_SwimState "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/swim/state:state:default]"}
-Number Poupool_SwimTimer "Durée temporisation (minute) [%d]" {mqtt="<[poupool:/settings/swim/timer:state:default],>[poupool:/settings/swim/timer:command:*:default]"}
-Number Poupool_SwimSpeed "Vitesse (%) [%d]" {mqtt="<[poupool:/settings/swim/speed:state:default],>[poupool:/settings/swim/speed:command:*:default]"}
+String Poupool_Swim_Mode "Mode []" {channel="mqtt:topic:unsecure:poupool:Swim_Mode", autoupdate="false"}
+String Poupool_Swim_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Swim_State"}
+Number Poupool_Swim_Timer "Durée temporisation (minute) [%d]" {channel="mqtt:topic:unsecure:poupool:Swim_Timer"}
+Number Poupool_Swim_Speed "Vitesse (%) [%d]" {channel="mqtt:topic:unsecure:poupool:Swim_Speed"}
 
-Number Poupool_Temperature_Pool "Température piscine [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/pool:state:default]"}
-Number Poupool_Temperature_Air "Température air [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/air:state:default]"}
-Number Poupool_Temperature_Local "Température local [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/local:state:default]"}
-Number Poupool_Temperature_Ncc "Température trappe [%.1f°C]" (Poupool_Temperature) {mqtt="<[poupool:/status/temperature/ncc:state:default]"}
+Number Poupool_Temperature_Pool "Température piscine [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Pool"}
+Number Poupool_Temperature_Air "Température air [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Air"}
+Number Poupool_Temperature_Local "Température local [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Local"}
+Number Poupool_Temperature_Ncc "Température trappe [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Ncc"}
 
-String Poupool_Heating_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/heating/state:state:default]"}
-Switch Poupool_Heating_Enable "Chauffage activé" {mqtt="<[poupool:/settings/heating/enable:state:default],>[poupool:/settings/heating/enable:command:*:default]"}
-Number Poupool_Heating_Setpoint "Température de consigne [%.1f°C]" {mqtt="<[poupool:/settings/heating/setpoint:state:default],>[poupool:/settings/heating/setpoint:command:*:default]"}
-Number Poupool_Heating_HourOfStart "Heure de chauffage [%d]" {mqtt="<[poupool:/settings/heating/start_hour:state:default],>[poupool:/settings/heating/start_hour:command:*:default]"}
+String Poupool_Heating_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Heating_State"}
+Switch Poupool_Heating_Enable "Chauffage activé" {channel="mqtt:topic:unsecure:poupool:Heating_Enable"}
+Number Poupool_Heating_Setpoint "Température de consigne [%.1f°C]" {channel="mqtt:topic:unsecure:poupool:Heating_Setpoint"}
+Number Poupool_Heating_HourOfStart "Heure de chauffage [%d]" {channel="mqtt:topic:unsecure:poupool:Heating_HourOfStart"}
 
-String Poupool_Light_Mode "Mode" {mqtt=">[poupool:/settings/light/mode:command:*:${command}]", autoupdate="false"}
-String Poupool_Light_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/light/state:state:default]"}
+String Poupool_Light_Mode "Mode []" {channel="mqtt:topic:unsecure:poupool:Light_Mode", autoupdate="false"}
+String Poupool_Light_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Light_State"}
 
-String Poupool_Disinfection_State "État [MAP(state.map):%s]" {mqtt="<[poupool:/status/disinfection/state:state:default]"}
-String Poupool_Disinfection_FreeChlorine "Chlore libre" {mqtt=">[poupool:/settings/disinfection/free_chlorine:command:*:${command}]", autoupdate="false"}
-Switch Poupool_Disinfection_PH_Enable "pH régulation activée" {mqtt="<[poupool:/settings/disinfection/ph/enable:state:default],>[poupool:/settings/disinfection/ph/enable:command:*:default]"}
-Number Poupool_Disinfection_PH_Setpoint "pH consigne [%.1f]" {mqtt="<[poupool:/settings/disinfection/ph/setpoint:state:default],>[poupool:/settings/disinfection/ph/setpoint:command:*:default]"}
-Number Poupool_Disinfection_PH_Pterm "pH valeur P [%.2f]" {mqtt="<[poupool:/settings/disinfection/ph/pterm:state:default],>[poupool:/settings/disinfection/ph/pterm:command:*:default]"}
-Number Poupool_Disinfection_PH "pH [%.2f]" {mqtt="<[poupool:/status/disinfection/ph/value:state:default]"}
-Number Poupool_Disinfection_Cl_Constant "Chlore pourcentage constant [%.1f]" {mqtt="<[poupool:/settings/disinfection/cl/constant:state:default],>[poupool:/settings/disinfection/cl/constant:command:*:default]"}
-Switch Poupool_Disinfection_ORP_Enable "ORP régulation activée" {mqtt="<[poupool:/settings/disinfection/orp/enable:state:default],>[poupool:/settings/disinfection/orp/enable:command:*:default]"}
-Number Poupool_Disinfection_ORP_Setpoint "ORP consigne [%d]" (Poupool_Disinfection_ORP_Measurement) {mqtt="<[poupool:/status/disinfection/orp/setpoint:state:default]"}
-Number Poupool_Disinfection_ORP_Pterm "ORP valeur P [%.2f]" {mqtt="<[poupool:/settings/disinfection/orp/pterm:state:default],>[poupool:/settings/disinfection/orp/pterm:command:*:default]"}
-Number Poupool_Disinfection_ORP "ORP [%d]" (Poupool_Disinfection_ORP_Measurement) {mqtt="<[poupool:/status/disinfection/orp/value:state:default]"}
-Number Poupool_Disinfection_Feedback_PH "pH feedback [%d%%]" (Poupool_Disinfection_Feedback) {mqtt="<[poupool:/status/disinfection/ph/feedback:state:default]"}
-Number Poupool_Disinfection_Feedback_Cl "Chlore feedback [%d%%]" (Poupool_Disinfection_Feedback) {mqtt="<[poupool:/status/disinfection/cl/feedback:state:default]"}
+String Poupool_Disinfection_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Disinfection_State"}
+String Poupool_Disinfection_FreeChlorine "Chlore libre" {channel="mqtt:topic:unsecure:poupool:Disinfection_FreeChlorine"}
+Switch Poupool_Disinfection_PH_Enable "pH régulation activée" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH_Enable"}
+Number Poupool_Disinfection_PH_Setpoint "pH consigne [%.1f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH_Setpoint"}
+Number Poupool_Disinfection_PH_Pterm "pH valeur P [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH_Pterm"}
+Number Poupool_Disinfection_PH "pH [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH"}
+Number Poupool_Disinfection_Cl_Constant "Chlore pourcentage constant [%.1f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_Cl_Constant"}
+Switch Poupool_Disinfection_ORP_Enable "ORP régulation activée" {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Enable"}
+Number Poupool_Disinfection_ORP_Setpoint "ORP consigne [%d]" (Poupool_Disinfection_ORP_Measurement) {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Setpoint"}
+Number Poupool_Disinfection_ORP_Pterm "ORP valeur P [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Pterm"}
+Number Poupool_Disinfection_ORP "ORP [%d]" (Poupool_Disinfection_ORP_Measurement) {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP"}
+Number Poupool_Disinfection_Feedback_PH "pH feedback [%d%%]" (Poupool_Disinfection_Feedback) {channel="mqtt:topic:unsecure:poupool:Disinfection_Feedback_PH"}
+Number Poupool_Disinfection_Feedback_Cl "Chlore feedback [%d%%]" (Poupool_Disinfection_Feedback) {channel="mqtt:topic:unsecure:poupool:Disinfection_Feedback_Cl"}
