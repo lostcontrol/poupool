@@ -11,7 +11,7 @@ system.
 
 This is meant as a personal project and will likely never be a fully-featured software. However, it
 would be awesome to see it running somewhere else. Poupool runs on a Raspberry Pi 3 Model B and most
-of the hardware is COST (commercial off-the-shelf). If you want more information, feel free to
+of the hardware is COTS (commercial off-the-shelf). If you want more information, feel free to
 contact me.
 
 Originally, I wanted to experiment with asyncio but finally chose to go with some more traditional
@@ -46,12 +46,19 @@ Frameworks:
 * Pykka
 * transitions
 * paho-mqtt
+* astral
 
 Raspberry Pi:
 
-* Adafruit-ADS1x15
 * RPi.GPIO
+* adafruit-circuitpython-ads1x15
+* adafruit-circuitpython-mcp4725
+
+User interface:
+
+* openHAB 2.5
 
 Development tools:
 
 * autopep8
+* pytest
