@@ -33,8 +33,12 @@ Several other features are available like a wintering state stiring the pool to 
 possible to have the water freezing, a stiring feature when the cover is closed to dissipate the
 heat forming just under the cover, the control of a swimming pump and more.
 
-Here is an early screenshot of the main menu in openHAB:
+Here is a screenshot of the main menu in openHAB 2.5M1:
+
 ![openHAB main menu](docs/images/openhab-01.png)
+
+Of course, you can use the iOS or Android openHAB clients, write your own HABPanel interface or
+even use the REST API provided by openHAB.
 
 ## Dependencies
 
