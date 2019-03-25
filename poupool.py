@@ -118,7 +118,7 @@ def setup_fake(registry):
 
     class FakeGpio(object):
         OUT = "OUT"
-        BOARD = "BOARD"
+        BCM = "BCM"
 
         def setmode(self, mode):
             print("Set mode to %s" % mode)
