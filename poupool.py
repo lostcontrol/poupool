@@ -88,11 +88,7 @@ def setup_rpi(registry):
 
     # DAC
     import adafruit_mcp4725
-    dac = None
-    try:
-        dac = adafruit_mcp4725.MCP4725(i2c)
-    except (OSError, ValueError):
-        logging.exception("No DAC available, ignoring")
+    dac = adafruit_mcp4725.MCP4725(i2c)
     registry.add_pump(SwimPumpDevice("swim", GPIO, int(config["pins", "swim"]), dac))
 
     # pH, ORP
