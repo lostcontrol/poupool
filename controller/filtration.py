@@ -383,7 +383,7 @@ class Filtration(PoupoolActor):
     def tank_start(self):
         tank = self.get_actor("Tank")
         if tank.is_halt().get():
-            tank.normal()
+            tank.fill()
 
     def heating_start(self):
         heating = self.get_actor("Heating")
@@ -396,7 +396,8 @@ class Filtration(PoupoolActor):
             arduino.run()
 
     def tank_is_low(self):
-        return self.get_actor("Tank").is_low().get()
+        tank = self.get_actor("Tank")
+        return tank.is_low().get() or tank.is_fill().get()
 
     def tank_is_high(self):
         return self.get_actor("Tank").is_high().get()

@@ -32,7 +32,7 @@ class Tank(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
 
-    states = ["halt", "low", "normal", "high"]
+    states = ["halt", "fill", "low", "normal", "high"]
 
     hysteresis = int(config["tank", "hysteresis"])
     levels_too_low = int(config["tank", "too_low"])
@@ -53,16 +53,11 @@ class Tank(PoupoolActor):
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Tank.states, initial="halt")
 
-        self.__machine.add_transition("low", "halt", "low")
-        self.__machine.add_transition("low", "normal", "low")
-        self.__machine.add_transition("normal", "halt", "normal")
-        self.__machine.add_transition("normal", "low", "normal")
-        self.__machine.add_transition("normal", "high", "normal")
-        self.__machine.add_transition("high", "halt", "high")
-        self.__machine.add_transition("high", "normal", "high")
-        self.__machine.add_transition("halt", "low", "halt")
-        self.__machine.add_transition("halt", "normal", "halt")
-        self.__machine.add_transition("halt", "high", "halt")
+        self.__machine.add_transition("low", ["fill", "normal"], "low")
+        self.__machine.add_transition("normal", ["fill", "low", "high"], "normal")
+        self.__machine.add_transition("high", ["fill", "normal"], "high")
+        self.__machine.add_transition("halt", ["fill", "low", "normal", "high"], "halt")
+        self.__machine.add_transition("fill", "halt", "fill")
 
     def __get_tank_height(self):
         height = self.__devices.get_sensor("tank").value
@@ -78,6 +73,29 @@ class Tank(PoupoolActor):
         logger.info("Entering halt state")
         self.__encoder.tank_state("halt")
         self.__devices.get_valve("main").off()
+
+    @do_repeat()
+    def on_enter_fill(self):
+        logger.info("Entering fill state")
+        self.__encoder.tank_state("fill")
+        height = self.__get_tank_height()
+        if height < self.levels_too_low:
+            self.__devices.get_valve("main").on()
+        else:
+            self._proxy.normal()
+            raise StopRepeatException
+
+    @repeat(delay=STATE_REFRESH_DELAY / 2)
+    def do_repeat_fill(self):
+        # Security feature: stop if we stay too long in this state
+        if self.__machine.get_time_in_state() > datetime.timedelta(hours=2):
+            logger.warning("Tank TOO LONG in fill state, stopping")
+            self.get_actor("Filtration").halt()
+            raise StopRepeatException
+        height = self.__get_tank_height()
+        if height > self.levels_too_low:
+            self._proxy.low()
+            raise StopRepeatException
 
     @do_repeat()
     def on_enter_low(self):
