@@ -16,7 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import pytest
-from unittest.mock import call, DEFAULT
+from unittest.mock import call, DEFAULT, PropertyMock
 
 
 @pytest.fixture
@@ -39,9 +39,10 @@ def swim_pump_device(gpio, dac):
 
 
 @pytest.fixture
-def swim_pump_device_without_dac(gpio):
+def swim_pump_device_without_dac(gpio, dac):
     from controller.device import SwimPumpDevice
-    return SwimPumpDevice("swim", gpio, PIN, None)
+    dac.value.side_effect = OSError()
+    return SwimPumpDevice("swim", gpio, PIN, dac)
 
 
 class TestSwimPumpDevice:
@@ -50,14 +51,18 @@ class TestSwimPumpDevice:
         assert swim_pump_device.name == "swim"
 
     def test_on(self, gpio, dac, swim_pump_device):
+        normalized_value = PropertyMock()
+        type(dac).normalized_value = normalized_value
         swim_pump_device.on()
         gpio.output.assert_has_calls([call(PIN, True), call(PIN, False)])
-        dac.normalized_value.assert_called_once_with(1)
+        normalized_value.assert_called_once_with(1)
 
     def test_off(self, gpio, dac, swim_pump_device):
+        normalized_value = PropertyMock()
+        type(dac).normalized_value = normalized_value
         swim_pump_device.off()
         gpio.output.assert_has_calls([call(PIN, True), call(PIN, True)])
-        dac.normalized_value.assert_called_once_with(0)
+        normalized_value.assert_called_once_with(0)
 
     def test_on_without_dac(self, gpio, swim_pump_device_without_dac):
         swim_pump_device_without_dac.on()
@@ -69,9 +74,11 @@ class TestSwimPumpDevice:
 
     @pytest.mark.parametrize("speed", range(0, 101, 25))
     def test_valid_speed(self, gpio, dac, swim_pump_device, speed):
+        normalized_value = PropertyMock()
+        type(dac).normalized_value = normalized_value
         swim_pump_device.speed(speed)
         gpio.output.assert_has_calls([call(PIN, True), call(PIN, True if speed == 0 else False)])
-        dac.normalized_value.assert_called_once_with(speed / 100)
+        normalized_value.assert_called_once_with(speed / 100)
 
     @pytest.mark.parametrize("speed", [-1, 101, 999])
     def test_invalid_speed(self, swim_pump_device, speed):
@@ -79,17 +86,21 @@ class TestSwimPumpDevice:
             swim_pump_device.speed(speed)
 
     def test_same_speed_one_call(self, gpio, dac, swim_pump_device):
+        normalized_value = PropertyMock()
+        type(dac).normalized_value = normalized_value
         for _ in range(10):
             swim_pump_device.speed(50)
         gpio.output.assert_has_calls([call(PIN, True), call(PIN, False)])
-        dac.normalized_value.assert_called_once_with(0.5)
+        normalized_value.assert_called_once_with(0.5)
 
     def test_dac_throws_always(self, gpio, dac, swim_pump_device):
-        dac.normalized_value.side_effect = OSError()
+        normalized_value = PropertyMock()
+        normalized_value.side_effect = OSError()
+        type(dac).normalized_value = normalized_value
         swim_pump_device.speed(50)
         gpio.output.assert_has_calls([call(PIN, True), call(PIN, False)])
-        dac.normalized_value.assert_called_with(0.5)
-        assert dac.normalized_value.call_count == 3
+        normalized_value.assert_called_with(0.5)
+        assert normalized_value.call_count == 3
 
     def test_dac_throws_once(self, gpio, dac, swim_pump_device):
         def side_effect(value):
@@ -98,8 +109,10 @@ class TestSwimPumpDevice:
                 raise OSError()
             return DEFAULT
         side_effect.counter = 0
-        dac.normalized_value.side_effect = side_effect
+        normalized_value = PropertyMock()
+        normalized_value.side_effect = side_effect
+        type(dac).normalized_value = normalized_value
         swim_pump_device.speed(50)
         gpio.output.assert_has_calls([call(PIN, True), call(PIN, False)])
-        dac.normalized_value.assert_called_with(0.5)
-        assert dac.normalized_value.call_count == 2
+        normalized_value.assert_called_with(0.5)
+        assert normalized_value.call_count == 2
