@@ -266,7 +266,8 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("opened", "opening_standby", "standby_boost")
         self.__machine.add_transition("opened", "opening_overflow", "overflow_boost")
         # Standby
-        self.__machine.add_transition("standby", "heating_running", "heating_delay_standby")
+        self.__machine.add_transition("standby", "heating_running",
+                                      "heating_delay_standby", unless="tank_is_low")
         self.__machine.add_transition("heating_delayed", "heating_delay_standby",
                                       "opening_standby", unless="tank_is_low")
         self.__machine.add_transition(
@@ -276,7 +277,8 @@ class Filtration(PoupoolActor):
                                       unless="pump_stopped_in_standby")
         self.__machine.add_transition("standby", "standby_boost", "standby_normal")
         # Overflow
-        self.__machine.add_transition("overflow", "heating_running", "heating_delay_overflow")
+        self.__machine.add_transition("overflow", "heating_running",
+                                      "heating_delay_overflow", unless="tank_is_low")
         self.__machine.add_transition("heating_delayed", "heating_delay_overflow",
                                       "opening_overflow", unless="tank_is_low")
         self.__machine.add_transition(
@@ -397,7 +399,7 @@ class Filtration(PoupoolActor):
 
     def tank_is_low(self):
         tank = self.get_actor("Tank")
-        return tank.is_low().get() or tank.is_fill().get()
+        return tank.is_halt().get() or tank.is_low().get() or tank.is_fill().get()
 
     def tank_is_high(self):
         return self.get_actor("Tank").is_high().get()

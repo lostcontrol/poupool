@@ -56,6 +56,7 @@ def main():
     publish("/settings/filtration/backwash/rinse_duration", 60)
     publish("/settings/filtration/speed/standby", 0)
     publish("/settings/filtration/speed/overflow", 4)
+    publish("/settings/tank/force_empty", "0")
     publish("/settings/swim/mode", "halt")
     publish("/settings/swim/timer", 5)
     publish("/settings/swim/speed", 50)

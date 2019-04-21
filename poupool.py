@@ -303,7 +303,7 @@ def main(args, devices):
 
     arduino = Arduino.start(encoder, devices).proxy()
 
-    dispatcher.register(filtration, swim, light, heater, heating, disinfection)
+    dispatcher.register(filtration, tank, swim, light, heater, heating, disinfection)
 
     mqtt.do_start()
 

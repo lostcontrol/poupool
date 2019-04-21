@@ -19,6 +19,7 @@ String Poupool_Filtration_RemainingDuration "Durée journalière restante [%s]" 
 
 String Poupool_Tank_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Tank_State"}
 Number Poupool_Tank_Height "Hauteur du tampon (%) [%d%%]" {channel="mqtt:topic:unsecure:poupool:Tank_Height"}
+Switch Poupool_Tank_Force_Empty "Forçage tampon vide" {channel="mqtt:topic:unsecure:poupool:Tank_Force_Empty"}
 
 Number Poupool_Filtration_BackwashPeriod "Période de contre-lavage (jour) [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_BackwashPeriod"}
 Number Poupool_Filtration_BackwashBackwashDuration "Durée de contre-lavage (secondes) [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_BackwashBackwashDuration"}

@@ -49,6 +49,7 @@ class Tank(PoupoolActor):
         super().__init__()
         self.__encoder = encoder
         self.__devices = devices
+        self.__force_empty = False
         self.levels = self.levels_eco
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Tank.states, initial="halt")
@@ -57,13 +58,27 @@ class Tank(PoupoolActor):
         self.__machine.add_transition("normal", ["fill", "low", "high"], "normal")
         self.__machine.add_transition("high", ["fill", "normal"], "high")
         self.__machine.add_transition("halt", ["fill", "low", "normal", "high"], "halt")
-        self.__machine.add_transition("fill", "halt", "fill")
+        self.__machine.add_transition("fill", "halt", "fill", unless="is_force_empty")
 
     def __get_tank_height(self):
         height = self.__devices.get_sensor("tank").value
         logger.debug("Tank level: %d" % height)
         self.__encoder.tank_height(int(round(height)))
         return height
+
+    def force_empty(self, value):
+        self.__force_empty = value
+        logger.info("Force empty tank is %sabled" % ("en" if value else "dis"))
+        if self.__force_empty and not self.is_halt():
+            # In case the user enable the settings and we are running already, we stop everything.
+            # The user can continue from the halt state.
+            logger.warning("The tank is not in the halt state, stopping everything")
+            self.get_actor("Filtration").halt()
+        elif not self.__force_empty and self.is_halt():
+            self._proxy.fill()
+
+    def is_force_empty(self):
+        return self.__force_empty
 
     def set_mode(self, mode):
         logger.info("Tank level set to %s" % mode)

@@ -45,7 +45,7 @@ class Dispatcher(object):
     def __init__(self):
         self.__mapping = {}
 
-    def register(self, filtration, swim, light, heater, heating, disinfection):
+    def register(self, filtration, tank, swim, light, heater, heating, disinfection):
         self.__mapping = {
             "/settings/mode": (filtration, lambda x: x in ("halt", "eco", "standby", "overflow", "comfort", "sweep", "wash", "wintering"), lambda x: x, None),
             "/settings/filtration/duration": (filtration, between(1, 172800), lambda x: "duration", to_int),
@@ -61,6 +61,7 @@ class Dispatcher(object):
             "/status/filtration/backwash/last": (filtration, lambda x: True, lambda x: "backwash_last", to_string),
             "/settings/filtration/speed/standby": (filtration, between(0, 1), lambda x: "speed_standby", to_int),
             "/settings/filtration/speed/overflow": (filtration, between(1, 4), lambda x: "speed_overflow", to_int),
+            "/settings/tank/force_empty": (tank, lambda x: x in ("0", "1"), lambda x: "force_empty", to_bool),
             "/settings/swim/mode": (swim, lambda x: x in ("halt", "timed", "continuous"), lambda x: x, None),
             "/settings/swim/timer": (swim, between(1, 60), lambda x: "timer", to_int),
             "/settings/swim/speed": (swim, between(1, 100), lambda x: "speed", to_int),

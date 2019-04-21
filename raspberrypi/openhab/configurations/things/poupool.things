@@ -18,6 +18,7 @@ Bridge mqtt:broker:unsecure [ host="poupool", secure=false ] {
 
         Type string : Tank_State [ stateTopic="/status/tank/state" ]
         Type number : Tank_Height [ stateTopic="/status/tank/height" ]
+        Type switch : Tank_Force_Empty [ stateTopic="/settings/tank/force_empty", commandTopic="/settings/tank/force_empty", retained="true" ]
 
         Type number : Filtration_BackwashPeriod [ stateTopic="/settings/filtration/backwash/period", commandTopic="/settings/filtration/backwash/period", retained="true" ]
         Type number : Filtration_BackwashBackwashDuration [ stateTopic="/settings/filtration/backwash/backwash_duration", commandTopic="/settings/filtration/backwash/backwash_duration", retained="true" ]
