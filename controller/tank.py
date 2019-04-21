@@ -67,14 +67,16 @@ class Tank(PoupoolActor):
         return height
 
     def force_empty(self, value):
+        previous = self.__force_empty
         self.__force_empty = value
         logger.info("Force empty tank is %sabled" % ("en" if value else "dis"))
-        if self.__force_empty and not self.is_halt():
+        if not previous and self.__force_empty and not self.is_halt():
             # In case the user enable the settings and we are running already, we stop everything.
             # The user can continue from the halt state.
             logger.warning("The tank is not in the halt state, stopping everything")
             self.get_actor("Filtration").halt()
-        elif not self.__force_empty and self.is_halt():
+        elif previous and not self.__force_empty and self.is_halt():
+            # Deactivation of the function, we start the tank FSM.
             self._proxy.fill()
 
     def is_force_empty(self):
