@@ -79,6 +79,10 @@ def main():
     [print(t) for t in missing]
     print()
 
+    # Don't stop the client too quickly or not all messages will be published.
+    import time
+    time.sleep(1)
+
     mqtt.do_stop()
     mqtt.stop()
 
