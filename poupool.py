@@ -181,8 +181,20 @@ def setup_fake(registry):
 
     class FakeDAC(object):
 
+        def __init__(self):
+            self.__value = 0
+
+        @property
+        def normalized_value(self):
+            return self.__value
+
+        @normalized_value.setter
         def normalized_value(self, value):
-            print("Set DAC to %.2f" % value)
+            self.__value = value
+
+        @property
+        def value(self):
+            return self.__value
 
     # Relay
     GPIO = FakeGpio()
