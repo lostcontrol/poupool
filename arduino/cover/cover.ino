@@ -73,9 +73,9 @@ class Cover {
       pinMode(pins.cover_interrupt, INPUT_PULLUP);
 
       pinMode(pins.cover_close, OUTPUT);
-      digitalWrite(pins.cover_close, HIGH);
+      digitalWrite(pins.cover_close, LOW);
       pinMode(pins.cover_open, OUTPUT);
-      digitalWrite(pins.cover_open, HIGH);
+      digitalWrite(pins.cover_open, LOW);
     }
 
     void process_direction(unsigned long now) {
@@ -83,9 +83,9 @@ class Cover {
         switch (m_direction) {
           case Direction::OPEN:
             m_running_direction = Direction::OPEN;
-            digitalWrite(pins.cover_close, LOW);
+            digitalWrite(pins.cover_close, HIGH);
             delay(100);
-            digitalWrite(pins.cover_open, HIGH);
+            digitalWrite(pins.cover_open, LOW);
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
             m_previous_time = now;
@@ -94,9 +94,9 @@ class Cover {
             break;
           case Direction::CLOSE:
             m_running_direction = Direction::CLOSE;
-            digitalWrite(pins.cover_open, LOW);
+            digitalWrite(pins.cover_open, HIGH);
             delay(100);
-            digitalWrite(pins.cover_close, HIGH);
+            digitalWrite(pins.cover_close, LOW);
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
             m_previous_time = now;
@@ -104,8 +104,8 @@ class Cover {
             m_do_stop_time = 0;
             break;
           case Direction::STOP:
-            digitalWrite(pins.cover_close, HIGH);
-            digitalWrite(pins.cover_open, HIGH);
+            digitalWrite(pins.cover_close, LOW);
+            digitalWrite(pins.cover_open, LOW);
             // Trigger delayed stop event. The cover might run for up to 3 seconds after we
             // stopped the motor so we cannot save the position directly to the EEPROM. We
             // trigger an event here and will write the position 3 seconds later.
