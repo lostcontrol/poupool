@@ -1,3 +1,4 @@
+wheel
 paho-mqtt==1.4.0
 Pykka==1.2.1
 pyserial==3.4
