@@ -119,10 +119,9 @@ class SwimPumpDevice(SwitchDevice):
     def __init__(self, name, gpio, pins, dac):
         super().__init__(name, gpio, pins)
         self.__speed = -1
-        # Try to read back a value from the DAC. If it fails, we conclude that the DAC
-        # is not present.
+        # Try to write a value to the DAC. If it fails, we conclude that the DAC is not present.
         try:
-            dac.value
+            dac.value = 0
             self.__dac = dac
         except OSError:
             logger.exception("No DAC available, ignoring")
