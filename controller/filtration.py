@@ -262,7 +262,8 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("heat", ["eco_waiting", "eco_normal"], "heating")
         self.__machine.add_transition("heating_delay", "heating", "heating_delay_none")
         self.__machine.add_transition("heating_delayed", "heating_delay_none", "eco")
-        self.__machine.add_transition("eco_waiting", ["eco_compute", "eco_tank"], "eco_waiting")
+        self.__machine.add_transition(
+            "eco_waiting", ["eco_compute", "eco_normal", "eco_tank"], "eco_waiting")
         self.__machine.add_transition("opened", "opening_standby", "standby_boost")
         self.__machine.add_transition("opened", "opening_overflow", "overflow_boost")
         # Standby
