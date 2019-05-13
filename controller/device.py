@@ -38,6 +38,7 @@ class DeviceRegistry(object):
         self.__valves = {}
         self.__pumps = {}
         self.__sensors = {}
+        self.__devices = {}
 
     def get_valves(self):
         return self.__valves.values()
@@ -48,14 +49,24 @@ class DeviceRegistry(object):
     def get_sensors(self):
         return self.__sensors.values()
 
+    def get_devices(self):
+        return self.__devices.values()
+
     def add_valve(self, device):
+        assert isinstance(device, SwitchDevice)
         self.__valves[device.name] = device
 
     def add_pump(self, device):
+        assert isinstance(device, (SwitchDevice, PumpDevice))
         self.__pumps[device.name] = device
 
     def add_sensor(self, device):
+        assert isinstance(device, SensorDevice)
         self.__sensors[device.name] = device
+
+    def add_device(self, device):
+        assert isinstance(device, StoppableDevice)
+        self.__devices[device.name] = device
 
     def get_valve(self, name):
         return self.__valves.get(name)
@@ -66,11 +77,24 @@ class DeviceRegistry(object):
     def get_sensor(self, name):
         return self.__sensors.get(name)
 
+    def get_device(self, name):
+        return self.__devices.get(name)
+
 
 class Device(object):
 
     def __init__(self, name):
         self.name = name
+
+
+class StoppableDevice(ABC, Device):
+
+    def __init__(self, name):
+        super().__init__(name)
+
+    @abstractmethod
+    def stop(self):
+        pass
 
 
 class SwitchDevice(Device):
@@ -280,7 +304,7 @@ class EZOSensorDevice(SensorDevice):
         return None
 
 
-class ArduinoDevice(Device):
+class ArduinoDevice(StoppableDevice):
 
     def __init__(self, name, port):
         super().__init__(name)
@@ -315,8 +339,8 @@ class ArduinoDevice(Device):
         value = self.__send("water")
         return int(value.replace("water ", "")) if value else None
 
-    def off(self):
-        # This is to be compatible with the sensor API. All devices are turned off() when exiting
+    def stop(self):
+        # This is to be compatible with the stoppable API. All devices are turned off() when exiting
         # the application. We stop the cover.
         self.cover_stop()
 

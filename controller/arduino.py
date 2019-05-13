@@ -37,7 +37,7 @@ class Arduino(PoupoolActor):
     def __init__(self, encoder, devices):
         super().__init__()
         self.__encoder = encoder
-        self.__arduino = devices.get_valve("arduino")
+        self.__arduino = devices.get_device("arduino")
         self.__water_counter = 0
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Arduino.states, initial="halt")

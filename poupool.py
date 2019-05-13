@@ -96,7 +96,7 @@ def setup_rpi(registry):
     registry.add_sensor(EZOSensorDevice("orp", config["serial", "orp"]))
 
     # Arduino (cover, water)
-    registry.add_valve(ArduinoDevice("arduino", config["serial", "arduino"]))
+    registry.add_device(ArduinoDevice("arduino", config["serial", "arduino"]))
 
     # 1-wire
     # 28-031634d04aff
@@ -110,7 +110,7 @@ def setup_rpi(registry):
 
 
 def setup_fake(registry):
-    from controller.device import Device, SensorDevice, SwimPumpDevice
+    from controller.device import Device, SensorDevice, SwimPumpDevice, StoppableDevice
 
     class FakeGpio(object):
         OUT = "OUT"
@@ -145,7 +145,7 @@ def setup_fake(registry):
             import random
             return random.uniform(self.__min, self.__max)
 
-    class FakeArduino(Device):
+    class FakeArduino(StoppableDevice):
 
         def __init__(self, name):
             super().__init__(name)
@@ -176,7 +176,7 @@ def setup_fake(registry):
             self.__water_counter += 1
             return self.__water_counter
 
-        def off(self):
+        def stop(self):
             self.cover_stop()
 
     class FakeDAC(object):
@@ -217,7 +217,7 @@ def setup_fake(registry):
     registry.add_sensor(FakeSensor("temperature_ncc", 21.3))
 
     # Arduino
-    registry.add_valve(FakeArduino("arduino"))
+    registry.add_device(FakeArduino("arduino"))
 
 
 def toggle_test(device):
@@ -353,6 +353,9 @@ if __name__ == '__main__':
         # Turn off all the devices on exit
         for device in itertools.chain(devices.get_pumps(), devices.get_valves()):
             device.off()
+        # Stop stoppable devices
+        for device in devices.get_devices():
+            device.stop()
         # Ensure all the pins are configured back as inputs
         if not args.fake_devices:
             import RPi.GPIO as GPIO
