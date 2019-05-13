@@ -375,3 +375,18 @@ class ArduinoDevice(StoppableDevice):
             logger.exception("Serial sensor %s had an error. Reconnecting..." % self.name)
             self.__reconnect()
         return None
+
+
+class LcdDevice(StoppableDevice):
+
+    def __init__(self, name, port):
+        super().__init__(name)
+        from lcdbackpack import LcdBackpack
+        self.__lcdbackpack = LcdBackpack(port, 115200)
+
+    def stop(self):
+        pass
+
+    def __getattr__(self, attr):
+        # We just delegate everything to the LcdBackpack
+        return getattr(self.__lcdbackpack, attr)

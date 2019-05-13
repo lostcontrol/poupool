@@ -18,9 +18,15 @@
 
 class Encoder(object):
 
-    def __init__(self, mqtt):
+    def __init__(self, mqtt, lcd):
         self.__mqtt = mqtt
+        self.__lcd = lcd
 
     def __getattr__(self, value):
         topic = "/status/" + "/".join(value.split("_"))
-        return lambda x, **kwargs: self.__mqtt.publish(topic, x, **kwargs)
+
+        def wrapper(x, **kwargs):
+            self.__mqtt.publish(topic, x, **kwargs)
+            self.__lcd.update(value, x)
+
+        return wrapper

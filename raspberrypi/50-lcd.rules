@@ -1,0 +1,1 @@
+ATTRS{idVendor}=="239a", ATTRS{idProduct}=="0001", SYMLINK+="lcd", TAG+="systemd"

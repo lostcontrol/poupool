@@ -37,6 +37,7 @@ from controller.sensor import TemperatureReader, TemperatureWriter
 from controller.sensor import DisinfectionReader, DisinfectionWriter
 from controller.device import DeviceRegistry
 from controller.config import config, as_list
+from controller.lcd import Lcd
 
 
 def setup_gpio(registry, gpio):
@@ -67,7 +68,7 @@ def setup_gpio(registry, gpio):
 
 def setup_rpi(registry):
     from controller.device import SwimPumpDevice, TempSensorDevice, TankSensorDevice
-    from controller.device import ArduinoDevice, EZOSensorDevice
+    from controller.device import ArduinoDevice, EZOSensorDevice, LcdDevice
 
     # Relay
     import RPi.GPIO as GPIO
@@ -97,6 +98,9 @@ def setup_rpi(registry):
 
     # Arduino (cover, water)
     registry.add_device(ArduinoDevice("arduino", config["serial", "arduino"]))
+
+    # LCD
+    registry.add_device(LcdDevice("lcd", config["serial", "lcd"]))
 
     # 1-wire
     # 28-031634d04aff
@@ -200,6 +204,25 @@ def setup_fake(registry):
         def value(self, value):
             self.__value = value
 
+    class FakeLcd(StoppableDevice):
+
+        def __init__(self, name):
+            super().__init__(name)
+            self.__counter = 0
+
+        def __getattr__(self, attr):
+            # Just do nothing. We already implemented the minimum attributes for the fake
+            return lambda *x: None
+
+        def stop(self):
+            pass
+
+        def write(self, value):
+            if self.__counter % 5 == 0:
+                # The display is a 4x20 LCD.
+                print("\n" + "\n".join(value[20 * i: 20 * i + 20] for i in range(4)) + "\n")
+            self.__counter += 1
+
     # Relay
     GPIO = FakeGpio()
     setup_gpio(registry, GPIO)
@@ -222,6 +245,9 @@ def setup_fake(registry):
 
     # Arduino
     registry.add_device(FakeArduino("arduino"))
+
+    # Lcd
+    registry.add_device(FakeLcd("lcd"))
 
 
 def toggle_test(device):
@@ -287,7 +313,8 @@ def main(args, devices):
     dispatcher = Dispatcher()
 
     mqtt = Mqtt.start(dispatcher).proxy()
-    encoder = Encoder(mqtt)
+    lcd = Lcd.start(devices.get_device("lcd")).proxy()
+    encoder = Encoder(mqtt, lcd)
 
     # Temperature
     sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_local"),
@@ -330,6 +357,7 @@ def main(args, devices):
     temperature_writer.do_write.defer()
     disinfection_reader.do_read.defer()
     disinfection_writer.do_write.defer()
+    lcd.do_update.defer()
 
     # Monitor the main actors. If one dies, we will exit the main thread.
     main_actors = [filtration.actor_ref, tank.actor_ref, disinfection.actor_ref, heating.actor_ref]

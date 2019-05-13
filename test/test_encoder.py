@@ -24,25 +24,34 @@ def mqtt(mocker):
 
 
 @pytest.fixture
-def encoder(mqtt):
+def lcd(mocker):
+    return mocker.Mock()
+
+
+@pytest.fixture
+def encoder(mqtt, lcd):
     from controller.encoder import Encoder
-    return Encoder(mqtt)
+    return Encoder(mqtt, lcd)
 
 
 class TestEncoder:
 
-    def test_publish_int(self, mqtt, encoder):
+    def test_publish_int(self, mqtt, lcd, encoder):
         value = 10
         encoder.foo(value)
         mqtt.publish.assert_called_once_with("/status/foo", value)
+        lcd.update.assert_called_once_with("foo", value)
 
-    def test_publish_with_underscore(self, mqtt, encoder):
+    def test_publish_with_underscore(self, mqtt, lcd, encoder):
         value = "foobar"
         encoder.foo_bar(value)
         mqtt.publish.assert_called_once_with("/status/foo/bar", value)
+        lcd.update.assert_called_once_with("foo_bar", value)
 
-    def test_publish_with_kwargs(self, mqtt, encoder):
+    def test_publish_with_kwargs(self, mqtt, lcd, encoder):
         value = "foobar"
         kwargs = (1, 2)
         encoder.foo_bar(value, kw=kwargs)
         mqtt.publish.assert_called_once_with("/status/foo/bar", value, kw=kwargs)
+        # No need/support for kwargs for LCD
+        lcd.update.assert_called_once_with("foo_bar", value)
