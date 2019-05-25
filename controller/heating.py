@@ -169,9 +169,13 @@ class Heating(PoupoolActor):
         if now >= self.__next_start:
             if self.__enable and self.filtration_ready_for_heating():
                 if self.check_before_on():
-                    self.get_actor("Filtration").heat()
-                    self._proxy.heat()
-                    raise StopRepeatException
+                    self.get_actor("Filtration").heat().get()
+                    # Ensure we are allowed to switch to the heat state. If the transition
+                    # above fails, we will call StopRepeatException but never land in the
+                    # heating state.
+                    if self.filtration_allow_heating():
+                        self._proxy.heat()
+                        raise StopRepeatException
                 else:
                     # No need to heat today. Schedule for next day
                     self.__next_start += timedelta(days=1)
