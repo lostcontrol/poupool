@@ -144,7 +144,7 @@ class Disinfection(PoupoolActor):
         # ORP
         self.__orp_measures = []
         self.__orp_enable = True
-        self.__orp_controller = PController(pterm=1.0, scale=0.001)
+        self.__orp_controller = PController(pterm=1.0, scale=0.005)
         self.__orp_controller.setpoint = 700
         # Chlorine
         self.__cl = PWM.start("cl", self.__devices.get_pump("cl")).proxy()
