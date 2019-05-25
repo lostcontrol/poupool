@@ -24,6 +24,7 @@ from datetime import datetime
 import logging
 import functools
 import re
+from threading import Timer
 
 logger = logging.getLogger(__name__)
 
@@ -92,11 +93,14 @@ class PoupoolActor(pykka.ThreadingActor):
     def __init__(self):
         super().__init__()
         self._proxy = self.actor_ref.proxy()
-        self.__delay_counter = 0
+        self.__timer = None
 
     # def on_failure(self, exception_type, exception_value, traceback):
     #    logger.fatal(exception_type, exception_value, traceback)
     #    get_actor("Filtration").stop()
+
+    def on_stop(self):
+        self.do_cancel()
 
     def get_actor(self, name):
         fsm = pykka.ActorRegistry.get_by_class_name(name)
@@ -106,19 +110,14 @@ class PoupoolActor(pykka.ThreadingActor):
         return None
 
     def do_cancel(self):
-        self.__delay_counter += 1
+        if self.__timer:
+            self.__timer.cancel()
+            self.__timer = None
 
     def do_delay(self, delay, method, *args, **kwargs):
         assert type(method) == str
-        self.__delay_counter += 1
-        end = time.time() + delay
-        self.do_delay_internal(self.__delay_counter, end, method, *args, **kwargs)
-
-    def do_delay_internal(self, counter, end, method, *args, **kwargs):
-        if counter == self.__delay_counter:
-            if (end - time.time()) > 0:
-                time.sleep(0.1)
-                self._proxy.do_delay_internal(counter, end, method, *args, **kwargs)
-            else:
-                func = getattr(self._proxy, method)
-                func(*args, **kwargs)
+        # Stop an already running timer
+        self.do_cancel()
+        func = getattr(self._proxy, method)
+        self.__timer = Timer(delay, func, *args, **kwargs)
+        self.__timer.start()
