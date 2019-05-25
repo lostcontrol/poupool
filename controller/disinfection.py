@@ -197,6 +197,7 @@ class Disinfection(PoupoolActor):
     def is_disable(self):
         return self.__is_disable
 
+    @do_repeat()
     def on_enter_halt(self):
         logger.info("Entering halt state")
         self.__encoder.disinfection_state("halt")
@@ -209,10 +210,27 @@ class Disinfection(PoupoolActor):
         self.__encoder.disinfection_cl_feedback(0)
         self.__encoder.disinfection_ph_feedback(0)
 
+    @repeat(delay=60)
+    def do_repeat_halt(self):
+        orp = self.__devices.get_sensor("orp").value
+        self.__encoder.disinfection_orp_value("%d" % orp)
+        ph = self.__devices.get_sensor("ph").value
+        self.__encoder.disinfection_ph_value("%.2f" % ph)
+
+    @do_repeat()
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
         self.__encoder.disinfection_state("waiting")
-        self._proxy.do_delay(Disinfection.START_DELAY, "run")
+
+    @repeat(delay=60)
+    def do_repeat_waiting(self):
+        orp = self.__devices.get_sensor("orp").value
+        self.__encoder.disinfection_orp_value("%d" % orp)
+        ph = self.__devices.get_sensor("ph").value
+        self.__encoder.disinfection_ph_value("%.2f" % ph)
+        if self.__machine.get_time_in_state() > timedelta(seconds=Disinfection.START_DELAY):
+            self._proxy.run()
+            raise StopRepeatException
 
     @do_repeat()
     def on_enter_constant(self):
