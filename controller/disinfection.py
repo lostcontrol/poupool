@@ -229,7 +229,7 @@ class Disinfection(PoupoolActor):
         ph = self.__devices.get_sensor("ph").value
         self.__encoder.disinfection_ph_value("%.2f" % ph)
         if self.__machine.get_time_in_state() > timedelta(seconds=Disinfection.START_DELAY):
-            self._proxy.run()
+            self._proxy.run.defer()
             raise StopRepeatException
 
     @do_repeat()
@@ -271,10 +271,10 @@ class Disinfection(PoupoolActor):
         self.__measurement_counter += 1
         if self.__measurement_counter > 6:
             logger.error("Unable to get enough samples. Stopping disinfection")
-            self._proxy.halt()
+            self._proxy.halt.defer()
             raise StopRepeatException
         if len(self.__ph_measures) + len(self.__orp_measures) >= 2 * Disinfection.SAMPLES:
-            self._proxy.adjust()
+            self._proxy.adjust.defer()
             raise StopRepeatException
 
     def on_enter_running_adjusting(self):
@@ -299,7 +299,7 @@ class Disinfection(PoupoolActor):
         self.__encoder.disinfection_orp_setpoint(int(orp_setpoint))
         logger.info("ORP: %d setpoint: %d feedback: %.2f" % (orp, orp_setpoint, cl_feedback))
         self.__cl.value = cl_feedback
-        self._proxy.wait()
+        self._proxy.wait.defer()
 
     def on_enter_running_waiting(self):
         logger.info("Entering waiting state")

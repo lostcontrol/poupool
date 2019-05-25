@@ -288,7 +288,7 @@ def main(args, devices):
     sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_local"),
                devices.get_sensor("temperature_air"), devices.get_sensor("temperature_ncc")]
     temperature = Temperature.start(encoder, sensors).proxy()
-    temperature.do_read()
+    temperature.do_read.defer()
 
     filtration = Filtration.start(temperature, encoder, devices).proxy()
     swim = Swim.start(temperature, encoder, devices).proxy()
@@ -305,11 +305,14 @@ def main(args, devices):
 
     dispatcher.register(filtration, tank, swim, light, heater, heating, disinfection)
 
-    mqtt.do_start()
+    mqtt.do_start.defer()
+
+    # Monitor the main actors. If one dies, we will exit the main thread.
+    main_actors = [filtration.actor_ref, tank.actor_ref, disinfection.actor_ref, heating.actor_ref]
 
     # Wait forever or until SIGTERM is caught
-    while running:
-        time.sleep(1)
+    while running and all([actor.is_alive() for actor in main_actors]):
+        time.sleep(0.5)
 
 
 def sigterm_handler(signo, stack_frame):

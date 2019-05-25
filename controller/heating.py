@@ -71,7 +71,7 @@ class Heater(PoupoolActor):
     def do_repeat_waiting(self):
         temp = self.__read_temperature()
         if temp < self.__setpoint - Heater.HYSTERESIS_DOWN:
-            self._proxy.heat()
+            self._proxy.heat.defer()
             raise StopRepeatException
 
     @do_repeat()
@@ -86,7 +86,7 @@ class Heater(PoupoolActor):
     def do_repeat_heating(self):
         temp = self.__read_temperature()
         if temp > self.__setpoint + Heater.HYSTERESIS_UP:
-            self._proxy.wait()
+            self._proxy.wait.defer()
             raise StopRepeatException
 
 
@@ -174,7 +174,7 @@ class Heating(PoupoolActor):
                     # above fails, we will call StopRepeatException but never land in the
                     # heating state.
                     if self.filtration_allow_heating():
-                        self._proxy.heat()
+                        self._proxy.heat.defer()
                         raise StopRepeatException
                 else:
                     # No need to heat today. Schedule for next day
@@ -192,7 +192,7 @@ class Heating(PoupoolActor):
         temperature = self.__read_temperature()
         if temperature >= self.__setpoint + Heating.HYSTERESIS_UP or not self.__enable:
             self.__next_start += timedelta(days=1)
-            self._proxy.wait()
+            self._proxy.wait.defer()
             raise StopRepeatException
 
     def on_exit_heating(self):
@@ -200,7 +200,7 @@ class Heating(PoupoolActor):
         self.__devices.get_valve("heating").off()
         # Only change the filtration state if we are running in heating_running state
         if self.filtration_allow_heating():
-            self.get_actor("Filtration").heating_delay()
+            self.get_actor("Filtration").heating_delay.defer()
 
     def on_enter_forcing(self):
         logger.info("Entering forcing state")

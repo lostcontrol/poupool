@@ -311,8 +311,8 @@ class Filtration(PoupoolActor):
     def __reload_eco(self):
         if self.is_eco(allow_substates=True):
             # Jump to the reload state so that we can jump back into the same state
-            self._proxy.reload()
-            self._proxy.eco()
+            self._proxy.reload.defer.defer()
+            self._proxy.eco.defer.defer()
 
     def duration(self, value):
         current_duration = self.__eco_mode.filtration.duration
@@ -352,16 +352,16 @@ class Filtration(PoupoolActor):
         logger.info("Speed for standby mode set to: %d" % self.__speed_standby)
         if self.is_standby_normal():
             # Jump to the reload state so that we can jump back into standby mode
-            self._proxy.reload()
-            self._proxy.standby()
+            self._proxy.reload.defer()
+            self._proxy.standby.defer()
 
     def speed_overflow(self, value):
         self.__speed_overflow = value
         logger.info("Speed for overflow mode set to: %d" % self.__speed_overflow)
         if self.is_overflow_normal():
             # Jump to the reload state so that we can jump back into overflow mode
-            self._proxy.reload()
-            self._proxy.overflow()
+            self._proxy.reload.defer()
+            self._proxy.overflow.defer()
 
     def backwash_backwash_duration(self, value):
         self.__backwash_backwash_duration = timedelta(seconds=value)
@@ -385,17 +385,17 @@ class Filtration(PoupoolActor):
     def tank_start(self):
         tank = self.get_actor("Tank")
         if tank.is_halt().get():
-            tank.fill()
+            tank.fill.defer()
 
     def heating_start(self):
         heating = self.get_actor("Heating")
         if heating.is_halt().get():
-            heating.wait()
+            heating.wait.defer()
 
     def arduino_start(self):
         arduino = self.get_actor("Arduino")
         if arduino.is_halt().get():
-            arduino.run()
+            arduino.run.defer()
 
     def tank_is_low(self):
         tank = self.get_actor("Tank")
@@ -426,12 +426,17 @@ class Filtration(PoupoolActor):
     def __actor_run(self, name):
         actor = self.get_actor(name)
         if actor.is_halt().get():
-            actor.run()
+            actor.run.defer()
 
     def __actor_halt(self, name):
         actor = self.get_actor(name)
-        if not actor.is_halt().get():
-            actor.halt()
+        try:
+            # We have seen situation where this creates a deadlock. We add a timeout so that we
+            # eventually return from the get() and force the halt transition.
+            if not actor.is_halt().get(timeout=1):
+                actor.halt.defer()
+        except pykka.Timeout:
+            actor.halt.defer()
 
     def on_enter_halt(self):
         logger.info("Entering halt state")
@@ -439,6 +444,9 @@ class Filtration(PoupoolActor):
         self.__actor_halt("Disinfection")
         self.__actor_halt("Tank")
         self.__actor_halt("Arduino")
+        self.__actor_halt("Heating")
+        self.__actor_halt("Light")
+        self.__actor_halt("Swim")
         self.__devices.get_pump("variable").off()
         self.__devices.get_pump("boost").off()
         self.__devices.get_valve("gravity").off()
@@ -455,7 +463,7 @@ class Filtration(PoupoolActor):
         self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").off()
         # close the roller shutter
-        self.get_actor("Arduino").cover_close()
+        self.get_actor("Arduino").cover_close.defer()
 
     @repeat(delay=5)
     def do_repeat_closing(self):
@@ -470,7 +478,7 @@ class Filtration(PoupoolActor):
     def on_exit_closing(self):
         logger.info("Exiting closing state")
         # stop the roller shutter
-        self.get_actor("Arduino").cover_stop()
+        self.get_actor("Arduino").cover_stop.defer()
 
     @do_repeat()
     def on_enter_opening(self):
@@ -482,7 +490,7 @@ class Filtration(PoupoolActor):
         self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").off()
         # open the roller shutter
-        self.get_actor("Arduino").cover_open()
+        self.get_actor("Arduino").cover_open.defer()
 
     @repeat(delay=5)
     def do_repeat_opening(self):
@@ -497,9 +505,9 @@ class Filtration(PoupoolActor):
     def on_exit_opening(self):
         logger.info("Exiting opening state")
         # TODO I'm not quite sure why this is here!!!??? Needed? Bug?
-        self.get_actor("Tank").set_mode("overflow")
+        self.get_actor("Tank").set_mode.defer("overflow")
         # stop the roller shutter
-        self.get_actor("Arduino").cover_stop()
+        self.get_actor("Arduino").cover_stop.defer()
 
     def on_enter_eco(self):
         logger.info("Entering eco state")
@@ -507,7 +515,7 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("drain").off()
         self.__devices.get_valve("gravity").on()
         self.__devices.get_valve("tank").off()
-        self.get_actor("Tank").set_mode("eco")
+        self.get_actor("Tank").set_mode.defer("eco")
 
     def on_enter_eco_compute(self):
         logger.info("Entering eco compute")
@@ -515,11 +523,11 @@ class Filtration(PoupoolActor):
         self.__eco_mode.check_reset(datetime.now())
         self.__eco_mode.compute()
         if self.__eco_mode.off_duration.total_seconds() > 0:
-            self._proxy.do_delay(10, "eco_waiting")
+            self._proxy.do_delay(5, "eco_waiting")
         elif self.__eco_mode.on_duration.total_seconds() > 0:
-            self._proxy.do_delay(10, "eco_normal")
+            self._proxy.do_delay(5, "eco_normal")
         else:
-            self._proxy.do_delay(10, "eco_waiting")
+            self._proxy.do_delay(5, "eco_waiting")
 
     @do_repeat()
     def on_enter_eco_normal(self):
@@ -532,7 +540,7 @@ class Filtration(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco_normal(self):
         if self.__start_backwash():
-            self._proxy.wash()
+            self._proxy.wash.defer()
             raise StopRepeatException
         now = datetime.now()
         self.__eco_mode.update(now)
@@ -541,9 +549,9 @@ class Filtration(PoupoolActor):
             raise StopRepeatException
         if self.__eco_mode.elapsed_on():
             if self.tank_is_low():
-                self._proxy.eco_waiting()
+                self._proxy.eco_waiting.defer()
             elif self.__eco_mode.tank_duration > timedelta():
-                self._proxy.eco_tank()
+                self._proxy.eco_tank.defer()
             raise StopRepeatException
 
     @do_repeat()
@@ -562,7 +570,7 @@ class Filtration(PoupoolActor):
             self.__reload_eco()
             raise StopRepeatException
         if self.__eco_mode.elapsed_on():
-            self._proxy.eco_waiting()
+            self._proxy.eco_waiting.defer()
             raise StopRepeatException
 
     def on_exit_eco_tank(self):
@@ -588,7 +596,7 @@ class Filtration(PoupoolActor):
     def on_exit_heating_running(self):
         actor = self.get_actor("Heating")
         if actor.is_heating().get():
-            actor.wait()
+            actor.wait.defer()
 
     def on_enter_heating_delay(self):
         logger.info("Entering heating_delay state")
@@ -617,7 +625,7 @@ class Filtration(PoupoolActor):
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco_waiting(self):
         if self.__start_backwash():
-            self._proxy.wash()
+            self._proxy.wash.defer()
             raise StopRepeatException
         now = datetime.now()
         self.__eco_mode.update(now, 0)
@@ -625,7 +633,7 @@ class Filtration(PoupoolActor):
             self.__reload_eco()
             raise StopRepeatException
         if self.__eco_mode.elapsed_off():
-            self._proxy.eco_normal()
+            self._proxy.eco_normal.defer()
             raise StopRepeatException
         # Update the stir mode at the end so we do not switch the boost pumps
         # for nothing.
@@ -690,11 +698,11 @@ class Filtration(PoupoolActor):
         self.__eco_mode.update(now, 1)
         actor = self.get_actor("Heating")
         if not actor.is_forcing().get() and not actor.is_recovering().get():
-            actor.force()
+            actor.force.defer()
 
     def on_exit_comfort(self):
         logger.info("Exiting comfort state")
-        self.get_actor("Heating").wait()
+        self.get_actor("Heating").wait.defer()
 
     def on_enter_overflow(self):
         logger.info("Entering overflow state")
@@ -719,7 +727,7 @@ class Filtration(PoupoolActor):
         else:
             self.__devices.get_pump("boost").off()
         # Use a constant chlorine flow
-        self.get_actor("Disinfection").constant()
+        self.get_actor("Disinfection").constant.defer()
 
     def on_exit_overflow_normal(self):
         logger.info("Exiting overflow state")
@@ -761,10 +769,10 @@ class Filtration(PoupoolActor):
     def on_enter_wintering(self):
         logger.info("Entering wintering state")
         self.__encoder.filtration_remaining(str(timedelta()))
-        self.get_actor("Heater").wait()
-        self.get_actor("Swim").wintering()
+        self.get_actor("Heater").wait.defer()
+        self.get_actor("Swim").wintering.defer()
         # open the roller shutter
-        self.get_actor("Arduino").cover_open()
+        self.get_actor("Arduino").cover_open.defer()
 
     @do_repeat()
     def on_enter_wintering_waiting(self):
@@ -777,7 +785,7 @@ class Filtration(PoupoolActor):
         if self.__machine.get_time_in_state() > timedelta(seconds=Filtration.WINTERING_PERIOD):
             temperature = self.__temperature.get_temperature("temperature_air").get()
             if temperature <= Filtration.WINTERING_ONLY_BELOW:
-                self._proxy.wintering_stir()
+                self._proxy.wintering_stir.defer()
                 raise StopRepeatException
 
     def on_enter_wintering_stir(self):

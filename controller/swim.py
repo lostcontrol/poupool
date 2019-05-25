@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class Swim(PoupoolActor):
 
-    STATE_REFRESH_DELAY = 1 # faster refresh rate because speed can change
+    STATE_REFRESH_DELAY = 1  # faster refresh rate because speed can change
     WINTERING_PERIOD = int(config["wintering", "swim_period"])
     WINTERING_ONLY_BELOW = float(config["wintering", "swim_only_below"])
     WINTERING_DURATION = int(config["wintering", "swim_duration"])
@@ -99,7 +99,7 @@ class Swim(PoupoolActor):
         self.__devices.get_pump("swim").speed(self.__speed)
         self.__timer.update(datetime.now())
         if self.__timer.elapsed():
-            self._proxy.halt()
+            self._proxy.halt.defer()
             raise StopRepeatException
 
     @do_repeat()
@@ -122,7 +122,7 @@ class Swim(PoupoolActor):
         if self.__machine.get_time_in_state() > timedelta(seconds=Swim.WINTERING_PERIOD):
             temperature = self.__temperature.get_temperature("temperature_ncc").get()
             if temperature <= Swim.WINTERING_ONLY_BELOW:
-                self._proxy.wintering_stir()
+                self._proxy.wintering_stir.defer()
                 raise StopRepeatException
 
     def on_enter_wintering_stir(self):

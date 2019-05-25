@@ -74,10 +74,10 @@ class Tank(PoupoolActor):
             # In case the user enable the settings and we are running already, we stop everything.
             # The user can continue from the halt state.
             logger.warning("The tank is not in the halt state, stopping everything")
-            self.get_actor("Filtration").halt()
+            self.get_actor("Filtration").halt.defer()
         elif previous and not self.__force_empty and self.is_halt():
             # Deactivation of the function, we start the tank FSM.
-            self._proxy.fill()
+            self._proxy.fill.defer()
 
     def is_force_empty(self):
         return self.__force_empty
@@ -99,7 +99,7 @@ class Tank(PoupoolActor):
         if height < self.levels_too_low:
             self.__devices.get_valve("main").on()
         else:
-            self._proxy.normal()
+            self._proxy.normal.defer()
             raise StopRepeatException
 
     @repeat(delay=STATE_REFRESH_DELAY / 2)
@@ -107,11 +107,11 @@ class Tank(PoupoolActor):
         # Security feature: stop if we stay too long in this state
         if self.__machine.get_time_in_state() > datetime.timedelta(hours=2):
             logger.warning("Tank TOO LONG in fill state, stopping")
-            self.get_actor("Filtration").halt()
+            self.get_actor("Filtration").halt.defer()
             raise StopRepeatException
         height = self.__get_tank_height()
         if height > self.levels_too_low:
-            self._proxy.low()
+            self._proxy.low.defer()
             raise StopRepeatException
 
     @do_repeat()
@@ -125,15 +125,15 @@ class Tank(PoupoolActor):
         # Security feature: stop if we stay too long in this state
         if self.__machine.get_time_in_state() > datetime.timedelta(hours=6):
             logger.warning("Tank TOO LONG in low state, stopping")
-            self.get_actor("Filtration").halt()
+            self.get_actor("Filtration").halt.defer()
             raise StopRepeatException
         height = self.__get_tank_height()
         if height >= self.levels["low"] + self.hysteresis:
-            self._proxy.normal()
+            self._proxy.normal.defer()
             raise StopRepeatException
         elif height < self.levels_too_low:
             logger.warning("Tank TOO LOW, stopping: %d" % height)
-            self.get_actor("Filtration").halt()
+            self.get_actor("Filtration").halt.defer()
             raise StopRepeatException
 
     @do_repeat()
@@ -146,10 +146,10 @@ class Tank(PoupoolActor):
     def do_repeat_normal(self):
         height = self.__get_tank_height()
         if height < self.levels["low"] - self.hysteresis:
-            self._proxy.low()
+            self._proxy.low.defer()
             raise StopRepeatException
         elif height >= self.levels["high"] + self.hysteresis:
-            self._proxy.high()
+            self._proxy.high.defer()
             raise StopRepeatException
 
     @do_repeat()
@@ -162,5 +162,5 @@ class Tank(PoupoolActor):
     def do_repeat_high(self):
         height = self.__get_tank_height()
         if height < self.levels["high"] - self.hysteresis:
-            self._proxy.normal()
+            self._proxy.normal.defer()
             raise StopRepeatException

@@ -95,9 +95,9 @@ class PoupoolActor(pykka.ThreadingActor):
         self._proxy = self.actor_ref.proxy()
         self.__timer = None
 
-    # def on_failure(self, exception_type, exception_value, traceback):
-    #    logger.fatal(exception_type, exception_value, traceback)
-    #    get_actor("Filtration").stop()
+    def on_failure(self, exception_type, exception_value, traceback):
+        # The actor is going to die
+        logger.fatal(exception_type, exception_value, traceback)
 
     def on_stop(self):
         self.do_cancel()
@@ -119,5 +119,5 @@ class PoupoolActor(pykka.ThreadingActor):
         # Stop an already running timer
         self.do_cancel()
         func = getattr(self._proxy, method)
-        self.__timer = Timer(delay, func, *args, **kwargs)
+        self.__timer = Timer(delay, func.defer, *args, **kwargs)
         self.__timer.start()
