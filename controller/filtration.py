@@ -248,8 +248,7 @@ class Filtration(PoupoolActor):
                                       initial="halt", before_state_change=[self.__before_state_change])
         # Transitions
         # Eco
-        self.__machine.add_transition(
-            "eco", ["standby", "overflow", "comfort", "opening"], "closing")
+        self.__machine.add_transition("eco", ["standby", "overflow", "opening"], "closing")
         # Special transition from halt to eco because we need to start the tank FSM. However, we
         # cannot start it on_exit of halt because when going from halt to wintering, the tank will
         # remain in the halt state.
