@@ -19,6 +19,7 @@ import pykka
 import time
 from datetime import datetime, timedelta
 import logging
+import statistics
 from .actor import PoupoolModel
 from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat, do_repeat
@@ -258,7 +259,7 @@ class Disinfection(PoupoolActor):
         self.__orp_measures = []
         self.__measurement_counter = 0
 
-    @repeat(delay=20)
+    @repeat(delay=10)
     def do_repeat_running_measuring(self):
         if len(self.__ph_measures) < Disinfection.SAMPLES:
             value = self.__devices.get_sensor("ph").value
@@ -269,7 +270,7 @@ class Disinfection(PoupoolActor):
             if value is not None:
                 self.__orp_measures.append(value)
         self.__measurement_counter += 1
-        if self.__measurement_counter > 6:
+        if self.__measurement_counter > 2 * Disinfection.SAMPLES:
             logger.error("Unable to get enough samples. Stopping disinfection")
             self._proxy.halt.defer()
             raise StopRepeatException
@@ -281,7 +282,7 @@ class Disinfection(PoupoolActor):
         logger.info("Entering adjusting state")
         self.__encoder.disinfection_state("adjusting")
         # pH
-        ph = sum(self.__ph_measures) / len(self.__ph_measures)
+        ph = statistics.median(self.__ph_measures)
         self.__encoder.disinfection_ph_value("%.2f" % ph)
         self.__ph_controller.current = ph
         ph_feedback = self.__ph_controller.compute() if self.__ph_enable else 0
@@ -289,7 +290,7 @@ class Disinfection(PoupoolActor):
         logger.info("pH: %.2f feedback: %.2f" % (ph, ph_feedback))
         self.__ph.value = ph_feedback
         # ORP/Chlorine
-        orp = sum(self.__orp_measures) / len(self.__orp_measures)
+        orp = statistics.median(self.__orp_measures)
         self.__encoder.disinfection_orp_value("%d" % orp)
         orp_setpoint = self.curves[self.__free_chlorine](ph)
         self.__orp_controller.setpoint = orp_setpoint
