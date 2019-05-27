@@ -311,8 +311,8 @@ class Filtration(PoupoolActor):
     def __reload_eco(self):
         if self.is_eco(allow_substates=True):
             # Jump to the reload state so that we can jump back into the same state
-            self._proxy.reload.defer.defer()
-            self._proxy.eco.defer.defer()
+            self._proxy.reload.defer()
+            self._proxy.eco.defer()
 
     def duration(self, value):
         current_duration = self.__eco_mode.filtration.duration
