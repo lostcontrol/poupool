@@ -196,6 +196,10 @@ def setup_fake(registry):
         def value(self):
             return self.__value
 
+        @value.setter
+        def value(self, value):
+            self.__value = value
+
     # Relay
     GPIO = FakeGpio()
     setup_gpio(registry, GPIO)
