@@ -66,6 +66,7 @@ def main():
     publish("/settings/heating/enable", "1")
     publish("/settings/heating/setpoint", "26.0")
     publish("/settings/heating/start_hour", "1")
+    publish("/settings/heating/min_temp", "15")
     publish("/settings/disinfection/cl/constant", "0.5")
     publish("/settings/disinfection/ph/enable", "1")
     publish("/settings/disinfection/ph/setpoint", "7")

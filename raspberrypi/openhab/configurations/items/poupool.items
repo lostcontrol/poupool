@@ -40,6 +40,7 @@ String Poupool_Heating_State "État [MAP(state.map):%s]" {channel="mqtt:topic:un
 Switch Poupool_Heating_Enable "Chauffage activé" {channel="mqtt:topic:unsecure:poupool:Heating_Enable"}
 Number Poupool_Heating_Setpoint "Température de consigne [%.1f°C]" {channel="mqtt:topic:unsecure:poupool:Heating_Setpoint"}
 Number Poupool_Heating_HourOfStart "Heure de chauffage [%d]" {channel="mqtt:topic:unsecure:poupool:Heating_HourOfStart"}
+Number Poupool_Heating_MinTemp "Température minimale [%d°C]" {channel="mqtt:topic:unsecure:poupool:Heating_MinTemp"}
 
 String Poupool_Light_Mode "Mode []" {channel="mqtt:topic:unsecure:poupool:Light_Mode", autoupdate="false"}
 String Poupool_Light_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Light_State"}

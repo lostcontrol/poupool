@@ -39,6 +39,7 @@ Bridge mqtt:broker:unsecure [ host="poupool", secure=false ] {
         Type switch : Heating_Enable [ stateTopic="/settings/heating/enable", commandTopic="/settings/heating/enable", retained="true" ]
         Type number : Heating_Setpoint [ stateTopic="/settings/heating/setpoint", commandTopic="/settings/heating/setpoint", retained="true" ]
         Type number : Heating_HourOfStart [ stateTopic="/settings/heating/start_hour", commandTopic="/settings/heating/start_hour", retained="true" ]
+        Type number : Heating_MinTemp [ stateTopic="/settings/heating/min_temp", commandTopic="/settings/heating/min_temp", retained="true" ]
 
         Type string : Light_Mode [ commandTopic="/settings/light/mode" ]
         Type string : Light_State [ stateTopic="/status/light/state" ]

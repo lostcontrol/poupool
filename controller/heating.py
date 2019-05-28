@@ -106,7 +106,9 @@ class Heating(PoupoolActor):
         self.__encoder = encoder
         self.__devices = devices
         self.__next_start = datetime.now()
+        self.__next_start_hour = 0
         self.__setpoint = 26.0
+        self.__min_temp = 15
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Heating.states, initial="halt")
 
@@ -119,8 +121,14 @@ class Heating(PoupoolActor):
         self.__machine.add_transition("wait", ["heating", "forcing"], "recovering")
         self.__machine.add_transition("recover_done", "recovering", "waiting")
 
-    def __read_temperature(self):
-        return self.__temperature.get_temperature("temperature_pool").get()
+    def __read_temperature(self, key="temperature_pool"):
+        return self.__temperature.get_temperature(key).get()
+
+    def __set_next_start(self):
+        tm = datetime.now()
+        self.__next_start = tm.replace(hour=self.__next_start_hour,
+                                       minute=0, second=0, microsecond=0)
+        self.__next_start += timedelta(days=1)
 
     def enable(self, value):
         self.__enable = value
@@ -135,10 +143,15 @@ class Heating(PoupoolActor):
 
     def start_hour(self, value):
         logger.info("Hour for heating start set to: %s" % value)
-        tm = datetime.now()
-        self.__next_start = tm.replace(hour=value, minute=0, second=0, microsecond=0)
-        if self.__next_start < tm:
+        self.__next_start_hour = value
+        self.__set_next_start()
+        if self.__next_start < datetime.now():
             self.__next_start -= timedelta(days=1)
+        logger.info("Next heating scheduled for %s" % self.__next_start)
+
+    def min_temp(self, value):
+        self.__min_temp = value
+        logger.info("Minimum temperature for heating set to %d" % self.__min_temp)
 
     def filtration_ready_for_heating(self):
         actor = self.get_actor("Filtration")
@@ -165,21 +178,27 @@ class Heating(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_waiting(self):
-        now = datetime.now()
-        if now >= self.__next_start:
-            if self.__enable and self.filtration_ready_for_heating():
-                if self.check_before_on():
-                    self.get_actor("Filtration").heat().get()
-                    # Ensure we are allowed to switch to the heat state. If the transition
-                    # above fails, we will call StopRepeatException but never land in the
-                    # heating state.
-                    if self.filtration_allow_heating():
-                        self._proxy.heat.defer()
-                        raise StopRepeatException
-                else:
-                    # No need to heat today. Schedule for next day
-                    self.__next_start += timedelta(days=1)
-                    logger.info("No heating needed today. Scheduled for %s" % self.__next_start)
+        if not self.__enable:
+            return
+        if datetime.now() < self.__next_start:
+            return
+        if not self.filtration_ready_for_heating():
+            return
+        if self.__read_temperature(key="temperature_air") < self.__min_temp:
+            return
+        # All pre-conditions ok, last check
+        if self.check_before_on():
+            self.get_actor("Filtration").heat().get()
+            # Ensure we are allowed to switch to the heat state. If the transition
+            # above fails, we will call StopRepeatException but never land in the
+            # heating state.
+            if self.filtration_allow_heating():
+                self._proxy.heat.defer()
+                raise StopRepeatException
+        else:
+            # No need to heat today. Schedule for next day
+            self.__set_next_start()
+            logger.info("No heating needed today. Scheduled for %s" % self.__next_start)
 
     @do_repeat()
     def on_enter_heating(self):
@@ -191,13 +210,16 @@ class Heating(PoupoolActor):
     def do_repeat_heating(self):
         temperature = self.__read_temperature()
         if temperature >= self.__setpoint + Heating.HYSTERESIS_UP or not self.__enable:
-            self.__next_start += timedelta(days=1)
             self._proxy.wait.defer()
             raise StopRepeatException
 
     def on_exit_heating(self):
         logger.info("Exiting heating state")
         self.__devices.get_valve("heating").off()
+        # If the heating is aborted by the user, we also consider it as done and will heat again
+        # the next day. If the heating ends normally then we are anyway done for the day.
+        self.__set_next_start()
+        logger.info("Heating done for today. Scheduled for %s" % self.__next_start)
         # Only change the filtration state if we are running in heating_running state
         if self.filtration_allow_heating():
             self.get_actor("Filtration").heating_delay.defer()
