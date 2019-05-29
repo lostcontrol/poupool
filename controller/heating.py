@@ -95,6 +95,7 @@ class Heating(PoupoolActor):
     STATE_REFRESH_DELAY = 10
     HYSTERESIS_DOWN = float(config["heating", "hysteresis_down"])
     HYSTERESIS_UP = float(config["heating", "hysteresis_up"])
+    HYSTERESIS_MIN_TEMP = float(config["heating", "hysteresis_min_temp"])
     RECOVER_PERIOD = int(config["heating", "recover_period"])
 
     states = ["halt", "waiting", "heating", "forcing", "recovering"]
@@ -184,7 +185,7 @@ class Heating(PoupoolActor):
             return
         if not self.filtration_ready_for_heating():
             return
-        if self.__read_temperature(key="temperature_air") < self.__min_temp:
+        if self.__read_temperature("temperature_air") < self.__min_temp:
             return
         # All pre-conditions ok, last check
         if self.check_before_on():
@@ -208,8 +209,14 @@ class Heating(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_heating(self):
-        temperature = self.__read_temperature()
-        if temperature >= self.__setpoint + Heating.HYSTERESIS_UP or not self.__enable:
+        temperature_pool = self.__read_temperature()
+        if temperature_pool >= self.__setpoint + Heating.HYSTERESIS_UP or not self.__enable:
+            self._proxy.wait.defer()
+            raise StopRepeatException
+        # If the air temperature goes too low, we stop the heat pump otherwise the efficiency
+        # will be too bad.
+        temperature_air = self.__read_temperature("temperature_air")
+        if temperature_air < self.__min_temp - Heating.HYSTERESIS_MIN_TEMP:
             self._proxy.wait.defer()
             raise StopRepeatException
 
