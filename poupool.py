@@ -35,7 +35,8 @@ from controller.swim import Swim
 from controller.dispatcher import Dispatcher
 from controller.encoder import Encoder
 from controller.mqtt import Mqtt
-from controller.temperature import TemperatureReader, TemperatureWriter
+from controller.sensor import TemperatureReader, TemperatureWriter
+from controller.sensor import DisinfectionReader, DisinfectionWriter
 from controller.device import DeviceRegistry
 from controller.config import config, as_list
 
@@ -289,22 +290,37 @@ def main(args, devices):
     mqtt = Mqtt.start(dispatcher).proxy()
     encoder = Encoder(mqtt)
 
+    # Temperature
     sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_local"),
                devices.get_sensor("temperature_air"), devices.get_sensor("temperature_ncc")]
     temperature_reader = TemperatureReader.start(sensors).proxy()
     temperature_writer = TemperatureWriter.start(encoder, temperature_reader).proxy()
 
+    # Filtration
     filtration = Filtration.start(temperature_reader, encoder, devices).proxy()
-    swim = Swim.start(temperature_reader, encoder, devices).proxy()
-    tank = Tank.start(encoder, devices).proxy()
-    disinfection = Disinfection.start(encoder, devices, args.no_disinfection).proxy()
 
+    # Swimming pump
+    swim = Swim.start(temperature_reader, encoder, devices).proxy()
+
+    # Tank
+    tank = Tank.start(encoder, devices).proxy()
+
+    # Disinfection
+    sensors = [devices.get_sensor("ph"), devices.get_sensor("orp")]
+    disinfection_reader = DisinfectionReader.start(sensors).proxy()
+    disinfection_writer = DisinfectionWriter.start(encoder, disinfection_reader).proxy()
+    no = args.no_disinfection
+    disinfection = Disinfection.start(encoder, devices, disinfection_reader, no).proxy()
+
+    # Heating
     switch = devices.get_valve("heater")
     heater = Heater.start(temperature_reader, switch).proxy()
     heating = Heating.start(temperature_reader, encoder, devices).proxy()
 
+    # Light
     light = Light.start(encoder, devices).proxy()
 
+    # Cover and water meter
     arduino = Arduino.start(encoder, devices).proxy()
 
     dispatcher.register(filtration, tank, swim, light, heater, heating, disinfection)
@@ -313,6 +329,8 @@ def main(args, devices):
     mqtt.do_start().get()
     temperature_reader.do_read.defer()
     temperature_writer.do_write.defer()
+    disinfection_reader.do_read.defer()
+    disinfection_writer.do_write.defer()
 
     # Monitor the main actors. If one dies, we will exit the main thread.
     main_actors = [filtration.actor_ref, tank.actor_ref, disinfection.actor_ref, heating.actor_ref]

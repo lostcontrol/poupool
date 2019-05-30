@@ -15,15 +15,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pykka
 import time
 from datetime import datetime, timedelta
 import logging
-import statistics
 from .actor import PoupoolModel
 from .actor import PoupoolActor
-from .actor import StopRepeatException, repeat, do_repeat
-from .util import mapping, constrain, Timer
+from .actor import repeat, do_repeat
+from .util import constrain, Timer
 from .config import config
 
 logger = logging.getLogger(__name__)
@@ -124,26 +122,23 @@ class Disinfection(PoupoolActor):
         "halt",
         "waiting",
         "constant",
-        {"name": "running", "initial": "measuring", "children": [
-            "measuring",
+        {"name": "running", "initial": "adjusting", "children": [
             "adjusting",
             "waiting"]}]
 
-    def __init__(self, encoder, devices, disable=False):
+    def __init__(self, encoder, devices, sensors, disable=False):
         super().__init__()
         self.__is_disable = disable
         self.__encoder = encoder
         self.__devices = devices
-        self.__measurement_counter = 0
+        self.__sensors = sensors
         # pH
-        self.__ph_measures = []
         self.__ph_enable = True
         self.__ph = PWM.start("pH", self.__devices.get_pump("ph")).proxy()
         self.__ph.period = Disinfection.PH_PWM_PERIOD
         self.__ph_controller = PController(pterm=-1.0)
         self.__ph_controller.setpoint = 7
         # ORP
-        self.__orp_measures = []
         self.__orp_enable = True
         self.__orp_controller = PController(pterm=1.0, scale=0.005)
         self.__orp_controller.setpoint = 700
@@ -159,8 +154,7 @@ class Disinfection(PoupoolActor):
         self.__machine.add_transition("run", "waiting", "running")
         self.__machine.add_transition("halt", ["constant", "waiting", "running"], "halt")
         self.__machine.add_transition("constant", ["halt", "waiting", "running"], "constant")
-        self.__machine.add_transition("measure", "running_waiting", "running_measuring")
-        self.__machine.add_transition("adjust", "running_measuring", "running_adjusting")
+        self.__machine.add_transition("adjust", "running_waiting", "running_adjusting")
         self.__machine.add_transition("wait", "running_adjusting", "running_waiting")
 
     def ph_enable(self, value):
@@ -198,7 +192,6 @@ class Disinfection(PoupoolActor):
     def is_disable(self):
         return self.__is_disable
 
-    @do_repeat()
     def on_enter_halt(self):
         logger.info("Entering halt state")
         self.__encoder.disinfection_state("halt")
@@ -211,27 +204,10 @@ class Disinfection(PoupoolActor):
         self.__encoder.disinfection_cl_feedback(0)
         self.__encoder.disinfection_ph_feedback(0)
 
-    @repeat(delay=60)
-    def do_repeat_halt(self):
-        orp = self.__devices.get_sensor("orp").value
-        self.__encoder.disinfection_orp_value("%d" % orp)
-        ph = self.__devices.get_sensor("ph").value
-        self.__encoder.disinfection_ph_value("%.2f" % ph)
-
-    @do_repeat()
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
         self.__encoder.disinfection_state("waiting")
-
-    @repeat(delay=60)
-    def do_repeat_waiting(self):
-        orp = self.__devices.get_sensor("orp").value
-        self.__encoder.disinfection_orp_value("%d" % orp)
-        ph = self.__devices.get_sensor("ph").value
-        self.__encoder.disinfection_ph_value("%.2f" % ph)
-        if self.__machine.get_time_in_state() > timedelta(seconds=Disinfection.START_DELAY):
-            self._proxy.run.defer()
-            raise StopRepeatException
+        self._proxy.do_delay(Disinfection.START_DELAY, "run")
 
     @do_repeat()
     def on_enter_constant(self):
@@ -251,47 +227,18 @@ class Disinfection(PoupoolActor):
         self.__cl.period = Disinfection.CL_PWM_PERIOD
         self.__cl.do_run()
 
-    @do_repeat()
-    def on_enter_running_measuring(self):
-        logger.info("Entering measuring state")
-        self.__encoder.disinfection_state("measuring")
-        self.__ph_measures = []
-        self.__orp_measures = []
-        self.__measurement_counter = 0
-
-    @repeat(delay=10)
-    def do_repeat_running_measuring(self):
-        if len(self.__ph_measures) < Disinfection.SAMPLES:
-            value = self.__devices.get_sensor("ph").value
-            if value is not None:
-                self.__ph_measures.append(value)
-        if len(self.__orp_measures) < Disinfection.SAMPLES:
-            value = self.__devices.get_sensor("orp").value
-            if value is not None:
-                self.__orp_measures.append(value)
-        self.__measurement_counter += 1
-        if self.__measurement_counter > 2 * Disinfection.SAMPLES:
-            logger.error("Unable to get enough samples. Stopping disinfection")
-            self._proxy.halt.defer()
-            raise StopRepeatException
-        if len(self.__ph_measures) + len(self.__orp_measures) >= 2 * Disinfection.SAMPLES:
-            self._proxy.adjust.defer()
-            raise StopRepeatException
-
     def on_enter_running_adjusting(self):
         logger.info("Entering adjusting state")
         self.__encoder.disinfection_state("adjusting")
         # pH
-        ph = statistics.median(self.__ph_measures)
-        self.__encoder.disinfection_ph_value("%.2f" % ph)
+        ph = self.__sensors.get_ph().get()
         self.__ph_controller.current = ph
         ph_feedback = self.__ph_controller.compute() if self.__ph_enable else 0
         self.__encoder.disinfection_ph_feedback(int(round(ph_feedback * 100)))
         logger.info("pH: %.2f feedback: %.2f" % (ph, ph_feedback))
         self.__ph.value = ph_feedback
         # ORP/Chlorine
-        orp = statistics.median(self.__orp_measures)
-        self.__encoder.disinfection_orp_value("%d" % orp)
+        orp = self.__sensors.get_orp().get()
         orp_setpoint = self.curves[self.__free_chlorine](ph)
         self.__orp_controller.setpoint = orp_setpoint
         self.__orp_controller.current = orp
@@ -305,4 +252,4 @@ class Disinfection(PoupoolActor):
     def on_enter_running_waiting(self):
         logger.info("Entering waiting state")
         self.__encoder.disinfection_state("treating")
-        self._proxy.do_delay(Disinfection.WAITING_DELAY, "measure")
+        self._proxy.do_delay(Disinfection.WAITING_DELAY, "adjusting")

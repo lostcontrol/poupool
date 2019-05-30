@@ -39,29 +39,79 @@ class MovingAverage:
         return statistics.mean(self.__data) if self.__data else None
 
 
-class TemperatureReader(PoupoolActor):
-
-    READ_DELAY = 10
+class BaseReader(PoupoolActor):
 
     def __init__(self, sensors):
         super().__init__()
         self.__sensors = sensors
-        self.__temperatures = {}
+        self.__values = {}
+        for sensor in self.__sensors:
+            self.__values[sensor.name] = MovingAverage()
 
-    def get_temperature(self, name):
-        return self.__temperatures.setdefault(name, MovingAverage()).mean()
+    @property
+    def values(self):
+        return self.__values
 
-    def get_all_temperatures(self):
-        return {k: v.mean() for k, v in self.__temperatures.items()}
-
-    @repeat(delay=READ_DELAY)
     def do_read(self):
         for sensor in self.__sensors:
             value = sensor.value
-            # In order to avoid reading the temperature again from different actors, we cache the
-            # results in a map. Other actors can then get the values from here.
             if value is not None:
-                self.__temperatures.setdefault(sensor.name, MovingAverage()).push(value)
+                self.__values[sensor.name].push(value)
+
+
+class DisinfectionReader(BaseReader):
+
+    READ_DELAY = 20
+
+    def __init__(self, sensors):
+        super().__init__(sensors)
+
+    def get_ph(self):
+        return self.values["ph"].mean()
+
+    def get_orp(self):
+        return self.values["orp"].mean()
+
+    @repeat(delay=READ_DELAY)
+    def do_read(self):
+        super().do_read()
+
+
+class DisinfectionWriter(PoupoolActor):
+
+    READ_DELAY = 60
+
+    def __init__(self, encoder, reader):
+        super().__init__()
+        self.__encoder = encoder
+        self.__reader = reader
+
+    @repeat(delay=READ_DELAY)
+    def do_write(self):
+        orp = self.__reader.get_orp().get()
+        if orp:
+            self.__encoder.disinfection_orp_value("%d" % orp)
+        ph = self.__reader.get_ph().get()
+        if ph:
+            self.__encoder.disinfection_ph_value("%.2f" % ph)
+
+
+class TemperatureReader(BaseReader):
+
+    READ_DELAY = 10
+
+    def __init__(self, sensors):
+        super().__init__(sensors)
+
+    def get_temperature(self, name):
+        return self.values[name].mean()
+
+    def get_all_temperatures(self):
+        return {k: v.mean() for k, v in self.values.items()}
+
+    @repeat(delay=READ_DELAY)
+    def do_read(self):
+        super().do_read()
 
 
 class TemperatureWriter(PoupoolActor):
