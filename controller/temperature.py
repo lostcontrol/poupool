@@ -16,24 +16,43 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import logging
+import statistics
+import collections
 from .actor import PoupoolActor
 from .actor import repeat
 
 logger = logging.getLogger(__name__)
 
 
-class Temperature(PoupoolActor):
+class MovingAverage:
 
-    READ_DELAY = 60
+    def __init__(self, maxlen=6):
+        self.__data = collections.deque(maxlen=maxlen)
 
-    def __init__(self, encoder, sensors):
+    def clear(self):
+        self.__data.clear()
+
+    def push(self, value):
+        self.__data.append(value)
+
+    def mean(self):
+        return statistics.mean(self.__data) if self.__data else None
+
+
+class TemperatureReader(PoupoolActor):
+
+    READ_DELAY = 10
+
+    def __init__(self, sensors):
         super().__init__()
-        self.__encoder = encoder
         self.__sensors = sensors
         self.__temperatures = {}
 
     def get_temperature(self, name):
-        return self.__temperatures.get(name)
+        return self.__temperatures.setdefault(name, MovingAverage()).mean()
+
+    def get_all_temperatures(self):
+        return {k: v.mean() for k, v in self.__temperatures.items()}
 
     @repeat(delay=READ_DELAY)
     def do_read(self):
@@ -41,11 +60,26 @@ class Temperature(PoupoolActor):
             value = sensor.value
             # In order to avoid reading the temperature again from different actors, we cache the
             # results in a map. Other actors can then get the values from here.
-            self.__temperatures[sensor.name] = value
+            if value is not None:
+                self.__temperatures.setdefault(sensor.name, MovingAverage()).push(value)
+
+
+class TemperatureWriter(PoupoolActor):
+
+    READ_DELAY = 60
+
+    def __init__(self, encoder, reader):
+        super().__init__()
+        self.__encoder = encoder
+        self.__reader = reader
+
+    @repeat(delay=READ_DELAY)
+    def do_write(self):
+        for name, value in self.__reader.get_all_temperatures().get().items():
             if value is not None:
                 rounded = round(value, 1)
-                logger.debug("Temperature (%s) is %.1f°C" % (sensor.name, rounded))
-                f = getattr(self.__encoder, sensor.name)
+                logger.debug("Temperature (%s) is %.1f°C" % (name, rounded))
+                f = getattr(self.__encoder, name)
                 f(rounded)
             else:
-                logger.warning("Temperature (%s) cannot be read!!!" % sensor.name)
+                logger.warning("Temperature (%s) cannot be read!!!" % name)

@@ -35,7 +35,7 @@ from controller.swim import Swim
 from controller.dispatcher import Dispatcher
 from controller.encoder import Encoder
 from controller.mqtt import Mqtt
-from controller.temperature import Temperature
+from controller.temperature import TemperatureReader, TemperatureWriter
 from controller.device import DeviceRegistry
 from controller.config import config, as_list
 
@@ -291,17 +291,17 @@ def main(args, devices):
 
     sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_local"),
                devices.get_sensor("temperature_air"), devices.get_sensor("temperature_ncc")]
-    temperature = Temperature.start(encoder, sensors).proxy()
-    temperature.do_read.defer()
+    temperature_reader = TemperatureReader.start(sensors).proxy()
+    temperature_writer = TemperatureWriter.start(encoder, temperature_reader).proxy()
 
-    filtration = Filtration.start(temperature, encoder, devices).proxy()
-    swim = Swim.start(temperature, encoder, devices).proxy()
+    filtration = Filtration.start(temperature_reader, encoder, devices).proxy()
+    swim = Swim.start(temperature_reader, encoder, devices).proxy()
     tank = Tank.start(encoder, devices).proxy()
     disinfection = Disinfection.start(encoder, devices, args.no_disinfection).proxy()
 
     switch = devices.get_valve("heater")
-    heater = Heater.start(temperature, switch).proxy()
-    heating = Heating.start(temperature, encoder, devices).proxy()
+    heater = Heater.start(temperature_reader, switch).proxy()
+    heating = Heating.start(temperature_reader, encoder, devices).proxy()
 
     light = Light.start(encoder, devices).proxy()
 
@@ -309,7 +309,10 @@ def main(args, devices):
 
     dispatcher.register(filtration, tank, swim, light, heater, heating, disinfection)
 
-    mqtt.do_start.defer()
+    # Start actors that run all the time
+    mqtt.do_start().get()
+    temperature_reader.do_read.defer()
+    temperature_writer.do_write.defer()
 
     # Monitor the main actors. If one dies, we will exit the main thread.
     main_actors = [filtration.actor_ref, tank.actor_ref, disinfection.actor_ref, heating.actor_ref]
