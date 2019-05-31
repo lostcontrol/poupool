@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class MovingAverage:
 
-    def __init__(self, maxlen=6):
+    def __init__(self, maxlen=10):
         self.__data = collections.deque(maxlen=maxlen)
 
     def clear(self):
@@ -61,7 +61,7 @@ class BaseReader(PoupoolActor):
 
 class DisinfectionReader(BaseReader):
 
-    READ_DELAY = 20
+    READ_DELAY = 30
 
     def __init__(self, sensors):
         super().__init__(sensors)
@@ -98,7 +98,7 @@ class DisinfectionWriter(PoupoolActor):
 
 class TemperatureReader(BaseReader):
 
-    READ_DELAY = 10
+    READ_DELAY = 30
 
     def __init__(self, sensors):
         super().__init__(sensors)
