@@ -15,14 +15,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pykka
-import time
 import logging
 from datetime import datetime, timedelta
 from .actor import PoupoolActor
 from .actor import PoupoolModel
 from .actor import StopRepeatException, repeat, do_repeat
-from .util import Timer
 from .config import config
 
 logger = logging.getLogger(__name__)

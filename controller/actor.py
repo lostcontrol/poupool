@@ -16,10 +16,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import pykka
-import transitions
-#from transitions.extensions import HierarchicalGraphMachine as Machine
+# from transitions.extensions import HierarchicalGraphMachine as Machine
 from transitions.extensions import HierarchicalMachine as Machine
-import time
 from datetime import datetime
 import logging
 import functools

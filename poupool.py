@@ -18,12 +18,10 @@
 import os
 import time
 import pykka
-import logging
 import logging.config
 import argparse
 import itertools
 import signal
-import sys
 
 from controller.arduino import Arduino
 from controller.filtration import Filtration
@@ -68,7 +66,8 @@ def setup_gpio(registry, gpio):
 
 
 def setup_rpi(registry):
-    from controller.device import SwimPumpDevice, TempSensorDevice, TankSensorDevice, ArduinoDevice, EZOSensorDevice
+    from controller.device import SwimPumpDevice, TempSensorDevice, TankSensorDevice
+    from controller.device import ArduinoDevice, EZOSensorDevice
 
     # Relay
     import RPi.GPIO as GPIO
@@ -111,7 +110,7 @@ def setup_rpi(registry):
 
 
 def setup_fake(registry):
-    from controller.device import Device, SensorDevice, SwimPumpDevice, StoppableDevice
+    from controller.device import SensorDevice, SwimPumpDevice, StoppableDevice
 
     class FakeGpio(object):
         OUT = "OUT"
@@ -321,7 +320,7 @@ def main(args, devices):
     light = Light.start(encoder, devices).proxy()
 
     # Cover and water meter
-    arduino = Arduino.start(encoder, devices).proxy()
+    Arduino.start(encoder, devices)
 
     dispatcher.register(filtration, tank, swim, light, heater, heating, disinfection)
 

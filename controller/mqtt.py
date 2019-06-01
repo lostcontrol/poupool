@@ -16,9 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import paho.mqtt.client as mqtt
-import time
 import logging
-import pykka
 from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat
 
@@ -76,7 +74,7 @@ class Mqtt(PoupoolActor):
         self.__run = False
 
     def publish(self, topic, payload, qos=0, retain=False):
-        result, mid = self.__client.publish(topic, payload, qos, retain)
+        result, _ = self.__client.publish(topic, payload, qos, retain)
         if result != 0:
             logger.error("Unable to publish topic '%s':'%s'" % (topic, str(payload)))
             return False

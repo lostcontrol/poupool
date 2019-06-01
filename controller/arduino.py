@@ -15,15 +15,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pykka
-import time
 import logging
-import datetime
-#from transitions.extensions import GraphMachine as Machine
+# from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor
 from .actor import PoupoolModel
-from .actor import StopRepeatException, repeat, do_repeat
-from .util import Timer
+from .actor import repeat, do_repeat
 
 logger = logging.getLogger(__name__)
 

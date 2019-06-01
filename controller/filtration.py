@@ -24,7 +24,7 @@ from .actor import PoupoolModel
 from .actor import PoupoolActor
 from .actor import StopRepeatException, repeat, do_repeat
 from .util import round_timedelta, Timer
-from .config import config, as_list
+from .config import config
 
 logger = logging.getLogger(__name__)
 
@@ -244,8 +244,8 @@ class Filtration(PoupoolActor):
         self.__backwash_period = 30
         self.__backwash_last = datetime.fromtimestamp(0)
         # Initialize the state machine
-        self.__machine = PoupoolModel(model=self, states=Filtration.states,
-                                      initial="halt", before_state_change=[self.__before_state_change])
+        self.__machine = PoupoolModel(model=self, states=Filtration.states, initial="halt",
+                                      before_state_change=[self.__before_state_change])
         # Transitions
         # Eco
         self.__machine.add_transition("eco", ["standby", "overflow", "opening"], "closing")
@@ -294,8 +294,10 @@ class Filtration(PoupoolActor):
         # Sweep
         self.__machine.add_transition("sweep", "standby", "sweep")
         # Stop
-        self.__machine.add_transition(
-            "halt", ["eco", "heating", "standby", "overflow", "comfort", "sweep", "opening", "closing", "wash", "wintering"], "halt")
+        self.__machine.add_transition("halt",
+                                      ["eco", "heating", "standby", "overflow", "comfort",
+                                       "sweep", "opening", "closing", "wash", "wintering"],
+                                      "halt")
         # (Back)wash
         self.__machine.add_transition(
             "wash", ["eco_normal", "eco_waiting"], "wash", conditions="tank_is_high")
