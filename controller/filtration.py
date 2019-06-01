@@ -276,6 +276,8 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("standby", "comfort", "standby",
                                       unless="pump_stopped_in_standby")
         self.__machine.add_transition("standby", "standby_boost", "standby_normal")
+        # Allow manual boost mode
+        self.__machine.add_transition("standby", "standby_normal", "standby_boost")
         # Overflow
         self.__machine.add_transition("overflow", "heating_running",
                                       "heating_delay_overflow", unless="tank_is_low")
@@ -285,6 +287,8 @@ class Filtration(PoupoolActor):
             "overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
         self.__machine.add_transition("overflow", ["standby", "comfort", "reload"], "overflow")
         self.__machine.add_transition("overflow", "overflow_boost", "overflow_normal")
+        # Allow manual boost mode
+        self.__machine.add_transition("overflow", "overflow_normal", "overflow_boost")
         # Comfort
         self.__machine.add_transition("comfort", ["standby", "overflow"], "comfort")
         # Sweep
