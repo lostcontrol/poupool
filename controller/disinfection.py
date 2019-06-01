@@ -240,6 +240,8 @@ class Disinfection(PoupoolActor):
         # ORP/Chlorine
         orp = self.__sensors.get_orp().get()
         orp_setpoint = self.curves[self.__free_chlorine](ph)
+        # Round to +/- 5 to avoid too many step changes
+        orp_setpoint = 5 * round(orp_setpoint / 5)
         self.__orp_controller.setpoint = orp_setpoint
         self.__orp_controller.current = orp
         cl_feedback = self.__orp_controller.compute() if self.__orp_enable else 0
