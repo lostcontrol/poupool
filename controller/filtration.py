@@ -423,6 +423,11 @@ class Filtration(PoupoolActor):
     def __disinfection_start(self):
         self.__actor_run("Disinfection")
 
+    def __disinfection_constant(self):
+        actor = self.get_actor("Disinfection")
+        if actor.is_constant().get():
+            actor.constant.defer()
+
     def __actor_run(self, name):
         actor = self.get_actor(name)
         if actor.is_halt().get():
@@ -458,6 +463,7 @@ class Filtration(PoupoolActor):
     def on_enter_closing(self):
         logger.info("Entering closing state")
         self.__encoder.filtration_state("closing")
+        self.__actor_halt("Disinfection")
         # stop the pumps to avoid perturbation in the water while shutter is moving
         self.__devices.get_valve("gravity").on()
         self.__devices.get_pump("boost").off()
@@ -646,6 +652,7 @@ class Filtration(PoupoolActor):
     def on_enter_standby(self):
         logger.info("Entering standby state")
         self.__devices.get_valve("gravity").off()
+        self.__actor_halt("Disinfection")
 
     def on_enter_standby_boost(self):
         logger.info("Entering standby boost state")
@@ -691,6 +698,8 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("tank").off()
         self.__devices.get_pump("variable").speed(2)
         self.__devices.get_pump("boost").off()
+        # Use a constant chlorine flow
+        self.__disinfection_constant()
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_comfort(self):
@@ -727,12 +736,11 @@ class Filtration(PoupoolActor):
         else:
             self.__devices.get_pump("boost").off()
         # Use a constant chlorine flow
-        self.get_actor("Disinfection").constant.defer()
+        self.__disinfection_constant()
 
     def on_exit_overflow_normal(self):
         logger.info("Exiting overflow state")
         self.__actor_halt("Swim")
-        self.__actor_halt("Disinfection")
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_overflow_normal(self):
