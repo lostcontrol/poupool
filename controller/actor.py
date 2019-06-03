@@ -107,15 +107,18 @@ class PoupoolActor(pykka.ThreadingActor):
         logger.critical("Actor %s not found!!!" % name)
         return None
 
-    def do_cancel(self):
+    def __do_cancel(self):
         if self.__timer:
             self.__timer.cancel()
             self.__timer = None
 
+    def do_cancel(self):
+        self.__do_cancel()
+
     def do_delay(self, delay, method, *args, **kwargs):
         assert type(method) == str
         # Stop an already running timer
-        self.do_cancel()
+        self.__do_cancel()
         func = getattr(self._proxy, method)
         self.__timer = Timer(delay, func.defer, *args, **kwargs)
         self.__timer.start()
