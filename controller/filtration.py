@@ -431,7 +431,7 @@ class Filtration(PoupoolActor):
 
     def __disinfection_constant(self):
         actor = self.get_actor("Disinfection")
-        if actor.is_constant().get():
+        if not actor.is_constant().get():
             actor.constant.defer()
 
     def __actor_run(self, name):
