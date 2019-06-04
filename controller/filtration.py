@@ -688,6 +688,7 @@ class Filtration(PoupoolActor):
     def on_enter_sweep(self):
         logger.info("Entering sweep state")
         self.__encoder.filtration_state("sweep")
+        self.__actor_halt("Disinfection")
         self.__devices.get_valve("gravity").on()
         self.__devices.get_valve("tank").off()
         self.__devices.get_pump("variable").speed(3)
