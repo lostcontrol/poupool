@@ -670,7 +670,7 @@ class Filtration(PoupoolActor):
 
     @do_repeat()
     def on_enter_standby_normal(self):
-        logger.info("Entering standby state")
+        logger.info("Entering standby_normal state")
         self.__encoder.filtration_state("standby")
         if self.__speed_standby > 0:
             self.__devices.get_valve("tank").on()
@@ -734,7 +734,7 @@ class Filtration(PoupoolActor):
 
     @do_repeat()
     def on_enter_overflow_normal(self):
-        logger.info("Entering overflow state")
+        logger.info("Entering overflow_normal state")
         self.__encoder.filtration_state("overflow")
         speed = self.__speed_overflow
         self.__devices.get_pump("variable").speed(min(speed, 3))
@@ -746,7 +746,7 @@ class Filtration(PoupoolActor):
         self.__disinfection_constant()
 
     def on_exit_overflow_normal(self):
-        logger.info("Exiting overflow state")
+        logger.info("Exiting overflow_normal state")
         self.__actor_halt("Swim")
 
     @repeat(delay=STATE_REFRESH_DELAY)
