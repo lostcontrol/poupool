@@ -1,4 +1,8 @@
 # Poupool - The swimming pool controller
+
+[![Build Status](https://travis-ci.com/lostcontrol/poupool.svg?branch=master)](https://travis-ci.com/lostcontrol/poupool)
+[![codecov](https://codecov.io/gh/lostcontrol/poupool/branch/master/graph/badge.svg)](https://codecov.io/gh/lostcontrol/poupool)
+
 Poupool is a swimming pool control software.
 
 It is based on [Transitions](https://github.com/pytransitions/transitions),
@@ -66,5 +70,3 @@ Development tools:
 
 * autopep8
 * pytest
-
-[![Build Status](https://travis-ci.com/lostcontrol/poupool.svg?branch=master)](https://travis-ci.com/lostcontrol/poupool)
