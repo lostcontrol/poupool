@@ -66,3 +66,5 @@ Development tools:
 
 * autopep8
 * pytest
+
+[![Build Status](https://travis-ci.com/lostcontrol/poupool.svg?branch=master)](https://travis-ci.com/lostcontrol/poupool)
