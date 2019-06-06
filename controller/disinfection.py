@@ -218,8 +218,9 @@ class Disinfection(PoupoolActor):
 
     @repeat(delay=10)
     def do_repeat_constant(self):
-        self.__encoder.disinfection_cl_feedback(int(round(self.__cl_constant)))
-        self.__cl.value = self.__cl_constant / 100.
+        cl_feedback = self.__cl_constant / 100. if self.__orp_enable else 0
+        self.__encoder.disinfection_cl_feedback(int(round(100 * cl_feedback)))
+        self.__cl.value = cl_feedback
 
     def on_enter_running(self):
         logger.info("Entering running state")
