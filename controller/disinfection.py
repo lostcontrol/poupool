@@ -128,7 +128,7 @@ class Disinfection(PoupoolActor):
 
     def __init__(self, encoder, devices, sensors, disable=False):
         super().__init__()
-        self.__is_disable = disable
+        self.__is_disabled = disable
         self.__encoder = encoder
         self.__devices = devices
         self.__sensors = sensors
@@ -150,7 +150,7 @@ class Disinfection(PoupoolActor):
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Disinfection.states, initial="halt")
 
-        self.__machine.add_transition("run", "halt", "waiting", unless="is_disable")
+        self.__machine.add_transition("run", "halt", "waiting", unless="is_disabled")
         self.__machine.add_transition("run", "waiting", "running")
         self.__machine.add_transition("halt", ["constant", "waiting", "running"], "halt")
         self.__machine.add_transition("constant", ["halt", "waiting", "running"], "constant")
@@ -189,8 +189,8 @@ class Disinfection(PoupoolActor):
         self.__orp_controller.pterm = value
         logger.info("ORP pterm set to: %f" % self.__orp_controller.pterm)
 
-    def is_disable(self):
-        return self.__is_disable
+    def is_disabled(self):
+        return self.__is_disabled
 
     def on_enter_halt(self):
         logger.info("Entering halt state")
