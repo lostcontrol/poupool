@@ -79,4 +79,4 @@ class TestSwim:
         # Go back to halt state
         swim.halt().get()
         assert swim.is_halt().get()
-        pump.off.assert_called_once()
+        pump.off.assert_called_once_with()

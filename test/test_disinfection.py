@@ -47,13 +47,13 @@ class TestPWM:
             with mock.patch("time.time", return_value=i):
                 pwm.do_run()
             if i == on_step + 1:
-                pump.on.assert_called_once()
+                pump.on.assert_called_once_with()
         # One more to see if we get the off transition
         with mock.patch("time.time", return_value=pwm.period + 2):
             pwm.do_run()
         # Only if pwm.value != 1.0 we will stop the pump at the end of the period
         if on_step not in (0, pwm.period):
-            pump.off.assert_called_once()
+            pump.off.assert_called_once_with()
 
     def run_many_iterations(self, pwm, iterations):
         loops = iterations * pwm.period
