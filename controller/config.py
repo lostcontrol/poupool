@@ -29,8 +29,8 @@ class Config:
         return self.__config.get(section, key)
 
 
-def as_list(value, type=int):
-    return [type(m) for m in value.split(",")]
+def as_list(value, type_cast=int):
+    return [type_cast(m) for m in value.split(",")]
 
 
 config = Config(["config.ini", "config.ini.local"])
