@@ -66,19 +66,18 @@ class PWM(PoupoolActor):
             elif duty_on > self.period - self.__min_runtime:
                 duty_on = self.period
             duty_off = self.period - duty_on
-            # duty = duty_on if self.__state else duty_off
             if int(now) % 10 == 0:
                 logger.debug("%s duty (on/off): %.1f/%.1f state: %d duration: %.1f" %
                              (self.__name, duty_on, duty_off, self.__state, self.__duration))
             if self.__state:
                 self.__security_duration.update(datetime.now())
-                if self.__duration > duty_on:
+                if self.__duration >= duty_on and duty_on != self.period:
                     self.__duration = 0
                     self.__state = False
                     self.__pump.off()
             else:
                 self.__security_duration.update(datetime.now(), 0)
-                if self.__duration > duty_off and not self.__security_duration.elapsed():
+                if self.__duration >= duty_off and duty_off != self.period and not self.__security_duration.elapsed():
                     self.__duration = 0
                     self.__state = True
                     self.__pump.on()
