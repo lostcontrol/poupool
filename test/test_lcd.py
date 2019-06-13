@@ -16,6 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import pytest
+from serial.serialutil import SerialException
 
 
 @pytest.fixture
@@ -31,9 +32,23 @@ def lcd(lcdbackpack):
 
 class TestLcd:
 
-    def test_do_update(self, lcd, lcdbackpack):
+    def test_do_connect(self, lcd, lcdbackpack):
+        lcd.do_start()
         lcdbackpack.connect.assert_called_once_with()
+        lcdbackpack.set_lcd_size.assert_called_once_with(20, 4)
         lcdbackpack.clear.assert_called_once_with()
+        lcdbackpack.set_brightness.assert_called_once_with(255)
+        lcdbackpack.display_on.assert_called_once_with()
+
+    def test_do_connect_failed(self, lcd, lcdbackpack):
+        lcdbackpack.connect.side_effect = SerialException()
+        lcd.do_start()
+        lcdbackpack.set_lcd_size.assert_not_called()
+        lcdbackpack.clear.assert_not_called()
+        lcdbackpack.set_brightness.assert_not_called()
+        lcdbackpack.display_on.assert_not_called()
+
+    def test_do_update(self, lcd, lcdbackpack):
         lcd.do_update()
         lcdbackpack.set_cursor_home.assert_called_once_with()
         lcdbackpack.write.assert_called_once_with("""Mode              --
