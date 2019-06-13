@@ -22,6 +22,7 @@ import logging.config
 import argparse
 import itertools
 import signal
+import sys
 
 from controller.arduino import Arduino
 from controller.filtration import Filtration
@@ -372,6 +373,8 @@ def main(args, devices):
     while running and all([actor.is_alive() for actor in main_actors]):
         time.sleep(0.5)
 
+    return 1 if running else 0
+
 
 def sigterm_handler(signo, stack_frame):
     global running
@@ -407,7 +410,7 @@ if __name__ == '__main__':
         if args.test_mode:
             test(args, devices)
         else:
-            main(args, devices)
+            sys.exit(main(args, devices))
     except KeyboardInterrupt:
         pass
     finally:
