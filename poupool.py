@@ -357,7 +357,7 @@ def main(args, devices):
     temperature_writer.do_write.defer()
     disinfection_reader.do_read.defer()
     disinfection_writer.do_write.defer()
-    lcd.do_update.defer()
+    lcd.do_start.defer()
 
     # Monitor the main actors. If one dies, we will exit the main thread.
     main_actors = [filtration.actor_ref, tank.actor_ref, disinfection.actor_ref, heating.actor_ref]

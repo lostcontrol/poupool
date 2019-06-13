@@ -18,6 +18,7 @@
 import logging
 from .actor import PoupoolActor
 from .actor import repeat
+from serial.serialutil import SerialException
 
 logger = logging.getLogger(__name__)
 
@@ -30,26 +31,35 @@ class Lcd(PoupoolActor):
         super().__init__()
         self.__cache = {}
         self.__lcdbackpack = lcdbackpack
-        self.__lcdbackpack.connect()
-        self.__lcdbackpack.set_lcd_size(20, 4)
-        # Not supported in the version from pip
-        # self.__lcdbackpack.set_splash_screen("Poupool", 20 * 4)
-        self.__lcdbackpack.clear()
-        self.__lcdbackpack.set_brightness(255)
-        self.__lcdbackpack.display_on()
 
     def on_stop(self):
-        self.__lcdbackpack.clear()
-        self.__lcdbackpack.set_brightness(16)
-        self.__lcdbackpack.set_cursor_home()
-        self.__lcdbackpack.write(" " * 20)
-        self.__lcdbackpack.write("       POUPOOL      ")
-        self.__lcdbackpack.write("     NOT RUNNING")
-        self.__lcdbackpack.disconnect()
+        if self.__lcdbackpack:
+            self.__lcdbackpack.clear()
+            self.__lcdbackpack.set_brightness(16)
+            self.__lcdbackpack.set_cursor_home()
+            self.__lcdbackpack.write(" " * 20)
+            self.__lcdbackpack.write("       POUPOOL      ")
+            self.__lcdbackpack.write("     NOT RUNNING")
+            self.__lcdbackpack.disconnect()
         super().on_stop()
 
     def update(self, key, value):
         self.__cache[key] = value
+
+    def do_start(self):
+        try:
+            self.__lcdbackpack.connect()
+            self.__lcdbackpack.set_lcd_size(20, 4)
+            # Not supported in the version from pip
+            # self.__lcdbackpack.set_splash_screen("Poupool", 20 * 4)
+            self.__lcdbackpack.clear()
+            self.__lcdbackpack.set_brightness(255)
+            self.__lcdbackpack.display_on()
+            # Go to our daily job
+            self._proxy.do_update.defer()
+        except SerialException:
+            logger.exception("Unable to open LCD, ignoring the device")
+            self.__lcdbackpack = None
 
     @repeat(delay=UPDATE_DELAY)
     def do_update(self):
