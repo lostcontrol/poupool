@@ -362,6 +362,12 @@ def main(args, devices):
     # Monitor the main actors. If one dies, we will exit the main thread.
     main_actors = [filtration.actor_ref, tank.actor_ref, disinfection.actor_ref, heating.actor_ref]
 
+    # Start test mode
+    if args.test_start:
+        global running
+        running = False
+        time.sleep(2)
+
     # Wait forever or until SIGTERM is caught
     while running and all([actor.is_alive() for actor in main_actors]):
         time.sleep(0.5)
@@ -380,6 +386,7 @@ if __name__ == '__main__':
                         help="disable disinfection support")
     parser.add_argument("--test-mode", action="store_true", help="test mode for the hardware")
     parser.add_argument("--fake-devices", action="store_true", help="fake the underlying hardware")
+    parser.add_argument("--test-start", action="store_true", help="test application start")
     args = parser.parse_args()
 
     # Setup logging

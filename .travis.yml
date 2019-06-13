@@ -4,9 +4,12 @@ python:
   - "3.5"
   - "3.7"
 cache: pip
+before_install:
+  - sudo apt-get install -y mosquitto
 install:
   - pip install -r requirements.txt
 script:
   - pytest --cov=controller --cov-report term test/
+  - python poupool.py --fake-devices --test-start
 after_success:
   - codecov
