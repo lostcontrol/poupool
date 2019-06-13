@@ -15,15 +15,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pykka
-import time
 import logging
-import datetime
-#from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor
-from .actor import PoupoolModel
-from .actor import StopRepeatException, repeat, do_repeat
-from .util import Timer
+from .actor import repeat
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +33,7 @@ class Lcd(PoupoolActor):
         self.__lcdbackpack.connect()
         self.__lcdbackpack.set_lcd_size(20, 4)
         # Not supported in the version from pip
-        #self.__lcdbackpack.set_splash_screen("Poupool", 20 * 4)
+        # self.__lcdbackpack.set_splash_screen("Poupool", 20 * 4)
         self.__lcdbackpack.clear()
         self.__lcdbackpack.set_brightness(255)
         self.__lcdbackpack.display_on()
@@ -71,8 +65,8 @@ class Lcd(PoupoolActor):
         ph = float(self.__cache.get("disinfection_ph_value", 0))
         orp = int(self.__cache.get("disinfection_orp_value", 0))
         s += "pH     {:>3.1f} ORP {:>5d}".format(ph, orp)[:20]
-        next = self.__cache.get("filtration_next", "00:00:00")
-        s += "Next event  {:>8}\n".format(next)[:20]
+        next_event = self.__cache.get("filtration_next", "00:00:00")
+        s += "Next event  {:>8}\n".format(next_event)[:20]
         return s
 
     def get_printable_string(self):
