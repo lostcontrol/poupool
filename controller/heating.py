@@ -21,6 +21,7 @@ from .actor import PoupoolActor
 from .actor import PoupoolModel
 from .actor import StopRepeatException, repeat, do_repeat
 from .config import config
+from .util import Duration
 
 logger = logging.getLogger(__name__)
 
@@ -97,11 +98,21 @@ class Heating(PoupoolActor):
 
     states = ["halt", "waiting", "heating", "forcing", "recovering"]
 
+    class DurationEncoderCallback(object):
+
+        def __init__(self, encoder):
+            self.__encoder = encoder
+
+        def __call__(self, value):
+            self.__encoder.heating_total__seconds(round(value.total_seconds()), retain=True)
+
     def __init__(self, temperature, encoder, devices):
         super().__init__()
         self.__enable = True
         self.__temperature = temperature
         self.__encoder = encoder
+        self.__total_duration = Duration("heating")
+        self.__total_duration.set_callback(Heating.DurationEncoderCallback(encoder))
         self.__devices = devices
         self.__next_start = datetime.now()
         self.__next_start_hour = 0
@@ -127,6 +138,11 @@ class Heating(PoupoolActor):
         self.__next_start = tm.replace(hour=self.__next_start_hour,
                                        minute=0, second=0, microsecond=0)
         self.__next_start += timedelta(days=1)
+
+    def total_seconds(self, value):
+        duration = timedelta(seconds=value)
+        self.__total_duration.init(duration)
+        logger.info("Total running hours set to %s" % duration)
 
     def enable(self, value):
         self.__enable = value
@@ -201,6 +217,7 @@ class Heating(PoupoolActor):
     @do_repeat()
     def on_enter_heating(self):
         logger.info("Entering heating state")
+        self.__total_duration.start()
         self.__encoder.heating_state("heating")
         self.__devices.get_valve("heating").on()
 
@@ -219,6 +236,7 @@ class Heating(PoupoolActor):
 
     def on_exit_heating(self):
         logger.info("Exiting heating state")
+        self.__total_duration.stop()
         self.__devices.get_valve("heating").off()
         # If the heating is aborted by the user, we also consider it as done and will heat again
         # the next day. If the heating ends normally then we are anyway done for the day.
@@ -230,11 +248,13 @@ class Heating(PoupoolActor):
 
     def on_enter_forcing(self):
         logger.info("Entering forcing state")
+        self.__total_duration.start()
         self.__encoder.heating_state("heating")
         self.__devices.get_valve("heating").on()
 
     def on_exit_forcing(self):
         logger.info("Exiting forcing state")
+        self.__total_duration.stop()
         self.__devices.get_valve("heating").off()
 
     def on_enter_recovering(self):

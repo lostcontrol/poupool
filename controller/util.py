@@ -21,6 +21,40 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class Duration(object):
+
+    def __init__(self, name):
+        self.__name = name
+        self.__total_duration = timedelta()
+        self.__start = datetime.now()
+        self.__callback = None
+
+    def set_callback(self, callback):
+        self.__callback = callback
+
+    def init(self, value):
+        assert isinstance(value, timedelta)
+        self.__total_duration = value
+
+    @property
+    def duration(self):
+        return self.__total_duration
+
+    def start(self, value=None):
+        value = value or datetime.now()
+        assert isinstance(value, datetime)
+        self.__start = value
+
+    def stop(self, value=None):
+        value = value or datetime.now()
+        assert isinstance(value, datetime)
+        diff = value - self.__start
+        assert diff > timedelta()
+        self.__total_duration += diff
+        if self.__callback:
+            self.__callback(self.__total_duration)
+
+
 class Timer(object):
 
     def __init__(self, name):

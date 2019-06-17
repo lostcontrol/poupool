@@ -48,6 +48,12 @@ class TestEncoder:
         mqtt.publish.assert_called_once_with("/status/foo/bar", value)
         lcd.update.assert_called_once_with("foo_bar", value)
 
+    def test_publish_with_double_underscore(self, mqtt, lcd, encoder):
+        value = "foobar"
+        encoder.foo_bar__cat(value)
+        mqtt.publish.assert_called_once_with("/status/foo/bar_cat", value)
+        lcd.update.assert_called_once_with("foo_bar__cat", value)
+
     def test_publish_with_kwargs(self, mqtt, lcd, encoder):
         value = "foobar"
         kwargs = (1, 2)

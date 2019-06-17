@@ -24,6 +24,7 @@ class Encoder(object):
 
     def __getattr__(self, value):
         topic = "/status/" + "/".join(value.split("_"))
+        topic = topic.replace("//", "_")
 
         def wrapper(x, **kwargs):
             self.__mqtt.publish(topic, x, **kwargs)

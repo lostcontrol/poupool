@@ -25,6 +25,51 @@ def util_timer():
     return Timer("test")
 
 
+@pytest.fixture
+def util_duration():
+    from controller.util import Duration
+    return Duration("test")
+
+
+class TestUtilDuration:
+
+    def test_update(self, util_duration):
+        util_duration.init(timedelta(seconds=100))
+        assert util_duration.duration == timedelta(seconds=100)
+        now = datetime.now()
+        util_duration.start(now)
+        util_duration.stop(now + timedelta(seconds=20))
+        assert util_duration.duration == timedelta(seconds=120)
+
+    def test_multiple_starts(self, util_duration):
+        util_duration.init(timedelta(seconds=100))
+        assert util_duration.duration == timedelta(seconds=100)
+        now = datetime.now()
+        util_duration.start(now)
+        util_duration.stop(now + timedelta(seconds=20))
+        assert util_duration.duration == timedelta(seconds=120)
+        util_duration.start(now + timedelta(seconds=60))
+        util_duration.stop(now + timedelta(seconds=80))
+        assert util_duration.duration == timedelta(seconds=140)
+
+    def test_callback(self, mocker, util_duration):
+        callback_mock = mocker.Mock()
+        util_duration.set_callback(callback_mock)
+        util_duration.init(timedelta(seconds=30))
+        assert util_duration.duration == timedelta(seconds=30)
+        now = datetime.now()
+        util_duration.start(now)
+        util_duration.stop(now + timedelta(seconds=10))
+        callback_mock.assert_called_once_with(timedelta(seconds=40))
+
+    def test_raise_if_negative_diff(self, util_duration):
+        util_duration.init(timedelta())
+        now = datetime.now()
+        util_duration.start(now)
+        with pytest.raises(AssertionError):
+            util_duration.stop(now - timedelta(seconds=10))
+
+
 class TestUtilTimer:
 
     def test_initial(self, util_timer):
