@@ -235,7 +235,7 @@ class Disinfection(PoupoolActor):
         self.__ph_controller.current = ph
         ph_feedback = self.__ph_controller.compute() if self.__ph_enable else 0
         self.__encoder.disinfection_ph_feedback(int(round(ph_feedback * 100)))
-        logger.info("pH: %.2f feedback: %.2f" % (ph, ph_feedback))
+        logger.debug("pH: %.2f feedback: %.2f" % (ph, ph_feedback))
         self.__ph.value = ph_feedback
         # ORP/Chlorine
         orp = self.__sensors.get_orp().get()
@@ -247,7 +247,7 @@ class Disinfection(PoupoolActor):
         cl_feedback = self.__orp_controller.compute() if self.__orp_enable else 0
         self.__encoder.disinfection_cl_feedback(int(round(cl_feedback * 100)))
         self.__encoder.disinfection_orp_setpoint(int(orp_setpoint))
-        logger.info("ORP: %d setpoint: %d feedback: %.2f" % (orp, orp_setpoint, cl_feedback))
+        logger.debug("ORP: %d setpoint: %d feedback: %.2f" % (orp, orp_setpoint, cl_feedback))
         self.__cl.value = cl_feedback
         self._proxy.wait.defer()
 
