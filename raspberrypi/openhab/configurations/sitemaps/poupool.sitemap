@@ -34,6 +34,7 @@ sitemap poupool label="Poupool"
             }
             Frame label="Chauffage" icon="inverter" {
                 Text item=Poupool_Heating_State icon="zoom"
+                Text item=Poupool_Heating_TotalHours icon="zoom"
             }
             Frame label="Désinfection" icon="water" {
                 Text item=Poupool_Disinfection_State icon="zoom"
