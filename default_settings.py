@@ -54,6 +54,7 @@ def main():
     publish("/settings/filtration/backwash/period", 30)
     publish("/settings/filtration/backwash/backwash_duration", 120)
     publish("/settings/filtration/backwash/rinse_duration", 60)
+    publish("/settings/filtration/speed/eco", 1)
     publish("/settings/filtration/speed/standby", 0)
     publish("/settings/filtration/speed/overflow", 4)
     publish("/settings/tank/force_empty", "0")
