@@ -124,7 +124,7 @@ class Disinfection(PoupoolActor):
         "constant",
         {"name": "running", "initial": "adjusting", "children": [
             "adjusting",
-            "waiting"]}]
+            "treating"]}]
 
     def __init__(self, encoder, devices, sensors_reader, sensors_writer, disable=False):
         super().__init__()
@@ -155,8 +155,8 @@ class Disinfection(PoupoolActor):
         self.__machine.add_transition("run", "waiting", "running")
         self.__machine.add_transition("halt", ["constant", "waiting", "running"], "halt")
         self.__machine.add_transition("constant", ["halt", "waiting", "running"], "constant")
-        self.__machine.add_transition("adjust", "running_waiting", "running_adjusting")
-        self.__machine.add_transition("wait", "running_adjusting", "running_waiting")
+        self.__machine.add_transition("adjust", "running_treating", "running_adjusting")
+        self.__machine.add_transition("treat", "running_adjusting", "running_treating")
 
     def ph_enable(self, value):
         self.__ph_enable = value
@@ -253,9 +253,9 @@ class Disinfection(PoupoolActor):
         self.__encoder.disinfection_orp_setpoint(int(orp_setpoint))
         logger.debug("ORP: %d setpoint: %d feedback: %.2f" % (orp, orp_setpoint, cl_feedback))
         self.__cl.value = cl_feedback
-        self._proxy.wait.defer()
+        self._proxy.treat.defer()
 
-    def on_enter_running_waiting(self):
-        logger.info("Entering waiting state")
+    def on_enter_running_treating(self):
+        logger.info("Entering treating state")
         self.__encoder.disinfection_state("treating")
         self._proxy.do_delay(Disinfection.WAITING_DELAY, "adjust")
