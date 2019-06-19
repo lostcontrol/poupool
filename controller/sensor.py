@@ -90,8 +90,9 @@ class DisinfectionWriter(PoupoolActor):
         self.__reader = reader
 
     def do_cancel(self):
-        self.__encoder.disinfection_orp_value("UNDEF")
-        self.__encoder.disinfection_ph_value("UNDEF")
+        # OpenHAB doesn't seem to process UNDEF as expected via MQTT
+        # self.__encoder.disinfection_orp_value("UNDEF")
+        # self.__encoder.disinfection_ph_value("UNDEF")
         super().do_cancel()
 
     @repeat(delay=DELAY_SECONDS)
