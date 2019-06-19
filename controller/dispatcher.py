@@ -70,6 +70,7 @@ class Dispatcher(object):
             "/settings/filtration/backwash/rinse_duration": (filtration, between(0, 300), lambda x: "backwash_rinse_duration", to_int),
             "/status/filtration/backwash/last": (filtration, lambda x: True, lambda x: "backwash_last", to_string),
             "/status/filtration/duration": (filtration, duration_only_once, lambda x: "restore_duration", to_string),
+            "/settings/filtration/speed/eco": (filtration, between(1, 3), lambda x: "speed_eco", to_int),
             "/settings/filtration/speed/standby": (filtration, between(0, 1), lambda x: "speed_standby", to_int),
             "/settings/filtration/speed/overflow": (filtration, between(1, 4), lambda x: "speed_overflow", to_int),
             "/settings/tank/force_empty": (tank, lambda x: x in ("0", "1"), lambda x: "force_empty", to_bool),

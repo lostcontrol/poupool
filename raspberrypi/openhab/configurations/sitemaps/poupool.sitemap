@@ -94,6 +94,7 @@ sitemap poupool label="Poupool"
                     Setpoint item=Poupool_Filtration_TankPercentage icon="settings" minValue=0 maxValue=0.5 step=0.1
                     Setpoint item=Poupool_Filtration_StirDuration icon="settings" minValue=0 maxValue=600 step=10
                     Selection item=Poupool_Filtration_StirPeriod icon="settings" mappings=[0="0", 900="900", 1800="1800", 3600="3600", 7200="7200"]
+                    Selection item=Poupool_Filtration_SpeedEco icon="settings" mappings=[1="1", 2="2", 3="3"]
                     Selection item=Poupool_Filtration_SpeedStandby icon="settings" mappings=[0="0", 1="1"]
                     Selection item=Poupool_Filtration_SpeedOverflow icon="settings" mappings=[1="1", 2="2", 3="3", 4="4"]
                 }

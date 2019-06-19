@@ -12,6 +12,7 @@ Number Poupool_Filtration_BoostDuration "Durée boost sortie mode eco (secondes)
 Number Poupool_Filtration_TankPercentage "Pourcentage filtration tampon [%.1f]" {channel="mqtt:topic:unsecure:poupool:Filtration_TankPercentage"}
 Number Poupool_Filtration_StirDuration "Durée brassage par période (secondes) [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_StirDuration"}
 Number Poupool_Filtration_StirPeriod "Période brassage (secondes)" {channel="mqtt:topic:unsecure:poupool:Filtration_StirPeriod"}
+Number Poupool_Filtration_SpeedEco "Vitesse pompe en éco" {channel="mqtt:topic:unsecure:poupool:Filtration_SpeedEco"}
 Number Poupool_Filtration_SpeedStandby "Vitesse pompe en veille" {channel="mqtt:topic:unsecure:poupool:Filtration_SpeedStandby"}
 Number Poupool_Filtration_SpeedOverflow "Vitesse pompe en débordement" {channel="mqtt:topic:unsecure:poupool:Filtration_SpeedOverflow"}
 String Poupool_Filtration_NextEvent "Prochain événement [%s]" {channel="mqtt:topic:unsecure:poupool:Filtration_NextEvent"}

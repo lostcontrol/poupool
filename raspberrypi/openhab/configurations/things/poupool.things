@@ -11,6 +11,7 @@ Bridge mqtt:broker:unsecure [ host="poupool", secure=false ] {
         Type number : Filtration_TankPercentage [ stateTopic="/settings/filtration/tank_percentage", commandTopic="/settings/filtration/tank_percentage", retained="true" ]
         Type number : Filtration_StirDuration [ stateTopic="/settings/filtration/stir_duration", commandTopic="/settings/filtration/stir_duration", retained="true" ]
         Type number : Filtration_StirPeriod [ stateTopic="/settings/filtration/stir_period", commandTopic="/settings/filtration/stir_period", retained="true" ]
+        Type number : Filtration_SpeedEco [ stateTopic="/settings/filtration/speed/eco", commandTopic="/settings/filtration/speed/eco", retained="true" ]
         Type number : Filtration_SpeedStandby [ stateTopic="/settings/filtration/speed/standby", commandTopic="/settings/filtration/speed/standby", retained="true" ]
         Type number : Filtration_SpeedOverflow [ stateTopic="/settings/filtration/speed/overflow", commandTopic="/settings/filtration/speed/overflow", retained="true" ]
         Type string : Filtration_NextEvent [ stateTopic="/status/filtration/next" ]

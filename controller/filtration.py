@@ -243,6 +243,7 @@ class Filtration(PoupoolActor):
         self.__eco_mode = EcoMode(encoder)
         self.__stir_mode = StirMode(devices)
         self.__boost_duration = timedelta(minutes=5)
+        self.__eco_standby = 1
         self.__speed_standby = 1
         self.__speed_overflow = 4
         self.__backwash_backwash_duration = 120
@@ -364,6 +365,14 @@ class Filtration(PoupoolActor):
     def boost_duration(self, value):
         self.__boost_duration = timedelta(seconds=value)
         logger.info("Duration for boost while going out of eco set to: %s" % self.__boost_duration)
+
+    def speed_eco(self, value):
+        self.__speed_eco = value
+        logger.info("Speed for eco mode set to: %d" % self.__speed_eco)
+        if self.is_eco_normal():
+            # Jump to the reload state so that we can jump back into standby mode
+            self._proxy.reload.defer()
+            self._proxy.eco.defer()
 
     def speed_standby(self, value):
         self.__speed_standby = value
@@ -559,7 +568,7 @@ class Filtration(PoupoolActor):
         self.__encoder.filtration_state("eco_normal")
         self.__eco_mode.set_current(self.__eco_mode.on_duration)
         self.__disinfection_start()
-        self.__devices.get_pump("variable").speed(1)
+        self.__devices.get_pump("variable").speed(self.__speed_eco)
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco_normal(self):
