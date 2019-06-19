@@ -20,13 +20,14 @@ import statistics
 import collections
 from .actor import PoupoolActor
 from .actor import repeat
+from datetime import timedelta
 
 logger = logging.getLogger(__name__)
 
 
 class MovingAverage:
 
-    def __init__(self, maxlen=10):
+    def __init__(self, maxlen):
         self.__data = collections.deque(maxlen=maxlen)
 
     def clear(self):
@@ -41,12 +42,12 @@ class MovingAverage:
 
 class BaseReader(PoupoolActor):
 
-    def __init__(self, sensors):
+    def __init__(self, sensors, maxlen=10):
         super().__init__()
         self.__sensors = sensors
         self.__values = {}
         for sensor in self.__sensors:
-            self.__values[sensor.name] = MovingAverage()
+            self.__values[sensor.name] = MovingAverage(maxlen=maxlen)
 
     @property
     def values(self):
@@ -61,10 +62,12 @@ class BaseReader(PoupoolActor):
 
 class DisinfectionReader(BaseReader):
 
-    READ_DELAY = 30
+    DELAY_SECONDS = 60
+    DURATION = timedelta(minutes=10)
 
     def __init__(self, sensors):
-        super().__init__(sensors)
+        samples = int(self.DURATION.total_seconds() // self.DELAY_SECONDS)
+        super().__init__(sensors, samples)
 
     def get_ph(self):
         return self.values["ph"].mean()
@@ -72,21 +75,21 @@ class DisinfectionReader(BaseReader):
     def get_orp(self):
         return self.values["orp"].mean()
 
-    @repeat(delay=READ_DELAY)
+    @repeat(delay=DELAY_SECONDS)
     def do_read(self):
         super().do_read()
 
 
 class DisinfectionWriter(PoupoolActor):
 
-    READ_DELAY = 60
+    DELAY_SECONDS = 60
 
     def __init__(self, encoder, reader):
         super().__init__()
         self.__encoder = encoder
         self.__reader = reader
 
-    @repeat(delay=READ_DELAY)
+    @repeat(delay=DELAY_SECONDS)
     def do_write(self):
         orp = self.__reader.get_orp().get()
         if orp:
@@ -98,10 +101,12 @@ class DisinfectionWriter(PoupoolActor):
 
 class TemperatureReader(BaseReader):
 
-    READ_DELAY = 30
+    DELAY_SECONDS = 60
+    DURATION = timedelta(minutes=30)
 
     def __init__(self, sensors):
-        super().__init__(sensors)
+        samples = int(self.DURATION.total_seconds() // self.DELAY_SECONDS)
+        super().__init__(sensors, maxlen=samples)
 
     def get_temperature(self, name):
         return self.values[name].mean()
@@ -109,21 +114,21 @@ class TemperatureReader(BaseReader):
     def get_all_temperatures(self):
         return {k: v.mean() for k, v in self.values.items()}
 
-    @repeat(delay=READ_DELAY)
+    @repeat(delay=DELAY_SECONDS)
     def do_read(self):
         super().do_read()
 
 
 class TemperatureWriter(PoupoolActor):
 
-    READ_DELAY = 60
+    DELAY_SECONDS = 60
 
     def __init__(self, encoder, reader):
         super().__init__()
         self.__encoder = encoder
         self.__reader = reader
 
-    @repeat(delay=READ_DELAY)
+    @repeat(delay=DELAY_SECONDS)
     def do_write(self):
         for name, value in self.__reader.get_all_temperatures().get().items():
             if value is not None:
