@@ -77,7 +77,8 @@ class PWM(PoupoolActor):
                     self.__pump.off()
             else:
                 self.__security_duration.update(datetime.now(), 0)
-                if self.__duration >= duty_off and duty_off != self.period and not self.__security_duration.elapsed():
+                security_ok = not self.__security_duration.elapsed()
+                if self.__duration >= duty_off and duty_off != self.period and security_ok:
                     self.__duration = 0
                     self.__state = True
                     self.__pump.on()
