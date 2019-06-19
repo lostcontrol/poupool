@@ -118,6 +118,7 @@ class EcoMode(object):
         # Only persist the duration every 5 minutes
         now = datetime.now()
         if (now - self.__duration_last_save) > timedelta(minutes=5):
+            self.__duration_last_save = now
             value = str(round_timedelta(self.filtration.duration))
             self.__encoder.filtration_duration(value, retain=True)
 
