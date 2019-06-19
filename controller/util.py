@@ -107,7 +107,7 @@ class Timer(object):
 
 
 def round_timedelta(x):
-    return timedelta(seconds=int(x.total_seconds()))
+    return timedelta(seconds=round(x.total_seconds()))
 
 
 def mapping(x, in_min, in_max, out_min, out_max):
