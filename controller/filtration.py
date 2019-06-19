@@ -243,7 +243,7 @@ class Filtration(PoupoolActor):
         self.__eco_mode = EcoMode(encoder)
         self.__stir_mode = StirMode(devices)
         self.__boost_duration = timedelta(minutes=5)
-        self.__eco_standby = 1
+        self.__speed_eco = 1
         self.__speed_standby = 1
         self.__speed_overflow = 4
         self.__backwash_backwash_duration = 120
