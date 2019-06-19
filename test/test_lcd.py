@@ -53,21 +53,29 @@ class TestLcd:
         lcdbackpack.set_cursor_home.assert_called_once_with()
         lcdbackpack.write.assert_called_once_with("""Mode              --
 Water  0.0 Air   0.0
-pH     0.0 ORP     0
+pH     -.- ORP   ---
 Next event  00:00:00""".replace("\n", ""))
 
     def test_halt_mode(self, lcd):
         lcd.update("filtration_state", "halt")
         assert lcd.get_printable_string() == """Mode            HALT
 Water  0.0 Air   0.0
-pH     0.0 ORP     0
+pH     -.- ORP   ---
 Next event  00:00:00"""
 
     def test_negative_temperature(self, lcd):
         lcd.update("temperature_air", "-12.3")
         assert lcd.get_printable_string() == """Mode              --
 Water  0.0 Air -12.3
-pH     0.0 ORP     0
+pH     -.- ORP   ---
+Next event  00:00:00"""
+
+    def test_ph_orp_defined(self, lcd):
+        lcd.update("disinfection_ph_value", "7.1")
+        lcd.update("disinfection_orp_value", "654")
+        assert lcd.get_printable_string() == """Mode              --
+Water  0.0 Air   0.0
+pH     7.1 ORP   654
 Next event  00:00:00"""
 
     def test_state_width_limit(self, lcd):

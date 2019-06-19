@@ -336,8 +336,13 @@ def main(args, devices):
     sensors = [devices.get_sensor("ph"), devices.get_sensor("orp")]
     disinfection_reader = DisinfectionReader.start(sensors).proxy()
     disinfection_writer = DisinfectionWriter.start(encoder, disinfection_reader).proxy()
-    no = args.no_disinfection
-    disinfection = Disinfection.start(encoder, devices, disinfection_reader, no).proxy()
+    disinfection = Disinfection.start(
+        encoder,
+        devices,
+        disinfection_reader,
+        disinfection_writer,
+        args.no_disinfection
+    ).proxy()
 
     # Heating
     switch = devices.get_valve("heater")
@@ -357,7 +362,7 @@ def main(args, devices):
     temperature_reader.do_read.defer()
     temperature_writer.do_write.defer()
     disinfection_reader.do_read.defer()
-    disinfection_writer.do_write.defer()
+    # disinfection_writer is started/stopped by the disinfection actor
     lcd.do_start.defer()
 
     # Monitor the main actors. If one dies, we will exit the main thread.

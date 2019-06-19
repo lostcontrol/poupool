@@ -72,9 +72,12 @@ class Lcd(PoupoolActor):
         pool = float(self.__cache.get("temperature_pool", 0))
         air = float(self.__cache.get("temperature_air", 0))
         s += "Water {:>4.1f} Air {:>5.1f}".format(pool, air)[:20]
-        ph = float(self.__cache.get("disinfection_ph_value", 0))
-        orp = int(self.__cache.get("disinfection_orp_value", 0))
-        s += "pH     {:>3.1f} ORP {:>5d}".format(ph, orp)[:20]
+        try:
+            ph = float(self.__cache.get("disinfection_ph_value", None))
+            orp = int(self.__cache.get("disinfection_orp_value", None))
+            s += "pH     {:>3.1f} ORP {:>5d}".format(ph, orp)[:20]
+        except (TypeError, ValueError):
+            s += "pH     -.- ORP   ---"
         next_event = self.__cache.get("filtration_next", "00:00:00")
         s += "Next event  {:>8}\n".format(next_event)[:20]
         return s

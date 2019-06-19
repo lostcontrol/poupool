@@ -126,12 +126,13 @@ class Disinfection(PoupoolActor):
             "adjusting",
             "waiting"]}]
 
-    def __init__(self, encoder, devices, sensors, disable=False):
+    def __init__(self, encoder, devices, sensors_reader, sensors_writer, disable=False):
         super().__init__()
         self.__is_disabled = disable
         self.__encoder = encoder
         self.__devices = devices
-        self.__sensors = sensors
+        self.__sensors_reader = sensors_reader
+        self.__sensors_writer = sensors_writer
         # pH
         self.__ph_enable = True
         self.__ph = PWM.start("pH", self.__devices.get_pump("ph")).proxy()
@@ -203,6 +204,7 @@ class Disinfection(PoupoolActor):
         self.__devices.get_pump("cl").off()
         self.__encoder.disinfection_cl_feedback(0)
         self.__encoder.disinfection_ph_feedback(0)
+        self.__sensors_writer.do_cancel()
 
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
@@ -227,19 +229,20 @@ class Disinfection(PoupoolActor):
         self.__ph.do_run()
         self.__cl.period = Disinfection.CL_PWM_PERIOD
         self.__cl.do_run()
+        self.__sensors_writer.do_write()
 
     def on_enter_running_adjusting(self):
         logger.info("Entering adjusting state")
         self.__encoder.disinfection_state("adjusting")
         # pH
-        ph = self.__sensors.get_ph().get()
+        ph = self.__sensors_reader.get_ph().get()
         self.__ph_controller.current = ph
         ph_feedback = self.__ph_controller.compute() if self.__ph_enable else 0
         self.__encoder.disinfection_ph_feedback(int(round(ph_feedback * 100)))
         logger.debug("pH: %.2f feedback: %.2f" % (ph, ph_feedback))
         self.__ph.value = ph_feedback
         # ORP/Chlorine
-        orp = self.__sensors.get_orp().get()
+        orp = self.__sensors_reader.get_orp().get()
         orp_setpoint = self.curves[self.__free_chlorine](ph)
         # Round to +/- 5 to avoid too many step changes
         orp_setpoint = 5 * round(orp_setpoint / 5)
