@@ -27,7 +27,7 @@ class Encoder(object):
         topic = topic.replace("//", "_")
 
         def wrapper(x, **kwargs):
-            self.__mqtt.publish(topic, x, **kwargs)
-            self.__lcd.update(value, x)
+            self.__mqtt.publish.defer(topic, x, **kwargs)
+            self.__lcd.update.defer(value, x)
 
         return wrapper

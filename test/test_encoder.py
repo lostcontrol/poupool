@@ -39,25 +39,25 @@ class TestEncoder:
     def test_publish_int(self, mqtt, lcd, encoder):
         value = 10
         encoder.foo(value)
-        mqtt.publish.assert_called_once_with("/status/foo", value)
-        lcd.update.assert_called_once_with("foo", value)
+        mqtt.publish.defer.assert_called_once_with("/status/foo", value)
+        lcd.update.defer.assert_called_once_with("foo", value)
 
     def test_publish_with_underscore(self, mqtt, lcd, encoder):
         value = "foobar"
         encoder.foo_bar(value)
-        mqtt.publish.assert_called_once_with("/status/foo/bar", value)
-        lcd.update.assert_called_once_with("foo_bar", value)
+        mqtt.publish.defer.assert_called_once_with("/status/foo/bar", value)
+        lcd.update.defer.assert_called_once_with("foo_bar", value)
 
     def test_publish_with_double_underscore(self, mqtt, lcd, encoder):
         value = "foobar"
         encoder.foo_bar__cat(value)
-        mqtt.publish.assert_called_once_with("/status/foo/bar_cat", value)
-        lcd.update.assert_called_once_with("foo_bar__cat", value)
+        mqtt.publish.defer.assert_called_once_with("/status/foo/bar_cat", value)
+        lcd.update.defer.assert_called_once_with("foo_bar__cat", value)
 
     def test_publish_with_kwargs(self, mqtt, lcd, encoder):
         value = "foobar"
         kwargs = (1, 2)
         encoder.foo_bar(value, kw=kwargs)
-        mqtt.publish.assert_called_once_with("/status/foo/bar", value, kw=kwargs)
+        mqtt.publish.defer.assert_called_once_with("/status/foo/bar", value, kw=kwargs)
         # No need/support for kwargs for LCD
-        lcd.update.assert_called_once_with("foo_bar", value)
+        lcd.update.defer.assert_called_once_with("foo_bar", value)

@@ -93,6 +93,6 @@ class Dispatcher(object):
                 if predicate(data):
                     func = getattr(fsm, method(data))
                     param = value(data) if value else None
-                    func(param) if param is not None else func()
+                    func.defer(param) if param is not None else func.defer()
             except Exception:
                 logger.exception("Unable to process data for %s: %s" % (topic, str(payload)))
