@@ -57,40 +57,219 @@ class Dispatcher(object):
 
     def register(self, filtration, tank, swim, light, heater, heating, disinfection):
         self.__mapping = {
-            "/settings/mode": (filtration, lambda x: x in ("halt", "eco", "standby", "overflow", "comfort", "sweep", "wash", "wintering"), lambda x: x, None),
-            "/settings/filtration/duration": (filtration, between(1, 172800), lambda x: "duration", to_int),
-            "/settings/filtration/period": (filtration, between(1, 10), lambda x: "period", to_int),
-            "/settings/filtration/reset_hour": (filtration, between(0, 23), lambda x: "reset_hour", to_int),
-            "/settings/filtration/tank_percentage": (filtration, between(0, 0.5), lambda x: "tank_percentage", to_float),
-            "/settings/filtration/stir_duration": (filtration, between(0, 10 * 60), lambda x: "stir_duration", to_int),
-            "/settings/filtration/stir_period": (filtration, between(0, 7200), lambda x: "stir_period", to_int),
-            "/settings/filtration/boost_duration": (filtration, between(0, 10 * 60), lambda x: "boost_duration", to_int),
-            "/settings/filtration/backwash/period": (filtration, between(0, 90), lambda x: "backwash_period", to_int),
-            "/settings/filtration/backwash/backwash_duration": (filtration, between(0, 300), lambda x: "backwash_backwash_duration", to_int),
-            "/settings/filtration/backwash/rinse_duration": (filtration, between(0, 300), lambda x: "backwash_rinse_duration", to_int),
-            "/status/filtration/backwash/last": (filtration, lambda x: True, lambda x: "backwash_last", to_string),
-            "/status/filtration/duration": (filtration, duration_only_once, lambda x: "restore_duration", to_string),
-            "/settings/filtration/speed/eco": (filtration, between(1, 3), lambda x: "speed_eco", to_int),
-            "/settings/filtration/speed/standby": (filtration, between(0, 1), lambda x: "speed_standby", to_int),
-            "/settings/filtration/speed/overflow": (filtration, between(1, 4), lambda x: "speed_overflow", to_int),
-            "/settings/tank/force_empty": (tank, lambda x: x in ("0", "1"), lambda x: "force_empty", to_bool),
-            "/settings/swim/mode": (swim, lambda x: x in ("halt", "timed", "continuous"), lambda x: x, None),
-            "/settings/swim/timer": (swim, between(1, 60), lambda x: "timer", to_int),
-            "/settings/swim/speed": (swim, between(1, 100), lambda x: "speed", to_int),
-            "/settings/light/mode": (light, lambda x: x in ("halt", "on"), lambda x: x, None),
-            "/settings/heater/setpoint": (heater, between(0, 30), lambda x: "setpoint", to_float),
-            "/settings/heating/enable": (heating, lambda x: x in ("0", "1"), lambda x: "enable", to_bool),
-            "/settings/heating/setpoint": (heating, between(10, 30), lambda x: "setpoint", to_float),
-            "/settings/heating/start_hour": (heating, between(0, 23), lambda x: "start_hour", to_int),
-            "/settings/heating/min_temp": (heating, between(5, 25), lambda x: "min_temp", to_int),
-            "/status/heating/total_seconds": (heating, lambda _: True, lambda _: "total_seconds", to_int),
-            "/settings/disinfection/cl/constant": (disinfection, between(0, 10), lambda x: "cl_constant", to_float),
-            "/settings/disinfection/ph/enable": (disinfection, lambda x: x in ("0", "1"), lambda x: "ph_enable", to_bool),
-            "/settings/disinfection/ph/setpoint": (disinfection, between(6, 8), lambda x: "ph_setpoint", to_float),
-            "/settings/disinfection/ph/pterm": (disinfection, between(0, 10), lambda x: "ph_pterm", to_float),
-            "/settings/disinfection/free_chlorine": (disinfection, lambda x: x in ("low", "mid", "mid_high", "high"), lambda x: "free_chlorine", to_string),
-            "/settings/disinfection/orp/enable": (disinfection, lambda x: x in ("0", "1"), lambda x: "orp_enable", to_bool),
-            "/settings/disinfection/orp/pterm": (disinfection, between(0, 10), lambda x: "orp_pterm", to_float),
+            "/settings/mode": (
+                filtration,
+                lambda x: x in (
+                    "halt",
+                    "eco",
+                    "standby",
+                    "overflow",
+                    "comfort",
+                    "sweep",
+                    "wash",
+                    "wintering"
+                ),
+                lambda x: x,
+                None
+            ),
+            "/settings/filtration/duration": (
+                filtration,
+                between(1, 172800),
+                lambda _: "duration",
+                to_int
+            ),
+            "/settings/filtration/period": (
+                filtration,
+                between(1, 10),
+                lambda _: "period",
+                to_int
+            ),
+            "/settings/filtration/reset_hour": (
+                filtration,
+                between(0, 23),
+                lambda _: "reset_hour",
+                to_int
+            ),
+            "/settings/filtration/tank_percentage": (
+                filtration,
+                between(0, 0.5),
+                lambda _: "tank_percentage",
+                to_float
+            ),
+            "/settings/filtration/stir_duration": (
+                filtration,
+                between(0, 10 * 60),
+                lambda _: "stir_duration",
+                to_int
+            ),
+            "/settings/filtration/stir_period": (
+                filtration,
+                between(0, 7200),
+                lambda _: "stir_period",
+                to_int
+            ),
+            "/settings/filtration/boost_duration": (
+                filtration,
+                between(0, 10 * 60),
+                lambda _: "boost_duration",
+                to_int
+            ),
+            "/settings/filtration/backwash/period": (
+                filtration,
+                between(0, 90),
+                lambda _: "backwash_period",
+                to_int
+            ),
+            "/settings/filtration/backwash/backwash_duration": (
+                filtration,
+                between(0, 300),
+                lambda _: "backwash_backwash_duration",
+                to_int
+            ),
+            "/settings/filtration/backwash/rinse_duration": (
+                filtration,
+                between(0, 300),
+                lambda _: "backwash_rinse_duration",
+                to_int
+            ),
+            "/status/filtration/backwash/last": (
+                filtration,
+                lambda _: True,
+                lambda _: "backwash_last",
+                to_string
+            ),
+            "/status/filtration/duration": (
+                filtration,
+                duration_only_once,
+                lambda _: "restore_duration",
+                to_string
+            ),
+            "/settings/filtration/speed/eco": (
+                filtration,
+                between(1, 3),
+                lambda _: "speed_eco",
+                to_int
+            ),
+            "/settings/filtration/speed/standby": (
+                filtration,
+                between(0, 1),
+                lambda _: "speed_standby",
+                to_int
+            ),
+            "/settings/filtration/speed/overflow": (
+                filtration,
+                between(1, 4),
+                lambda _: "speed_overflow",
+                to_int
+            ),
+            "/settings/tank/force_empty": (
+                tank,
+                lambda x: x in ("0", "1"),
+                lambda _: "force_empty",
+                to_bool
+            ),
+            "/settings/swim/mode": (
+                swim,
+                lambda x: x in ("halt", "timed", "continuous"),
+                lambda x: x,
+                None
+            ),
+            "/settings/swim/timer": (
+                swim,
+                between(1, 60),
+                lambda _: "timer",
+                to_int
+            ),
+            "/settings/swim/speed": (
+                swim,
+                between(1, 100),
+                lambda _: "speed",
+                to_int
+            ),
+            "/settings/light/mode": (
+                light,
+                lambda x: x in ("halt", "on"),
+                lambda x: x,
+                None
+            ),
+            "/settings/heater/setpoint": (
+                heater,
+                between(0, 30),
+                lambda _: "setpoint",
+                to_float
+            ),
+            "/settings/heating/enable": (
+                heating,
+                lambda x: x in ("0", "1"),
+                lambda _: "enable",
+                to_bool
+            ),
+            "/settings/heating/setpoint": (
+                heating,
+                between(10, 30),
+                lambda _: "setpoint",
+                to_float
+            ),
+            "/settings/heating/start_hour": (
+                heating,
+                between(0, 23),
+                lambda _: "start_hour",
+                to_int
+            ),
+            "/settings/heating/min_temp": (
+                heating,
+                between(5, 25),
+                lambda _: "min_temp",
+                to_int
+            ),
+            "/status/heating/total_seconds": (
+                heating,
+                lambda _: True,
+                lambda _: "total_seconds",
+                to_int
+            ),
+            "/settings/disinfection/cl/constant": (
+                disinfection,
+                between(0, 10),
+                lambda _: "cl_constant",
+                to_float
+            ),
+            "/settings/disinfection/ph/enable": (
+                disinfection,
+                lambda x: x in ("0", "1"),
+                lambda _: "ph_enable",
+                to_bool
+            ),
+            "/settings/disinfection/ph/setpoint": (
+                disinfection,
+                between(6, 8),
+                lambda _: "ph_setpoint",
+                to_float
+            ),
+            "/settings/disinfection/ph/pterm": (
+                disinfection,
+                between(0, 10),
+                lambda _: "ph_pterm",
+                to_float
+            ),
+            "/settings/disinfection/free_chlorine": (
+                disinfection,
+                lambda x: x in ("low", "mid", "mid_high", "high"),
+                lambda _: "free_chlorine",
+                to_string
+            ),
+            "/settings/disinfection/orp/enable": (
+                disinfection,
+                lambda x: x in ("0", "1"),
+                lambda _: "orp_enable",
+                to_bool
+            ),
+            "/settings/disinfection/orp/pterm": (
+                disinfection,
+                between(0, 10),
+                lambda _: "orp_pterm",
+                to_float
+            ),
         }
 
     def topics(self):
@@ -105,6 +284,9 @@ class Dispatcher(object):
                 if predicate(data):
                     func = getattr(fsm, method(data))
                     param = value(data) if value else None
-                    func.defer(param) if param is not None else func.defer()
+                    if param is not None:
+                        func.defer(param)
+                    else:
+                        func.defer()
             except Exception:
                 logger.exception("Unable to process data for %s: %s" % (topic, str(payload)))
