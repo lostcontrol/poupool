@@ -19,7 +19,7 @@ String Poupool_Filtration_NextEvent "Prochain événement [%s]" {channel="mqtt:t
 String Poupool_Filtration_RemainingDuration "Durée journalière restante [%s]" {channel="mqtt:topic:unsecure:poupool:Filtration_RemainingDuration"}
 
 String Poupool_Tank_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Tank_State"}
-Number Poupool_Tank_Height "Hauteur du tampon (%) [%d%%]" {channel="mqtt:topic:unsecure:poupool:Tank_Height"}
+Number Poupool_Tank_Height "Hauteur du tampon (%) [%d%%]" {channel="mqtt:topic:unsecure:poupool:Tank_Height", expire="2m"}
 Switch Poupool_Tank_Force_Empty "Forçage tampon vide" {channel="mqtt:topic:unsecure:poupool:Tank_Force_Empty"}
 
 Number Poupool_Filtration_BackwashPeriod "Période de contre-lavage (jour) [%d]" {channel="mqtt:topic:unsecure:poupool:Filtration_BackwashPeriod"}
@@ -32,10 +32,10 @@ String Poupool_Swim_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsec
 Number Poupool_Swim_Timer "Durée temporisation (minute) [%d]" {channel="mqtt:topic:unsecure:poupool:Swim_Timer"}
 Number Poupool_Swim_Speed "Vitesse (%) [%d]" {channel="mqtt:topic:unsecure:poupool:Swim_Speed"}
 
-Number Poupool_Temperature_Pool "Température piscine [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Pool"}
-Number Poupool_Temperature_Air "Température air [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Air"}
-Number Poupool_Temperature_Local "Température local [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Local"}
-Number Poupool_Temperature_Ncc "Température trappe [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Ncc"}
+Number Poupool_Temperature_Pool "Température piscine [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Pool", expire="2m"}
+Number Poupool_Temperature_Air "Température air [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Air", expire="2m"}
+Number Poupool_Temperature_Local "Température local [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Local", expire="2m"}
+Number Poupool_Temperature_Ncc "Température trappe [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Ncc", expire="2m"}
 
 String Poupool_Heating_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Heating_State"}
 Switch Poupool_Heating_Enable "Chauffage activé" {channel="mqtt:topic:unsecure:poupool:Heating_Enable"}
@@ -52,11 +52,11 @@ String Poupool_Disinfection_FreeChlorine "Chlore libre" {channel="mqtt:topic:uns
 Switch Poupool_Disinfection_PH_Enable "pH régulation activée" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH_Enable"}
 Number Poupool_Disinfection_PH_Setpoint "pH consigne [%.1f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH_Setpoint"}
 Number Poupool_Disinfection_PH_Pterm "pH valeur P [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH_Pterm"}
-Number Poupool_Disinfection_PH "pH [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH"}
+Number Poupool_Disinfection_PH "pH [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH", expire="2m"}
 Number Poupool_Disinfection_Cl_Constant "Chlore pourcentage constant [%.1f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_Cl_Constant"}
 Switch Poupool_Disinfection_ORP_Enable "ORP régulation activée" {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Enable"}
 Number Poupool_Disinfection_ORP_Setpoint "ORP consigne [%d]" (Poupool_Disinfection_ORP_Measurement) {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Setpoint"}
 Number Poupool_Disinfection_ORP_Pterm "ORP valeur P [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Pterm"}
-Number Poupool_Disinfection_ORP "ORP [%d]" (Poupool_Disinfection_ORP_Measurement) {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP"}
+Number Poupool_Disinfection_ORP "ORP [%d]" (Poupool_Disinfection_ORP_Measurement) {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP", expire="2m"}
 Number Poupool_Disinfection_Feedback_PH "pH feedback [%d%%]" (Poupool_Disinfection_Feedback) {channel="mqtt:topic:unsecure:poupool:Disinfection_Feedback_PH"}
 Number Poupool_Disinfection_Feedback_Cl "Chlore feedback [%d%%]" (Poupool_Disinfection_Feedback) {channel="mqtt:topic:unsecure:poupool:Disinfection_Feedback_Cl"}
