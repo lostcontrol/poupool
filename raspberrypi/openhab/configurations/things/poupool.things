@@ -36,6 +36,8 @@ Bridge mqtt:broker:unsecure [ host="poupool", secure=false ] {
         Type number : Temperature_Local [ stateTopic="/status/temperature/local" ]
         Type number : Temperature_Ncc [ stateTopic="/status/temperature/ncc" ]
 
+        Type number : Water_Counter [ stateTopic="/status/water/counter" ]
+
         Type string : Heating_State [ stateTopic="/status/heating/state" ]
         Type number : Heating_TotalHours [ stateTopic="/status/heating/total_seconds", transformationPattern="JS:divide3600.js" ]
         Type switch : Heating_Enable [ stateTopic="/settings/heating/enable", commandTopic="/settings/heating/enable", retained="true" ]

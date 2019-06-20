@@ -37,6 +37,8 @@ Number Poupool_Temperature_Air "Température air [%.1f°C]" (Poupool_Temperature
 Number Poupool_Temperature_Local "Température local [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Local", expire="2m"}
 Number Poupool_Temperature_Ncc "Température trappe [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Ncc", expire="2m"}
 
+Number Poupool_Water_Counter "Consommation d'eau (litres) [%d]" {channel="mqtt:topic:unsecure:poupool:Water_Counter"}
+
 String Poupool_Heating_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Heating_State"}
 Switch Poupool_Heating_Enable "Chauffage activé" {channel="mqtt:topic:unsecure:poupool:Heating_Enable"}
 Number Poupool_Heating_Setpoint "Température de consigne [%.1f°C]" {channel="mqtt:topic:unsecure:poupool:Heating_Setpoint"}

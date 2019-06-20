@@ -24,6 +24,9 @@ sitemap poupool label="Poupool"
                 Text item=Poupool_Temperature_Local icon="temperature"
                 Text item=Poupool_Temperature_Ncc icon="temperature"
             }
+            Frame label="Eau" icon="faucet" {
+                Text item=Poupool_Water_Counter icon="faucet"
+            }
             Frame label="Tampon" icon="cistern-20" {
                 Text item=Poupool_Tank_State icon="zoom"
                 Text item=Poupool_Tank_Height icon="cistern"
