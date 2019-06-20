@@ -598,6 +598,9 @@ class Filtration(PoupoolActor):
         self.__eco_mode.set_current(self.__eco_mode.tank_duration)
         self.__actor_halt("Disinfection")
         self.__devices.get_valve("tank").on()
+        # We force the speed to 1 in tank mode because otherwise the tank will be emptied
+        # too quickly and the pool will overflow.
+        self.__devices.get_pump("variable").speed(1)
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco_tank(self):
