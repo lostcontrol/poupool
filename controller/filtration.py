@@ -119,7 +119,7 @@ class EcoMode(object):
         now = datetime.now()
         if (now - self.__duration_last_save) > timedelta(minutes=5):
             self.__duration_last_save = now
-            value = str(round_timedelta(self.filtration.duration))
+            value = str(round(self.filtration.duration.total_seconds()))
             self.__encoder.filtration_duration(value, retain=True)
 
     def elapsed_on(self):
@@ -133,7 +133,7 @@ class EcoMode(object):
             self.__next_reset += timedelta(days=1)
             self.filtration.reset()
             # Update the saved filtration duration since we reset the timer
-            value = str(round_timedelta(self.filtration.duration))
+            value = str(round(self.filtration.duration.total_seconds()))
             self.__encoder.filtration_duration(value, retain=True)
             return True
         return False
@@ -345,10 +345,9 @@ class Filtration(PoupoolActor):
         self.__reload_eco()
 
     def restore_duration(self, value):
-        t = datetime.strptime(value, "%X")
-        duration = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-        self.__eco_mode.filtration.duration = duration
-        logger.info("Elapsed duration for filtration set to: %s" % duration)
+        self.__eco_mode.filtration.duration = timedelta(seconds=value)
+        logger.info("Elapsed duration for filtration set to: %s" %
+                    self.__eco_mode.filtration.duration)
 
     def tank_percentage(self, value):
         self.__eco_mode.tank_percentage = value

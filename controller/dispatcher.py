@@ -142,7 +142,7 @@ class Dispatcher(object):
                 filtration,
                 duration_only_once,
                 lambda _: "restore_duration",
-                to_string
+                to_int,
             ),
             "/settings/filtration/speed/eco": (
                 filtration,
