@@ -132,6 +132,9 @@ class EcoMode(object):
         if now >= self.__next_reset:
             self.__next_reset += timedelta(days=1)
             self.filtration.reset()
+            # Update the saved filtration duration since we reset the timer
+            value = str(round_timedelta(self.filtration.duration))
+            self.__encoder.filtration_duration(value, retain=True)
             return True
         return False
 
