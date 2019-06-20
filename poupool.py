@@ -353,9 +353,9 @@ def main(args, devices):
     light = Light.start(encoder, devices).proxy()
 
     # Cover and water meter
-    Arduino.start(encoder, devices)
+    arduino = Arduino.start(encoder, devices).proxy()
 
-    dispatcher.register(filtration, tank, swim, light, heater, heating, disinfection)
+    dispatcher.register(filtration, tank, swim, light, heater, heating, disinfection, arduino)
 
     # Start actors that run all the time
     mqtt.do_start().get()

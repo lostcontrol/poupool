@@ -35,11 +35,16 @@ class Arduino(PoupoolActor):
         self.__encoder = encoder
         self.__arduino = devices.get_device("arduino")
         self.__water_counter = 0
+        self.__water_counter_last = None
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Arduino.states, initial="halt")
 
         self.__machine.add_transition("run", "halt", "run")
         self.__machine.add_transition("halt", "run", "halt")
+
+    def restore_water_counter(self, value):
+        self.__water_counter = value
+        logger.info("Water counter set to: %d" % self.__water_counter)
 
     def cover_open(self):
         self.__arduino.cover_open()
@@ -69,7 +74,9 @@ class Arduino(PoupoolActor):
         # Water counter
         value = self.__arduino.water_counter
         if value is not None:
-            self.__water_counter = value
-            self.__encoder.water_counter(value)
+            if self.__water_counter_last is not None and self.__water_counter_last != value:
+                self.__water_counter += value - self.__water_counter_last
+                self.__encoder.water_counter(self.__water_counter, retain=True)
+            self.__water_counter_last = value
         else:
             logger.error("Unable to read water counter. Not updating the value")

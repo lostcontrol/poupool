@@ -24,6 +24,10 @@ def between(minimum, maximum):
     return lambda x: minimum <= float(x) <= maximum
 
 
+def greater_equal(value):
+    return lambda x: float(x) >= value
+
+
 def to_bool(x):
     return x.lower() in ("true", "1", "y", "yes", "on")
 
@@ -45,7 +49,7 @@ class Dispatcher(object):
     def __init__(self):
         self.__mapping = {}
 
-    def register(self, filtration, tank, swim, light, heater, heating, disinfection):
+    def register(self, filtration, tank, swim, light, heater, heating, disinfection, arduino):
         self.__mapping = {
             "/settings/mode": (
                 filtration,
@@ -293,6 +297,13 @@ class Dispatcher(object):
                 lambda _: "orp_pterm",
                 to_float,
                 False,
+            ),
+            "/status/water/counter": (
+                arduino,
+                greater_equal(0),
+                lambda _: "restore_water_counter",
+                to_int,
+                True,
             ),
         }
 
