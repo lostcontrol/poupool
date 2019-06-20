@@ -40,16 +40,6 @@ def to_string(x):
     return str(x)
 
 
-duration_only_once_flag = True
-
-
-def duration_only_once(_):
-    global duration_only_once_flag
-    once = duration_only_once_flag
-    duration_only_once_flag = False
-    return once
-
-
 class Dispatcher(object):
 
     def __init__(self):
@@ -70,205 +60,239 @@ class Dispatcher(object):
                     "wintering"
                 ),
                 lambda x: x,
-                None
+                None,
+                False,
             ),
             "/settings/filtration/duration": (
                 filtration,
                 between(1, 172800),
                 lambda _: "duration",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/filtration/period": (
                 filtration,
                 between(1, 10),
                 lambda _: "period",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/filtration/reset_hour": (
                 filtration,
                 between(0, 23),
                 lambda _: "reset_hour",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/filtration/tank_percentage": (
                 filtration,
                 between(0, 0.5),
                 lambda _: "tank_percentage",
-                to_float
+                to_float,
+                False,
             ),
             "/settings/filtration/stir_duration": (
                 filtration,
                 between(0, 10 * 60),
                 lambda _: "stir_duration",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/filtration/stir_period": (
                 filtration,
                 between(0, 7200),
                 lambda _: "stir_period",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/filtration/boost_duration": (
                 filtration,
                 between(0, 10 * 60),
                 lambda _: "boost_duration",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/filtration/backwash/period": (
                 filtration,
                 between(0, 90),
                 lambda _: "backwash_period",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/filtration/backwash/backwash_duration": (
                 filtration,
                 between(0, 300),
                 lambda _: "backwash_backwash_duration",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/filtration/backwash/rinse_duration": (
                 filtration,
                 between(0, 300),
                 lambda _: "backwash_rinse_duration",
-                to_int
+                to_int,
+                False,
             ),
             "/status/filtration/backwash/last": (
                 filtration,
                 lambda _: True,
                 lambda _: "backwash_last",
-                to_string
+                to_string,
+                False,
             ),
             "/status/filtration/duration": (
                 filtration,
-                duration_only_once,
+                between(0, 86400),
                 lambda _: "restore_duration",
                 to_int,
+                True,
             ),
             "/settings/filtration/speed/eco": (
                 filtration,
                 between(1, 3),
                 lambda _: "speed_eco",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/filtration/speed/standby": (
                 filtration,
                 between(0, 1),
                 lambda _: "speed_standby",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/filtration/speed/overflow": (
                 filtration,
                 between(1, 4),
                 lambda _: "speed_overflow",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/tank/force_empty": (
                 tank,
                 lambda x: x in ("0", "1"),
                 lambda _: "force_empty",
-                to_bool
+                to_bool,
+                False,
             ),
             "/settings/swim/mode": (
                 swim,
                 lambda x: x in ("halt", "timed", "continuous"),
                 lambda x: x,
-                None
+                None,
+                False,
             ),
             "/settings/swim/timer": (
                 swim,
                 between(1, 60),
                 lambda _: "timer",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/swim/speed": (
                 swim,
                 between(1, 100),
                 lambda _: "speed",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/light/mode": (
                 light,
                 lambda x: x in ("halt", "on"),
                 lambda x: x,
-                None
+                None,
+                False,
             ),
             "/settings/heater/setpoint": (
                 heater,
                 between(0, 30),
                 lambda _: "setpoint",
-                to_float
+                to_float,
+                False,
             ),
             "/settings/heating/enable": (
                 heating,
                 lambda x: x in ("0", "1"),
                 lambda _: "enable",
-                to_bool
+                to_bool,
+                False,
             ),
             "/settings/heating/setpoint": (
                 heating,
                 between(10, 30),
                 lambda _: "setpoint",
-                to_float
+                to_float,
+                False,
             ),
             "/settings/heating/start_hour": (
                 heating,
                 between(0, 23),
                 lambda _: "start_hour",
-                to_int
+                to_int,
+                False,
             ),
             "/settings/heating/min_temp": (
                 heating,
                 between(5, 25),
                 lambda _: "min_temp",
-                to_int
+                to_int,
+                False,
             ),
             "/status/heating/total_seconds": (
                 heating,
                 lambda _: True,
                 lambda _: "total_seconds",
-                to_int
+                to_int,
+                True,
             ),
             "/settings/disinfection/cl/constant": (
                 disinfection,
                 between(0, 10),
                 lambda _: "cl_constant",
-                to_float
+                to_float,
+                False,
             ),
             "/settings/disinfection/ph/enable": (
                 disinfection,
                 lambda x: x in ("0", "1"),
                 lambda _: "ph_enable",
-                to_bool
+                to_bool,
+                False,
             ),
             "/settings/disinfection/ph/setpoint": (
                 disinfection,
                 between(6, 8),
                 lambda _: "ph_setpoint",
-                to_float
+                to_float,
+                False,
             ),
             "/settings/disinfection/ph/pterm": (
                 disinfection,
                 between(0, 10),
                 lambda _: "ph_pterm",
-                to_float
+                to_float,
+                False,
             ),
             "/settings/disinfection/free_chlorine": (
                 disinfection,
                 lambda x: x in ("low", "mid", "mid_high", "high"),
                 lambda _: "free_chlorine",
-                to_string
+                to_string,
+                False,
             ),
             "/settings/disinfection/orp/enable": (
                 disinfection,
                 lambda x: x in ("0", "1"),
                 lambda _: "orp_enable",
-                to_bool
+                to_bool,
+                False,
             ),
             "/settings/disinfection/orp/pterm": (
                 disinfection,
                 between(0, 10),
                 lambda _: "orp_pterm",
-                to_float
+                to_float,
+                False,
             ),
         }
 
@@ -278,7 +302,7 @@ class Dispatcher(object):
     def dispatch(self, topic, payload):
         entry = self.__mapping.get(topic)
         if entry:
-            fsm, predicate, method, value = entry
+            fsm, predicate, method, value, once = entry
             try:
                 data = payload.decode("utf-8")
                 if predicate(data):
@@ -288,5 +312,10 @@ class Dispatcher(object):
                         func.defer(param)
                     else:
                         func.defer()
+                    # Remove the entry if it should be processed only once e.g. for
+                    # configuration restore at startup.
+                    if once:
+                        logger.debug("Removing %s, only processed once" % topic)
+                        del self.__mapping[topic]
             except Exception:
                 logger.exception("Unable to process data for %s: %s" % (topic, str(payload)))
