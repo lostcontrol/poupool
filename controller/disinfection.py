@@ -104,7 +104,6 @@ class PController(object):
 class Disinfection(PoupoolActor):
 
     STATE_REFRESH_DELAY = 10
-    SAMPLES = int(config["disinfection", "samples"])
     START_DELAY = int(config["disinfection", "start_delay"])
     WAITING_DELAY = int(config["disinfection", "waiting_delay"])
     PH_PWM_PERIOD = int(config["disinfection", "ph_pwm_period"])
