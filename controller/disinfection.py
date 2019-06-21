@@ -232,7 +232,7 @@ class Disinfection(PoupoolActor):
         self.__sensors_writer.do_write()
 
     def on_enter_running_adjusting(self):
-        logger.info("Entering adjusting state")
+        logger.debug("Entering adjusting state")
         self.__encoder.disinfection_state("adjusting")
         # pH
         ph = self.__sensors_reader.get_ph().get()
@@ -256,6 +256,6 @@ class Disinfection(PoupoolActor):
         self._proxy.treat.defer()
 
     def on_enter_running_treating(self):
-        logger.info("Entering treating state")
+        logger.debug("Entering treating state")
         self.__encoder.disinfection_state("treating")
         self._proxy.do_delay(Disinfection.WAITING_DELAY, "adjust")
