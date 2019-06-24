@@ -175,10 +175,6 @@ class Heating(PoupoolActor):
         actor = self.get_actor("Filtration")
         return actor.is_heating_running().get()
 
-    def check_before_on(self):
-        temperature = self.__read_temperature()
-        return (temperature - Heating.HYSTERESIS_DOWN) < self.__setpoint
-
     def on_enter_halt(self):
         logger.info("Entering halt state")
         self.__encoder.heating_state("halt")
@@ -194,25 +190,31 @@ class Heating(PoupoolActor):
     def do_repeat_waiting(self):
         if not self.__enable:
             return
+        # First, we check if the daily run is due
         if datetime.now() < self.__next_start:
             return
-        if not self.filtration_ready_for_heating():
-            return
-        if self.__read_temperature("temperature_air") < self.__min_temp:
-            return
-        # All pre-conditions ok, last check
-        if self.check_before_on():
-            self.get_actor("Filtration").heat().get()
-            # Ensure we are allowed to switch to the heat state. If the transition
-            # above fails, we will call StopRepeatException but never land in the
-            # heating state.
-            if self.filtration_allow_heating():
-                self._proxy.heat.defer()
-                raise StopRepeatException
-        else:
+        # After the time constrain is fulfilled, we check if the temperature is low enough to
+        # require heating. If not, then we say it's all good for today and schedule another heating
+        # check for tomorrow.
+        if (self.__read_temperature() - Heating.HYSTERESIS_DOWN) >= self.__setpoint:
             # No need to heat today. Schedule for next day
             self.__set_next_start()
             logger.info("No heating needed today. Scheduled for %s" % self.__next_start)
+            return
+        # We ensure the outside temperature is high enough to get a good efficiency from the
+        # heat pump
+        if self.__read_temperature("temperature_air") < self.__min_temp:
+            return
+        # Finally we check that filtration is ready to be switched to heating
+        if not self.filtration_ready_for_heating():
+            return
+        # All pre-conditions ok, we can start heating now
+        self.get_actor("Filtration").heat().get()
+        # Ensure we are allowed to switch to the heat state. If the transition above fails,
+        # we will call StopRepeatException but never land in the heating state.
+        if self.filtration_allow_heating():
+            self._proxy.heat.defer()
+            raise StopRepeatException
 
     @do_repeat()
     def on_enter_heating(self):
