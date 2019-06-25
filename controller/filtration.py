@@ -505,6 +505,7 @@ class Filtration(PoupoolActor):
     def do_repeat_closing(self):
         position = self.get_actor("Arduino").cover_position().get()
         logger.debug("Cover position is %d" % position)
+        self.__encoder.filtration_state("closing_%d" % (position // 10 * 10))
         if position == 0:
             # Because of roundings, the cover might still need to move just a little more.
             # We wait a bit more before exiting the state.
@@ -532,6 +533,7 @@ class Filtration(PoupoolActor):
     def do_repeat_opening(self):
         position = self.get_actor("Arduino").cover_position().get()
         logger.debug("Cover position is %d" % position)
+        self.__encoder.filtration_state("opening_%d" % (position // 10 * 10))
         if position == 100:
             # Because of roundings, the cover might still need to move just a little more.
             # We wait a bit more before exiting the state.
