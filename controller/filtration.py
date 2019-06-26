@@ -701,12 +701,13 @@ class Filtration(PoupoolActor):
     def on_enter_standby_normal(self):
         logger.info("Entering standby_normal state")
         self.__encoder.filtration_state("standby")
-        if self.__speed_standby > 0:
-            self.__devices.get_valve("tank").on()
-        else:
-            self.__devices.get_valve("tank").off()
+        # No overflow in standby mode
+        self.__devices.get_valve("tank").off()
         self.__devices.get_pump("boost").off()
         self.__devices.get_pump("variable").speed(self.__speed_standby)
+        # If filtration is running, enable disinfection
+        if self.__speed_standby > 0:
+            self.__disinfection_start()
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_standby_normal(self):

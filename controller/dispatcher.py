@@ -160,7 +160,7 @@ class Dispatcher(object):
             ),
             "/settings/filtration/speed/standby": (
                 filtration,
-                between(0, 1),
+                between(0, 2),
                 lambda _: "speed_standby",
                 to_int,
                 False,
