@@ -115,28 +115,24 @@ class EcoMode(object):
         seconds = (self.filtration.delay - self.filtration.duration).total_seconds()
         remaining = max(timedelta(), timedelta(seconds=int(seconds)))
         self.__encoder.filtration_remaining(str(remaining))
+        # Check if we reached the daily reset
+        reset = False
+        if now >= self.__next_reset:
+            self.__next_reset += timedelta(days=1)
+            self.filtration.reset()
+            reset = True
         # Only persist the duration every 5 minutes
-        now = datetime.now()
-        if (now - self.__duration_last_save) > timedelta(minutes=5):
+        if (now - self.__duration_last_save) > timedelta(minutes=5) or reset:
             self.__duration_last_save = now
             value = str(round(self.filtration.duration.total_seconds()))
             self.__encoder.filtration_duration(value, retain=True)
+        return reset
 
     def elapsed_on(self):
         return self.current.elapsed() or self.filtration.elapsed()
 
     def elapsed_off(self):
         return self.current.elapsed() and not self.filtration.elapsed()
-
-    def check_reset(self, now):
-        if now >= self.__next_reset:
-            self.__next_reset += timedelta(days=1)
-            self.filtration.reset()
-            # Update the saved filtration duration since we reset the timer
-            value = str(round(self.filtration.duration.total_seconds()))
-            self.__encoder.filtration_duration(value, retain=True)
-            return True
-        return False
 
 
 class StirMode(object):
@@ -558,7 +554,7 @@ class Filtration(PoupoolActor):
     def on_enter_eco_compute(self):
         logger.info("Entering eco compute")
         self.__encoder.filtration_state("eco_compute")
-        self.__eco_mode.check_reset(datetime.now())
+        self.__eco_mode.update(datetime.now(), 0)
         self.__eco_mode.compute()
         if self.__eco_mode.off_duration.total_seconds() > 0:
             self._proxy.do_delay(5, "eco_waiting")
@@ -580,9 +576,7 @@ class Filtration(PoupoolActor):
         if self.__start_backwash():
             self._proxy.wash.defer()
             raise StopRepeatException
-        now = datetime.now()
-        self.__eco_mode.update(now)
-        if self.__eco_mode.check_reset(now):
+        if self.__eco_mode.update(datetime.now()):
             self.__reload_eco()
             raise StopRepeatException
         if self.__eco_mode.elapsed_on():
@@ -605,9 +599,7 @@ class Filtration(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_eco_tank(self):
-        now = datetime.now()
-        self.__eco_mode.update(now)
-        if self.__eco_mode.check_reset(now):
+        if self.__eco_mode.update(datetime.now()):
             self.__reload_eco()
             raise StopRepeatException
         if self.__eco_mode.elapsed_on():
@@ -627,12 +619,8 @@ class Filtration(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_heating_running(self):
-        now = datetime.now()
         # We are running at speed 2 so count a bit more than 1 for the filteration
-        self.__eco_mode.update(now, 1.1)
-        # Check if we have to reset the filtration per day counter but do not react
-        # since heating has an higher priority.
-        self.__eco_mode.check_reset(now)
+        self.__eco_mode.update(datetime.now(), 1.1)
 
     def on_exit_heating_running(self):
         actor = self.get_actor("Heating")
@@ -669,8 +657,7 @@ class Filtration(PoupoolActor):
             self._proxy.wash.defer()
             raise StopRepeatException
         now = datetime.now()
-        self.__eco_mode.update(now, 0)
-        if self.__eco_mode.check_reset(now):
+        if self.__eco_mode.update(now, 0):
             self.__reload_eco()
             raise StopRepeatException
         if self.__eco_mode.elapsed_off():
@@ -711,9 +698,8 @@ class Filtration(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_standby_normal(self):
-        now = datetime.now()
         factor = 1 if self.__speed_standby > 0 else 0
-        self.__eco_mode.update(now, factor)
+        self.__eco_mode.update(datetime.now(), factor)
 
     def on_enter_sweep(self):
         logger.info("Entering sweep state")
@@ -740,8 +726,7 @@ class Filtration(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_comfort(self):
-        now = datetime.now()
-        self.__eco_mode.update(now, 1)
+        self.__eco_mode.update(datetime.now())
         actor = self.get_actor("Heating")
         if not actor.is_forcing().get() and not actor.is_recovering().get():
             actor.force.defer()
@@ -781,8 +766,7 @@ class Filtration(PoupoolActor):
 
     @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_overflow_normal(self):
-        now = datetime.now()
-        self.__eco_mode.update(now, 2 if self.__speed_overflow > 2 else 1)
+        self.__eco_mode.update(datetime.now(), 2 if self.__speed_overflow > 2 else 1)
 
     def on_enter_wash(self):
         logger.info("Entering wash state")
