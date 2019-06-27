@@ -172,6 +172,13 @@ class Dispatcher(object):
                 to_int,
                 False,
             ),
+            "/settings/cover/position/eco": (
+                filtration,
+                between(0, 100),
+                lambda _: "cover_position_eco",
+                to_int,
+                False,
+            ),
             "/settings/tank/force_empty": (
                 tank,
                 lambda x: x in ("0", "1"),

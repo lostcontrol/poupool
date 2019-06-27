@@ -243,6 +243,7 @@ class Filtration(PoupoolActor):
         self.__eco_mode = EcoMode(encoder)
         self.__stir_mode = StirMode(devices)
         self.__boost_duration = timedelta(minutes=5)
+        self.__cover_position_eco = 0
         self.__speed_eco = 1
         self.__speed_standby = 1
         self.__speed_overflow = 4
@@ -344,6 +345,10 @@ class Filtration(PoupoolActor):
         self.__eco_mode.filtration.duration = timedelta(seconds=value)
         logger.info("Elapsed duration for filtration set to: %s" %
                     self.__eco_mode.filtration.duration)
+
+    def cover_position_eco(self, value):
+        self.__cover_position_eco = value
+        logger.info("Cover position during eco mode set to: %d" % self.__cover_position_eco)
 
     def tank_percentage(self, value):
         self.__eco_mode.tank_percentage = value
@@ -502,10 +507,13 @@ class Filtration(PoupoolActor):
         position = self.get_actor("Arduino").cover_position().get()
         logger.debug("Cover position is %d" % position)
         self.__encoder.filtration_state("closing_%d" % (position // 10 * 10))
-        if position == 0:
-            # Because of roundings, the cover might still need to move just a little more.
-            # We wait a bit more before exiting the state.
-            self._proxy.do_delay(2, "closed")
+        if position <= self.__cover_position_eco:
+            # Because of roundings, the cover might still need to move just a little more to reach
+            # 0. But if we want to stop the cover somewhere in between, we exit the state directly.
+            if self.__cover_position_eco == 0:
+                self._proxy.do_delay(2, "closed")
+            else:
+                self._proxy.closed.defer()
             raise StopRepeatException
 
     def on_exit_closing(self):

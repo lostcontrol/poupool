@@ -57,6 +57,7 @@ def main():
     publish("/settings/filtration/speed/eco", 1)
     publish("/settings/filtration/speed/standby", 0)
     publish("/settings/filtration/speed/overflow", 4)
+    publish("/settings/cover/position/eco", 0)
     publish("/settings/tank/force_empty", "0")
     publish("/settings/swim/mode", "halt")
     publish("/settings/swim/timer", 5)

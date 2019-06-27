@@ -17,6 +17,8 @@ Bridge mqtt:broker:unsecure [ host="poupool", secure=false ] {
         Type string : Filtration_NextEvent [ stateTopic="/status/filtration/next" ]
         Type string : Filtration_RemainingDuration [ stateTopic="/status/filtration/remaining" ]
 
+        Type number : Cover_PositionEco [ stateTopic="/settings/cover/position/eco", commandTopic="/settings/cover/position/eco", retained="true" ]
+
         Type string : Tank_State [ stateTopic="/status/tank/state" ]
         Type number : Tank_Height [ stateTopic="/status/tank/height" ]
         Type switch : Tank_Force_Empty [ stateTopic="/settings/tank/force_empty", commandTopic="/settings/tank/force_empty", retained="true" ]

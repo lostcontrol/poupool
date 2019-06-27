@@ -18,6 +18,8 @@ Number Poupool_Filtration_SpeedOverflow "Vitesse pompe en débordement" {channel
 String Poupool_Filtration_NextEvent "Prochain événement [%s]" {channel="mqtt:topic:unsecure:poupool:Filtration_NextEvent"}
 String Poupool_Filtration_RemainingDuration "Durée journalière restante [%s]" {channel="mqtt:topic:unsecure:poupool:Filtration_RemainingDuration"}
 
+Number Poupool_Cover_PositionEco "Position volet en éco" {channel="mqtt:topic:unsecure:poupool:Cover_PositionEco"}
+
 String Poupool_Tank_State "État [MAP(state.map):%s]" {channel="mqtt:topic:unsecure:poupool:Tank_State"}
 Number Poupool_Tank_Height "Hauteur du tampon (%) [%d%%]" {channel="mqtt:topic:unsecure:poupool:Tank_Height", expire="2m"}
 Switch Poupool_Tank_Force_Empty "Forçage tampon vide" {channel="mqtt:topic:unsecure:poupool:Tank_Force_Empty"}
