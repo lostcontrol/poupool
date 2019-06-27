@@ -216,6 +216,7 @@ class Disinfection(PoupoolActor):
         self.__encoder.disinfection_state("constant")
         self.__cl.period = Disinfection.CL_PWM_PERIOD_CONSTANT
         self.__cl.do_run()
+        self.__sensors_writer.do_cancel()
 
     @repeat(delay=10)
     def do_repeat_constant(self):
