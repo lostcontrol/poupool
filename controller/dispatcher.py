@@ -284,18 +284,18 @@ class Dispatcher(object):
                 to_float,
                 False,
             ),
-            "/settings/disinfection/free_chlorine": (
-                disinfection,
-                lambda x: x in ("low", "mid", "mid_high", "high"),
-                lambda _: "free_chlorine",
-                to_string,
-                False,
-            ),
             "/settings/disinfection/orp/enable": (
                 disinfection,
                 lambda x: x in ("0", "1"),
                 lambda _: "orp_enable",
                 to_bool,
+                False,
+            ),
+            "/settings/disinfection/orp/setpoint": (
+                disinfection,
+                between(500, 700),
+                lambda _: "orp_setpoint",
+                to_int,
                 False,
             ),
             "/settings/disinfection/orp/pterm": (

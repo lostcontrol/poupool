@@ -6,6 +6,6 @@ Items {
     Poupool_Temperature* : strategy = everyMinute, restoreOnStartup
     Poupool_Tank_Height : strategy = everyMinute, restoreOnStartup
     Poupool_Disinfection_PH : strategy = everyMinute, restoreOnStartup
-    Poupool_Disinfection_ORP_Measurement* : strategy = everyMinute, restoreOnStartup
+    Poupool_Disinfection_ORP : strategy = everyMinute, restoreOnStartup
     Poupool_Disinfection_Feedback* : strategy = everyMinute, restoreOnStartup
 }

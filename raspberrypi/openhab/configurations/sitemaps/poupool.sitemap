@@ -75,7 +75,7 @@ sitemap poupool label="Poupool"
                         Chart item=Poupool_Disinfection_PH period=d refresh=60000
                     }
                     Frame label="ORP (24h)" {
-                        Chart item=Poupool_Disinfection_ORP_Measurement period=d refresh=60000
+                        Chart item=Poupool_Disinfection_ORP period=d refresh=60000
                     }
                     Frame label="Feedback (24h)" {
                         Chart item=Poupool_Disinfection_Feedback period=d refresh=60000
@@ -123,12 +123,12 @@ sitemap poupool label="Poupool"
                     Setpoint item=Poupool_Swim_Timer icon="settings" minValue=1 maxValue=60 step=1
                 }
                 Text label="Désinfection" icon="water" {
-                    Selection item=Poupool_Disinfection_FreeChlorine icon="settings" mappings=[low="Bas", mid="Moyen", mid_high="Moyen-Haut", high="Haut"]
                     Switch item=Poupool_Disinfection_PH_Enable icon="settings"
                     Setpoint item=Poupool_Disinfection_PH_Setpoint icon="settings" minValue=6 maxValue=8 step=0.1
                     Setpoint item=Poupool_Disinfection_PH_Pterm icon="settings" minValue=0 maxValue=10 step=0.1
                     Setpoint item=Poupool_Disinfection_Cl_Constant icon="settings" minValue=0 maxValue=10 step=0.1
                     Switch item=Poupool_Disinfection_ORP_Enable icon="settings"
+                    Setpoint item=Poupool_Disinfection_ORP_Setpoint icon="settings" minValue=500 maxValue=700 step=10
                     Setpoint item=Poupool_Disinfection_ORP_Pterm icon="settings" minValue=0 maxValue=10 step=0.1
                 }
             }

@@ -110,13 +110,6 @@ class Disinfection(PoupoolActor):
     CL_PWM_PERIOD = int(config["disinfection", "cl_pwm_period"])
     CL_PWM_PERIOD_CONSTANT = int(config["disinfection", "cl_pwm_period_constant"])
 
-    curves = {
-        "low": lambda x: -45.162 * x + 1002,         # 0.8
-        "mid": lambda x: -50 * x + 1065,             # 1.0
-        "mid_high": lambda x: -55.691 * x + 1138.9,  # 1.3
-        "high": lambda x: -58.618 * x + 1178.1,      # 1.5
-    }
-
     states = [
         "halt",
         "waiting",
@@ -141,12 +134,11 @@ class Disinfection(PoupoolActor):
         # ORP
         self.__orp_enable = True
         self.__orp_controller = PController(pterm=1.0, scale=0.005)
-        self.__orp_controller.setpoint = 700
+        self.__orp_controller.setpoint = 600
         # Chlorine
         self.__cl = PWM.start("cl", self.__devices.get_pump("cl")).proxy()
         self.__cl.period = Disinfection.CL_PWM_PERIOD
         self.__cl_constant = 0.5
-        self.__free_chlorine = "low"
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Disinfection.states, initial="halt")
 
@@ -173,12 +165,9 @@ class Disinfection(PoupoolActor):
         self.__cl_constant = value
         logger.info("Chlore constant value set to: %f" % self.__cl_constant)
 
-    def free_chlorine(self, value):
-        if value in self.curves:
-            self.__free_chlorine = value
-            logger.info("Free chlorine level set to: %s" % self.__free_chlorine)
-        else:
-            logger.error("Unsupported free chlorine level: %s" % value)
+    def orp_setpoint(self, value):
+        self.__orp_controller.setpoint = value
+        logger.info("ORP setpoint set to: %d" % self.__orp_controller.setpoint)
 
     def ph_pterm(self, value):
         # We assume here that we use "pH minus" chemicals, therefore inverse the term.
@@ -243,14 +232,10 @@ class Disinfection(PoupoolActor):
         self.__ph.value = ph_feedback
         # ORP/Chlorine
         orp = self.__sensors_reader.get_orp().get()
-        orp_setpoint = self.curves[self.__free_chlorine](ph)
-        # Round to +/- 5 to avoid too many step changes
-        orp_setpoint = 5 * round(orp_setpoint / 5)
-        self.__orp_controller.setpoint = orp_setpoint
+        orp_setpoint = self.__orp_controller.setpoint
         self.__orp_controller.current = orp
         cl_feedback = self.__orp_controller.compute() if self.__orp_enable else 0
         self.__encoder.disinfection_cl_feedback(int(round(cl_feedback * 100)))
-        self.__encoder.disinfection_orp_setpoint(int(orp_setpoint))
         logger.debug("ORP: %d setpoint: %d feedback: %.2f" % (orp, orp_setpoint, cl_feedback))
         self.__cl.value = cl_feedback
         self._proxy.treat.defer()

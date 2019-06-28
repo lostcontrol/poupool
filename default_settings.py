@@ -73,8 +73,8 @@ def main():
     publish("/settings/disinfection/ph/enable", "1")
     publish("/settings/disinfection/ph/setpoint", "7")
     publish("/settings/disinfection/ph/pterm", "1.0")
-    publish("/settings/disinfection/free_chlorine", "low")
     publish("/settings/disinfection/orp/enable", "1")
+    publish("/settings/disinfection/orp/setpoint", "600")
     publish("/settings/disinfection/orp/pterm", "1.0")
 
     print("\n**** Missing default parameters ***")
