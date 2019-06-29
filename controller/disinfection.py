@@ -186,13 +186,13 @@ class Disinfection(PoupoolActor):
         self.__encoder.disinfection_state("halt")
         self.__ph.value = 0
         self.__cl.value = 0
-        self.__ph.do_cancel()
-        self.__cl.do_cancel()
+        self.__ph.do_cancel.defer()
+        self.__cl.do_cancel.defer()
         self.__devices.get_pump("ph").off()
         self.__devices.get_pump("cl").off()
         self.__encoder.disinfection_cl_feedback(0)
         self.__encoder.disinfection_ph_feedback(0)
-        self.__sensors_writer.do_cancel()
+        self.__sensors_writer.do_cancel.defer()
 
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
@@ -204,8 +204,8 @@ class Disinfection(PoupoolActor):
         logger.info("Entering constant state")
         self.__encoder.disinfection_state("constant")
         self.__cl.period = Disinfection.CL_PWM_PERIOD_CONSTANT
-        self.__cl.do_run()
-        self.__sensors_writer.do_cancel()
+        self.__cl.do_run.defer()
+        self.__sensors_writer.do_cancel.defer()
 
     @repeat(delay=10)
     def do_repeat_constant(self):
@@ -215,10 +215,10 @@ class Disinfection(PoupoolActor):
 
     def on_enter_running(self):
         logger.info("Entering running state")
-        self.__ph.do_run()
+        self.__ph.do_run.defer()
         self.__cl.period = Disinfection.CL_PWM_PERIOD
-        self.__cl.do_run()
-        self.__sensors_writer.do_write()
+        self.__cl.do_run.defer()
+        self.__sensors_writer.do_write.defer()
 
     def on_enter_running_adjusting(self):
         logger.debug("Entering adjusting state")
@@ -232,11 +232,10 @@ class Disinfection(PoupoolActor):
         self.__ph.value = ph_feedback
         # ORP/Chlorine
         orp = self.__sensors_reader.get_orp().get()
-        orp_setpoint = self.__orp_controller.setpoint
         self.__orp_controller.current = orp
         cl_feedback = self.__orp_controller.compute() if self.__orp_enable else 0
         self.__encoder.disinfection_cl_feedback(int(round(cl_feedback * 100)))
-        logger.debug("ORP: %d setpoint: %d feedback: %.2f" % (orp, orp_setpoint, cl_feedback))
+        logger.debug("ORP: %d feedback: %.2f" % (orp, cl_feedback))
         self.__cl.value = cl_feedback
         self._proxy.treat.defer()
 
