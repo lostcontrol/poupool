@@ -138,7 +138,7 @@ class Disinfection(PoupoolActor):
         # Chlorine
         self.__cl = PWM.start("cl", self.__devices.get_pump("cl")).proxy()
         self.__cl.period = Disinfection.CL_PWM_PERIOD
-        self.__cl_constant = 0.5
+        self.__cl_constant = 5.0
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Disinfection.states, initial="halt")
 
@@ -159,11 +159,11 @@ class Disinfection(PoupoolActor):
 
     def ph_setpoint(self, value):
         self.__ph_controller.setpoint = value
-        logger.info("pH setpoint set to: %f" % self.__ph_controller.setpoint)
+        logger.info("pH setpoint set to: %.2f" % self.__ph_controller.setpoint)
 
     def cl_constant(self, value):
         self.__cl_constant = value
-        logger.info("Chlore constant value set to: %f" % self.__cl_constant)
+        logger.info("Chlore constant value set to: %.2f" % self.__cl_constant)
 
     def orp_setpoint(self, value):
         self.__orp_controller.setpoint = value
@@ -172,11 +172,11 @@ class Disinfection(PoupoolActor):
     def ph_pterm(self, value):
         # We assume here that we use "pH minus" chemicals, therefore inverse the term.
         self.__ph_controller.pterm = -value
-        logger.info("pH pterm set to: %f" % self.__ph_controller.pterm)
+        logger.info("pH pterm set to: %.2f" % self.__ph_controller.pterm)
 
     def orp_pterm(self, value):
         self.__orp_controller.pterm = value
-        logger.info("ORP pterm set to: %f" % self.__orp_controller.pterm)
+        logger.info("ORP pterm set to: %.2f" % self.__orp_controller.pterm)
 
     def is_disabled(self):
         return self.__is_disabled

@@ -126,7 +126,7 @@ sitemap poupool label="Poupool"
                     Switch item=Poupool_Disinfection_PH_Enable icon="settings"
                     Setpoint item=Poupool_Disinfection_PH_Setpoint icon="settings" minValue=6 maxValue=8 step=0.1
                     Setpoint item=Poupool_Disinfection_PH_Pterm icon="settings" minValue=0 maxValue=10 step=0.1
-                    Setpoint item=Poupool_Disinfection_Cl_Constant icon="settings" minValue=0 maxValue=10 step=0.1
+                    Setpoint item=Poupool_Disinfection_Cl_Constant icon="settings" minValue=0 maxValue=50 step=0.5
                     Switch item=Poupool_Disinfection_ORP_Enable icon="settings"
                     Setpoint item=Poupool_Disinfection_ORP_Setpoint icon="settings" minValue=500 maxValue=700 step=10
                     Setpoint item=Poupool_Disinfection_ORP_Pterm icon="settings" minValue=0 maxValue=10 step=0.1

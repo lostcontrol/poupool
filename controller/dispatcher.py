@@ -258,7 +258,7 @@ class Dispatcher(object):
             ),
             "/settings/disinfection/cl/constant": (
                 disinfection,
-                between(0, 10),
+                between(0, 50),
                 lambda _: "cl_constant",
                 to_float,
                 False,
