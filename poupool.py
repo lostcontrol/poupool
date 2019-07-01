@@ -378,6 +378,10 @@ def main(args, devices):
     while running and all([actor.is_alive() for actor in main_actors]):
         time.sleep(0.5)
 
+    # If possible try to stop the filtration actor which in turn will stop others.
+    if filtration.actor_ref.is_alive():
+        filtration.halt()
+
     return 1 if running else 0
 
 
@@ -405,6 +409,8 @@ if __name__ == '__main__':
 
     # Handle SIGTERM nicely. It is used by systemd to stop us.
     signal.signal(signal.SIGTERM, sigterm_handler)
+    # Handle SIGINT. It is ctrl+c
+    signal.signal(signal.SIGINT, sigterm_handler)
 
     devices = DeviceRegistry()
     try:
@@ -416,8 +422,6 @@ if __name__ == '__main__':
             test(args, devices)
         else:
             sys.exit(main(args, devices))
-    except KeyboardInterrupt:
-        pass
     finally:
         pykka.ActorRegistry.stop_all()
         # Turn off all the devices on exit
