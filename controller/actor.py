@@ -43,10 +43,10 @@ def repeat(delay=10):
                 pass
             else:
                 if delay > 0:
-                    self._proxy.do_delay(delay, func.__name__)
+                    self._proxy.do_delay(delay, func.__name__,  *args, **kwargs)
                 else:
                     function = getattr(self._proxy, func.__name__)
-                    function(*args, **kwargs)
+                    function.defer(*args, **kwargs)
         return wrapped_func
     return wrap
 
@@ -61,8 +61,8 @@ def do_repeat():
                 pass
             else:
                 method = re.sub("on_enter_", "do_repeat_", func.__name__)
-                function = getattr(self, method)
-                function()
+                function = getattr(self._proxy, method)
+                function.defer()
         return wrapped_func
     return wrap
 
