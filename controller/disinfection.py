@@ -46,10 +46,11 @@ class PWM(PoupoolActor):
         self.value = 0.0
 
     def do_cancel(self):
+        super().do_cancel()
         # Clear the security duration counter and last time during a pause
         self.__security_duration.clear()
         self.__last = None
-        super().do_cancel()
+        self.__pump.off()
 
     def do_run(self):
         now = time.time()
@@ -188,8 +189,6 @@ class Disinfection(PoupoolActor):
         self.__cl.value = 0
         self.__ph.do_cancel.defer()
         self.__cl.do_cancel.defer()
-        self.__devices.get_pump("ph").off()
-        self.__devices.get_pump("cl").off()
         self.__encoder.disinfection_cl_feedback(0)
         self.__encoder.disinfection_ph_feedback(0)
         self.__sensors_writer.do_cancel.defer()
@@ -203,6 +202,7 @@ class Disinfection(PoupoolActor):
     def on_enter_constant(self):
         logger.info("Entering constant state")
         self.__encoder.disinfection_state("constant")
+        self.__ph.do_cancel.defer()
         self.__cl.period = Disinfection.CL_PWM_PERIOD_CONSTANT
         self.__cl.do_run.defer()
         self.__sensors_writer.do_cancel.defer()
