@@ -17,7 +17,6 @@
 
 import logging
 from .actor import PoupoolActor
-from .actor import repeat
 from serial.serialutil import SerialException
 
 logger = logging.getLogger(__name__)
@@ -61,10 +60,10 @@ class Lcd(PoupoolActor):
             logger.exception("Unable to open LCD, ignoring the device")
             self.__lcdbackpack = None
 
-    @repeat(delay=UPDATE_DELAY)
     def do_update(self):
         self.__lcdbackpack.set_cursor_home()
         self.__lcdbackpack.write(self.get_string())
+        self.do_delay(self.UPDATE_DELAY, self.do_update.__name__)
 
     def get_string(self):
         state = self.__cache.get("filtration_state", "--")

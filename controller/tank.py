@@ -20,7 +20,7 @@ import datetime
 # from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor
 from .actor import PoupoolModel
-from .actor import StopRepeatException, repeat, do_repeat
+from .actor import StopRepeatException, do_repeat
 from .config import config
 
 logger = logging.getLogger(__name__)
@@ -100,17 +100,17 @@ class Tank(PoupoolActor):
             self._proxy.normal.defer()
             raise StopRepeatException
 
-    @repeat(delay=STATE_REFRESH_DELAY / 2)
     def do_repeat_fill(self):
         # Security feature: stop if we stay too long in this state
         if self.__machine.get_time_in_state() > datetime.timedelta(hours=2):
             logger.warning("Tank TOO LONG in fill state, stopping")
             self.get_actor("Filtration").halt.defer()
-            raise StopRepeatException
+            return
         height = self.__get_tank_height()
         if height > self.levels_too_low:
             self._proxy.low.defer()
-            raise StopRepeatException
+            return
+        self.do_delay(self.STATE_REFRESH_DELAY / 2, self.do_repeat_fill.__name__)
 
     @do_repeat()
     def on_enter_low(self):
@@ -118,21 +118,21 @@ class Tank(PoupoolActor):
         self.__encoder.tank_state("low")
         self.__devices.get_valve("main").on()
 
-    @repeat(delay=STATE_REFRESH_DELAY / 2)
     def do_repeat_low(self):
         # Security feature: stop if we stay too long in this state
         if self.__machine.get_time_in_state() > datetime.timedelta(hours=6):
             logger.warning("Tank TOO LONG in low state, stopping")
             self.get_actor("Filtration").halt.defer()
-            raise StopRepeatException
+            return
         height = self.__get_tank_height()
         if height >= self.levels["low"] + self.hysteresis:
             self._proxy.normal.defer()
-            raise StopRepeatException
+            return
         elif height < self.levels_too_low:
             logger.warning("Tank TOO LOW, stopping: %d" % height)
             self.get_actor("Filtration").halt.defer()
-            raise StopRepeatException
+            return
+        self.do_delay(self.STATE_REFRESH_DELAY / 2, self.do_repeat_low.__name__)
 
     @do_repeat()
     def on_enter_normal(self):
@@ -140,15 +140,15 @@ class Tank(PoupoolActor):
         self.__encoder.tank_state("normal")
         self.__devices.get_valve("main").off()
 
-    @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_normal(self):
         height = self.__get_tank_height()
         if height < self.levels["low"] - self.hysteresis:
             self._proxy.low.defer()
-            raise StopRepeatException
+            return
         elif height >= self.levels["high"] + self.hysteresis:
             self._proxy.high.defer()
-            raise StopRepeatException
+            return
+        self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_normal.__name__)
 
     @do_repeat()
     def on_enter_high(self):
@@ -156,9 +156,9 @@ class Tank(PoupoolActor):
         self.__encoder.tank_state("high")
         self.__devices.get_valve("main").off()
 
-    @repeat(delay=STATE_REFRESH_DELAY * 2)
     def do_repeat_high(self):
         height = self.__get_tank_height()
         if height < self.levels["high"] - self.hysteresis:
             self._proxy.normal.defer()
-            raise StopRepeatException
+        else:
+            self.do_delay(self.STATE_REFRESH_DELAY * 2, self.do_repeat_high.__name__)

@@ -31,26 +31,6 @@ class StopRepeatException(Exception):
     pass
 
 
-def repeat(delay=10):
-    assert delay >= 0
-
-    def wrap(func):
-        @functools.wraps(func)
-        def wrapped_func(self, *args, **kwargs):
-            try:
-                func(self, *args, **kwargs)
-            except StopRepeatException:
-                pass
-            else:
-                if delay > 0:
-                    self._proxy.do_delay(delay, func.__name__,  *args, **kwargs)
-                else:
-                    function = getattr(self._proxy, func.__name__)
-                    function.defer(*args, **kwargs)
-        return wrapped_func
-    return wrap
-
-
 def do_repeat():
     def wrap(func):
         @functools.wraps(func)
@@ -117,8 +97,12 @@ class PoupoolActor(pykka.ThreadingActor):
 
     def do_delay(self, delay, method, *args, **kwargs):
         assert type(method) == str
+        assert delay >= 0
         # Stop an already running timer
         self.__do_cancel()
         func = getattr(self._proxy, method)
-        self.__timer = Timer(delay, func.defer, *args, **kwargs)
-        self.__timer.start()
+        if delay > 0:
+            self.__timer = Timer(delay, func.defer, *args, **kwargs)
+            self.__timer.start()
+        else:
+            func.defer(*args, **kwargs)

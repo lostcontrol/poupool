@@ -19,7 +19,7 @@ import logging
 from datetime import datetime, timedelta
 from .actor import PoupoolActor
 from .actor import PoupoolModel
-from .actor import StopRepeatException, repeat, do_repeat
+from .actor import do_repeat
 from .config import config
 from .util import Duration
 
@@ -65,12 +65,12 @@ class Heater(PoupoolActor):
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
 
-    @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_waiting(self):
         temp = self.__read_temperature()
         if temp < self.__setpoint - Heater.HYSTERESIS_DOWN:
             self._proxy.heat.defer()
-            raise StopRepeatException
+        else:
+            self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_waiting.__name__)
 
     @do_repeat()
     def on_enter_heating(self):
@@ -80,12 +80,12 @@ class Heater(PoupoolActor):
     def on_exit_heating(self):
         self.__heater.off()
 
-    @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_heating(self):
         temp = self.__read_temperature()
         if temp > self.__setpoint + Heater.HYSTERESIS_UP:
             self._proxy.wait.defer()
-            raise StopRepeatException
+        else:
+            self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_heating.__name__)
 
 
 class Heating(PoupoolActor):
@@ -186,12 +186,13 @@ class Heating(PoupoolActor):
         self.__devices.get_valve("heating").off()
         self.__encoder.heating_state("waiting")
 
-    @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_waiting(self):
         if not self.__enable:
+            self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_waiting.__name__)
             return
         # First, we check if the daily run is due
         if datetime.now() < self.__next_start:
+            self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_waiting.__name__)
             return
         # After the time constrain is fulfilled, we check if the temperature is low enough to
         # require heating. If not, then we say it's all good for today and schedule another heating
@@ -200,13 +201,16 @@ class Heating(PoupoolActor):
             # No need to heat today. Schedule for next day
             self.__set_next_start()
             logger.info("No heating needed today. Scheduled for %s" % self.__next_start)
+            self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_waiting.__name__)
             return
         # We ensure the outside temperature is high enough to get a good efficiency from the
         # heat pump
         if self.__read_temperature("temperature_air") < self.__min_temp:
+            self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_waiting.__name__)
             return
         # Finally we check that filtration is ready to be switched to heating
         if not self.filtration_ready_for_heating():
+            self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_waiting.__name__)
             return
         # All pre-conditions ok, we can start heating now
         self.get_actor("Filtration").heat().get()
@@ -214,7 +218,8 @@ class Heating(PoupoolActor):
         # we will call StopRepeatException but never land in the heating state.
         if self.filtration_allow_heating():
             self._proxy.heat.defer()
-            raise StopRepeatException
+        else:
+            self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_waiting.__name__)
 
     @do_repeat()
     def on_enter_heating(self):
@@ -223,18 +228,18 @@ class Heating(PoupoolActor):
         self.__encoder.heating_state("heating")
         self.__devices.get_valve("heating").on()
 
-    @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_heating(self):
         temperature_pool = self.__read_temperature()
         if temperature_pool >= self.__setpoint + Heating.HYSTERESIS_UP or not self.__enable:
             self._proxy.wait.defer()
-            raise StopRepeatException
+            return
         # If the air temperature goes too low, we stop the heat pump otherwise the efficiency
         # will be too bad.
         temperature_air = self.__read_temperature("temperature_air")
         if temperature_air < self.__min_temp - Heating.HYSTERESIS_MIN_TEMP:
             self._proxy.wait.defer()
-            raise StopRepeatException
+            return
+        self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_heating.__name__)
 
     def on_exit_heating(self):
         logger.info("Exiting heating state")

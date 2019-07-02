@@ -18,7 +18,6 @@
 import paho.mqtt.client as mqtt
 import logging
 from .actor import PoupoolActor
-from .actor import StopRepeatException, repeat
 
 logger = logging.getLogger(__name__)
 
@@ -51,24 +50,21 @@ class Mqtt(PoupoolActor):
         if rc != 0 and self.__run:
             self.do_connect()
 
-    @repeat(delay=5)
     def do_connect(self):
         try:
             self.__client.connect("localhost")
         except Exception as e:
             logger.error("Unable to connect to MQTT broker: %s" % e)
-        else:
-            raise StopRepeatException
+            self.do_delay(5, self.do_connect.__name__)
 
     def do_start(self):
         self.do_connect()
         self._proxy.do_loop()
 
-    @repeat(delay=0)
     def do_loop(self):
-        if not self.__run:
-            raise StopRepeatException()
         self.__client.loop(timeout=0.05)
+        if self.__run:
+            self.do_delay(0, self.do_loop.__name__)
 
     def do_stop(self):
         self.__run = False

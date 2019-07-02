@@ -19,7 +19,7 @@ import logging
 # from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor
 from .actor import PoupoolModel
-from .actor import repeat, do_repeat
+from .actor import do_repeat
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,6 @@ class Arduino(PoupoolActor):
     def on_enter_run(self):
         logger.info("Entering run state")
 
-    @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_run(self):
         # Water counter
         value = self.__arduino.water_counter
@@ -80,3 +79,4 @@ class Arduino(PoupoolActor):
             self.__water_counter_last = value
         else:
             logger.error("Unable to read water counter. Not updating the value")
+        self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_run.__name__)

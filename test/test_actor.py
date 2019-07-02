@@ -18,7 +18,7 @@
 import pytest
 import pykka
 import time
-from controller.actor import PoupoolActor, repeat
+from controller.actor import PoupoolActor
 
 
 class MyPoupoolActor(PoupoolActor):
@@ -28,6 +28,7 @@ class MyPoupoolActor(PoupoolActor):
         self.cancelled = 0
         self.run = 0
         self.single = 0
+        self.long = 0
 
     def do_cancel(self):
         self.cancelled += 1
@@ -36,9 +37,14 @@ class MyPoupoolActor(PoupoolActor):
     def do_single(self):
         self.single += 1
 
-    @repeat(delay=1)
+    def do_long(self):
+        time.sleep(1)
+        self.long += 1
+        self.do_delay(0.1, self.do_long.__name__)
+
     def do_run(self):
         self.run += 1
+        self.do_delay(1, self.do_run.__name__)
 
 
 @pytest.fixture
@@ -80,3 +86,11 @@ class TestPoupoolActor:
         time.sleep(2)
         assert poupool_actor.single.get() == 1
         assert poupool_actor.cancelled.get() == 0
+
+    def test_long_cancel(self, poupool_actor):
+        poupool_actor.do_long.defer()
+        time.sleep(0.5)
+        poupool_actor.do_cancel.defer()
+        time.sleep(2)
+        assert poupool_actor.long.get() == 1
+        assert poupool_actor.cancelled.get() == 1

@@ -19,7 +19,6 @@ import logging
 import statistics
 import collections
 from .actor import PoupoolActor
-from .actor import repeat
 from datetime import timedelta
 
 logger = logging.getLogger(__name__)
@@ -75,9 +74,9 @@ class DisinfectionReader(BaseReader):
     def get_orp(self):
         return self.values["orp"].mean()
 
-    @repeat(delay=DELAY_SECONDS)
     def do_read(self):
         super().do_read()
+        self.do_delay(self.DELAY_SECONDS, self.do_read.__name__)
 
 
 class DisinfectionWriter(PoupoolActor):
@@ -89,7 +88,6 @@ class DisinfectionWriter(PoupoolActor):
         self.__encoder = encoder
         self.__reader = reader
 
-    @repeat(delay=DELAY_SECONDS)
     def do_write(self):
         orp = self.__reader.get_orp().get()
         if orp:
@@ -97,6 +95,7 @@ class DisinfectionWriter(PoupoolActor):
         ph = self.__reader.get_ph().get()
         if ph:
             self.__encoder.disinfection_ph_value("%.2f" % ph)
+        self.do_delay(self.DELAY_SECONDS, self.do_write.__name__)
 
 
 class TemperatureReader(BaseReader):
@@ -114,9 +113,9 @@ class TemperatureReader(BaseReader):
     def get_all_temperatures(self):
         return {k: v.mean() for k, v in self.values.items()}
 
-    @repeat(delay=DELAY_SECONDS)
     def do_read(self):
         super().do_read()
+        self.do_delay(self.DELAY_SECONDS, self.do_read.__name__)
 
 
 class TemperatureWriter(PoupoolActor):
@@ -128,7 +127,6 @@ class TemperatureWriter(PoupoolActor):
         self.__encoder = encoder
         self.__reader = reader
 
-    @repeat(delay=DELAY_SECONDS)
     def do_write(self):
         for name, value in self.__reader.get_all_temperatures().get().items():
             if value is not None:
@@ -138,3 +136,4 @@ class TemperatureWriter(PoupoolActor):
                 f(rounded)
             else:
                 logger.warning("Temperature (%s) cannot be read!!!" % name)
+        self.do_delay(self.DELAY_SECONDS, self.do_write.__name__)

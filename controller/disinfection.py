@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 import logging
 from .actor import PoupoolModel
 from .actor import PoupoolActor
-from .actor import repeat, do_repeat
+from .actor import do_repeat
 from .util import constrain, Timer
 from .config import config
 
@@ -51,7 +51,6 @@ class PWM(PoupoolActor):
         self.__last = None
         super().do_cancel()
 
-    @repeat(delay=1)
     def do_run(self):
         now = time.time()
         if self.__last is not None:
@@ -86,6 +85,7 @@ class PWM(PoupoolActor):
             self.__security_duration.reset()
             self.__security_reset += timedelta(days=1)
         self.__last = now
+        self.do_delay(1, self.do_run.__name__)
 
 
 class PController(object):
@@ -207,11 +207,11 @@ class Disinfection(PoupoolActor):
         self.__cl.do_run.defer()
         self.__sensors_writer.do_cancel.defer()
 
-    @repeat(delay=10)
     def do_repeat_constant(self):
         cl_feedback = self.__cl_constant / 100. if self.__orp_enable else 0
         self.__encoder.disinfection_cl_feedback(int(round(100 * cl_feedback)))
         self.__cl.value = cl_feedback
+        self.do_delay(10, self.do_repeat_constant.__name__)
 
     def on_enter_running(self):
         logger.info("Entering running state")

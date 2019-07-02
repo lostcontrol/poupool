@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 # from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor
 from .actor import PoupoolModel
-from .actor import StopRepeatException, repeat, do_repeat
+from .actor import do_repeat
 from .util import Timer
 from .config import config
 
@@ -92,22 +92,22 @@ class Swim(PoupoolActor):
         self.__encoder.swim_state("timed")
         self.__timer.reset()
 
-    @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_timed(self):
         self.__devices.get_pump("swim").speed(self.__speed)
         self.__timer.update(datetime.now())
         if self.__timer.elapsed():
             self._proxy.halt.defer()
-            raise StopRepeatException
+        else:
+            self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_timed.__name__)
 
     @do_repeat()
     def on_enter_continuous(self):
         logger.info("Entering continuous state")
         self.__encoder.swim_state("continuous")
 
-    @repeat(delay=STATE_REFRESH_DELAY)
     def do_repeat_continuous(self):
         self.__devices.get_pump("swim").speed(self.__speed)
+        self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_continuous.__name__)
 
     @do_repeat()
     def on_enter_wintering_waiting(self):
@@ -115,13 +115,13 @@ class Swim(PoupoolActor):
         self.__encoder.swim_state("wintering_waiting")
         self.__devices.get_pump("swim").off()
 
-    @repeat(delay=2 * 60)
     def do_repeat_wintering_waiting(self):
         if self.__machine.get_time_in_state() > timedelta(seconds=Swim.WINTERING_PERIOD):
             temperature = self.__temperature.get_temperature("temperature_ncc").get()
             if temperature <= Swim.WINTERING_ONLY_BELOW:
                 self._proxy.wintering_stir.defer()
-                raise StopRepeatException
+                return
+        self.do_delay(2 * 60, self.do_repeat_wintering_waiting.__name__)
 
     def on_enter_wintering_stir(self):
         logger.info("Entering wintering stir state")
