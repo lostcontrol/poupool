@@ -510,7 +510,7 @@ class Filtration(PoupoolActor):
             # Because of roundings, the cover might still need to move just a little more to reach
             # 0. But if we want to stop the cover somewhere in between, we exit the state directly.
             if self.__cover_position_eco == 0:
-                self._proxy.do_delay(2, "closed")
+                self.do_delay(2, "closed")
             else:
                 self._proxy.closed.defer()
         else:
@@ -540,7 +540,7 @@ class Filtration(PoupoolActor):
         if position == 100:
             # Because of roundings, the cover might still need to move just a little more.
             # We wait a bit more before exiting the state.
-            self._proxy.do_delay(2, "opened")
+            self.do_delay(2, "opened")
         else:
             self.do_delay(5, self.do_repeat_opening.__name__)
 
@@ -565,11 +565,11 @@ class Filtration(PoupoolActor):
         self.__eco_mode.update(datetime.now(), 0)
         self.__eco_mode.compute()
         if self.__eco_mode.off_duration.total_seconds() > 0:
-            self._proxy.do_delay(5, "eco_waiting")
+            self.do_delay(5, "eco_waiting")
         elif self.__eco_mode.on_duration.total_seconds() > 0:
-            self._proxy.do_delay(5, "eco_normal")
+            self.do_delay(5, "eco_normal")
         else:
-            self._proxy.do_delay(5, "eco_waiting")
+            self.do_delay(5, "eco_waiting")
 
     @do_repeat()
     def on_enter_eco_normal(self):
@@ -639,13 +639,13 @@ class Filtration(PoupoolActor):
     def on_enter_heating_delay_none(self):
         # The heat pump manual says it runs the main pump for 30 seconds after the heat pump has
         # switched off. We go for 60 seconds here to be sure (and since it is easy to do it)
-        self._proxy.do_delay(Filtration.HEATING_DELAY_TO_ECO, "heating_delayed")
+        self.do_delay(Filtration.HEATING_DELAY_TO_ECO, "heating_delayed")
 
     def on_enter_heating_delay_standby(self):
-        self._proxy.do_delay(Filtration.HEATING_DELAY_TO_OPEN, "heating_delayed")
+        self.do_delay(Filtration.HEATING_DELAY_TO_OPEN, "heating_delayed")
 
     def on_enter_heating_delay_overflow(self):
-        self._proxy.do_delay(Filtration.HEATING_DELAY_TO_OPEN, "heating_delayed")
+        self.do_delay(Filtration.HEATING_DELAY_TO_OPEN, "heating_delayed")
 
     @do_repeat()
     def on_enter_eco_waiting(self):
@@ -684,7 +684,7 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("tank").on()
         self.__devices.get_pump("boost").on()
         self.__devices.get_pump("variable").speed(3)
-        self._proxy.do_delay(self.__boost_duration.total_seconds(), "standby")
+        self.do_delay(self.__boost_duration.total_seconds(), "standby")
 
     @do_repeat()
     def on_enter_standby_normal(self):
@@ -747,7 +747,7 @@ class Filtration(PoupoolActor):
         self.__encoder.filtration_state("overflow_boost")
         self.__devices.get_pump("variable").speed(3)
         self.__devices.get_pump("boost").on()
-        self._proxy.do_delay(self.__boost_duration.total_seconds(), "overflow")
+        self.do_delay(self.__boost_duration.total_seconds(), "overflow")
 
     @do_repeat()
     def on_enter_overflow_normal(self):
@@ -783,13 +783,13 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("backwash").on()
         time.sleep(2)
         self.__devices.get_valve("drain").on()
-        self._proxy.do_delay(self.__backwash_backwash_duration.total_seconds(), "rinse")
+        self.do_delay(self.__backwash_backwash_duration.total_seconds(), "rinse")
 
     def on_enter_wash_rinse(self):
         logger.info("Entering rinse state")
         self.__encoder.filtration_state("rinse")
         self.__devices.get_valve("backwash").off()
-        self._proxy.do_delay(self.__backwash_rinse_duration.total_seconds(), "eco")
+        self.do_delay(self.__backwash_rinse_duration.total_seconds(), "eco")
 
     def on_exit_wash_rinse(self):
         logger.info("Exiting rinse state")
@@ -823,7 +823,7 @@ class Filtration(PoupoolActor):
         logger.info("Entering wintering stir state")
         self.__encoder.filtration_state("wintering_stir")
         self.__devices.get_pump("variable").speed(Filtration.WINTERING_PUMP_SPEED)
-        self._proxy.do_delay(Filtration.WINTERING_DURATION, "wintering_waiting")
+        self.do_delay(Filtration.WINTERING_DURATION, "wintering_waiting")
 
     def on_exit_wintering(self):
         logger.info("Exiting wintering state")

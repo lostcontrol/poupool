@@ -127,4 +127,4 @@ class Swim(PoupoolActor):
         logger.info("Entering wintering stir state")
         self.__encoder.swim_state("wintering_stir")
         self.__devices.get_pump("swim").on()
-        self._proxy.do_delay(Swim.WINTERING_DURATION, "wintering_waiting")
+        self.do_delay(Swim.WINTERING_DURATION, "wintering_waiting")

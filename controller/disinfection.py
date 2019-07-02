@@ -196,7 +196,7 @@ class Disinfection(PoupoolActor):
     def on_enter_waiting(self):
         logger.info("Entering waiting state")
         self.__encoder.disinfection_state("waiting")
-        self._proxy.do_delay(Disinfection.START_DELAY, "run")
+        self.do_delay(Disinfection.START_DELAY, "run")
 
     @do_repeat()
     def on_enter_constant(self):
@@ -242,4 +242,4 @@ class Disinfection(PoupoolActor):
     def on_enter_running_treating(self):
         logger.debug("Entering treating state")
         self.__encoder.disinfection_state("treating")
-        self._proxy.do_delay(Disinfection.WAITING_DELAY, "adjust")
+        self.do_delay(Disinfection.WAITING_DELAY, "adjust")
