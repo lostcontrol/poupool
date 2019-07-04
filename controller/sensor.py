@@ -61,8 +61,8 @@ class BaseReader(PoupoolActor):
 
 class DisinfectionReader(BaseReader):
 
-    DELAY_SECONDS = 60
-    DURATION = timedelta(minutes=10)
+    DELAY_SECONDS = 120
+    DURATION = timedelta(hours=4)
 
     def __init__(self, sensors):
         samples = int(self.DURATION.total_seconds() // self.DELAY_SECONDS)
