@@ -727,7 +727,7 @@ class Filtration(PoupoolActor):
         self.__disinfection_constant()
 
     def do_repeat_comfort(self):
-        self.__eco_mode.update(datetime.now())
+        self.__eco_mode.update(datetime.now(), 0.5)
         actor = self.get_actor("Heating")
         if not actor.is_forcing().get() and not actor.is_recovering().get():
             actor.force.defer()
@@ -767,7 +767,7 @@ class Filtration(PoupoolActor):
         self.__actor_halt("Swim")
 
     def do_repeat_overflow_normal(self):
-        self.__eco_mode.update(datetime.now(), 2 if self.__speed_overflow > 2 else 1)
+        self.__eco_mode.update(datetime.now(), 1 if self.__speed_overflow > 2 else 0.5)
         self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_overflow_normal.__name__)
 
     def on_enter_wash(self):
