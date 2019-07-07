@@ -24,42 +24,29 @@ from datetime import timedelta
 logger = logging.getLogger(__name__)
 
 
-class MovingFilter:
+class MovingAverage:
 
-    def __init__(self, function, maxlen):
-        self._function = function
-        self._data = collections.deque(maxlen=maxlen)
+    def __init__(self, maxlen):
+        self.__data = collections.deque(maxlen=maxlen)
 
     def clear(self):
-        self._data.clear()
+        self.__data.clear()
 
     def push(self, value):
-        self._data.append(value)
+        self.__data.append(value)
 
     def mean(self):
-        return self._function(self._data) if self._data else None
-
-
-class MovingAverage(MovingFilter):
-
-    def __init__(self, maxlen):
-        MovingFilter.__init__(self, statistics.mean, maxlen)
-
-
-class MovingMedian(MovingFilter):
-
-    def __init__(self, maxlen):
-        MovingFilter.__init__(self, statistics.median, maxlen)
+        return statistics.mean(self.__data) if self.__data else None
 
 
 class BaseReader(PoupoolActor):
 
-    def __init__(self, sensors, maxlen=10, moving_filter=MovingAverage):
+    def __init__(self, sensors, maxlen=10):
         super().__init__()
         self.__sensors = sensors
         self.__values = {}
         for sensor in self.__sensors:
-            self.__values[sensor.name] = moving_filter(maxlen=maxlen)
+            self.__values[sensor.name] = MovingAverage(maxlen=maxlen)
 
     @property
     def values(self):
@@ -79,7 +66,7 @@ class DisinfectionReader(BaseReader):
 
     def __init__(self, sensors):
         samples = int(self.DURATION.total_seconds() // self.DELAY_SECONDS)
-        super().__init__(sensors, samples, MovingMedian)
+        super().__init__(sensors, samples)
 
     def get_ph(self):
         return self.values["ph"].mean()
