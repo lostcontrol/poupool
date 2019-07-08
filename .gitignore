@@ -58,3 +58,6 @@ target/
 
 # Local config
 config.ini.local
+
+# Backup
+backup.txt
