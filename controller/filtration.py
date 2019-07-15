@@ -184,12 +184,11 @@ class StirMode(object):
         # We only activate the stir mode if the sun elevation is greater than ~20°.
         # No need to stir at night, this mode is meant to lower the solar cover
         # temperature.
-        if self.__astral.solar_elevation() >= StirMode.SOLAR_ELEVATION:
-            if self.__period > timedelta() and self.__current.elapsed():
-                if self.__stir_state:
-                    self.__pause()
-                else:
-                    self.__stir()
+        if self.__period > timedelta() and self.__current.elapsed():
+            if self.__stir_state:
+                self.__pause()
+            elif self.__astral.solar_elevation() >= StirMode.SOLAR_ELEVATION:
+                self.__stir()
 
 
 class Filtration(PoupoolActor):
