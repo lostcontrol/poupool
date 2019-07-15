@@ -164,9 +164,14 @@ class StirMode(object):
             self.__duration = duration
             logger.info("Stir duration set to: %s" % self.__duration)
 
-    def __pause(self):
+    def __pause(self, now):
+        if self.__stir_state or now is None:
+            delay = max(timedelta(), self.__period - self.__duration)
+        else:
+            self.__current.update(now)
+            delay = self.__current.remaining
         self.__stir_state = False
-        self.__current.delay = max(timedelta(), self.__period - self.__duration)
+        self.__current.delay = delay
         self.__devices.get_pump("boost").off()
         logger.info("Stir deactivated for %s" % self.__current.delay)
 
@@ -176,8 +181,8 @@ class StirMode(object):
         self.__devices.get_pump("boost").on()
         logger.info("Stir activated for %s" % self.__current.delay)
 
-    def clear(self):
-        self.__pause()
+    def clear(self, now):
+        self.__pause(now)
 
     def update(self, now):
         self.__current.update(now)
@@ -186,7 +191,7 @@ class StirMode(object):
         # temperature.
         if self.__period > timedelta() and self.__current.elapsed():
             if self.__stir_state:
-                self.__pause()
+                self.__pause(None)
             elif self.__astral.solar_elevation() >= StirMode.SOLAR_ELEVATION:
                 self.__stir()
 
@@ -493,6 +498,10 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("tank").off()
         self.__devices.get_valve("drain").off()
 
+    def on_exit_halt(self):
+        logger.info("Exiting halt state")
+        self.__stir_mode.clear(None)
+
     @do_repeat()
     def on_enter_closing(self):
         logger.info("Entering closing state")
@@ -523,6 +532,8 @@ class Filtration(PoupoolActor):
         logger.info("Exiting closing state")
         # stop the roller shutter
         self.get_actor("Arduino").cover_stop.defer()
+        # Clear the stir mode, we were opened before so we likely do not need to stir immediately
+        self.__stir_mode.clear(None)
 
     @do_repeat()
     def on_enter_opening(self):
@@ -583,9 +594,10 @@ class Filtration(PoupoolActor):
         self.__devices.get_pump("variable").speed(self.__speed_eco)
 
     def do_repeat_eco_normal(self):
+        now = datetime.now()
         if self.__start_backwash():
             self._proxy.wash.defer()
-        elif self.__eco_mode.update(datetime.now()):
+        elif self.__eco_mode.update(now):
             self.__reload_eco()
         elif self.__eco_mode.elapsed_on():
             if self.tank_is_low():
@@ -593,6 +605,7 @@ class Filtration(PoupoolActor):
             elif self.__eco_mode.tank_duration > timedelta():
                 self._proxy.eco_tank.defer()
         else:
+            self.__stir_mode.update(now)
             self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_eco_normal.__name__)
 
     @do_repeat()
@@ -601,6 +614,7 @@ class Filtration(PoupoolActor):
         self.__encoder.filtration_state("eco_tank")
         self.__eco_mode.set_current(self.__eco_mode.tank_duration)
         self.__actor_halt("Disinfection")
+        self.__stir_mode.clear(datetime.now())
         self.__devices.get_valve("tank").on()
         # We force the speed to 1 in tank mode because otherwise the tank will be emptied
         # too quickly and the pool will overflow.
@@ -626,14 +640,16 @@ class Filtration(PoupoolActor):
         self.__devices.get_pump("variable").speed(2)
 
     def do_repeat_heating_running(self):
-        # We are running at speed 2 so count a bit more than 1 for the filteration
-        self.__eco_mode.update(datetime.now(), 1.1)
+        now = datetime.now()
+        self.__eco_mode.update(now)
+        self.__stir_mode.update(now)
         self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_heating_running.__name__)
 
     def on_exit_heating_running(self):
         actor = self.get_actor("Heating")
         if actor.is_heating().get():
             actor.wait.defer()
+        self.__stir_mode.clear(datetime.now())
 
     def on_enter_heating_delay(self):
         logger.info("Entering heating_delay state")
@@ -657,7 +673,6 @@ class Filtration(PoupoolActor):
         self.__eco_mode.set_current(self.__eco_mode.off_duration)
         self.__actor_halt("Disinfection")
         self.__devices.get_pump("variable").off()
-        self.__stir_mode.clear()
 
     def do_repeat_eco_waiting(self):
         now = datetime.now()
@@ -671,10 +686,6 @@ class Filtration(PoupoolActor):
             # Update the stir mode at the end so we do not switch the boost pumps for nothing.
             self.__stir_mode.update(now)
             self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_eco_waiting.__name__)
-
-    def on_exit_eco_waiting(self):
-        logger.info("Exiting eco_waiting state")
-        self.__stir_mode.clear()
 
     def on_enter_standby(self):
         logger.info("Entering standby state")
@@ -776,6 +787,7 @@ class Filtration(PoupoolActor):
     def on_enter_wash(self):
         logger.info("Entering wash state")
         self.__actor_halt("Disinfection")
+        self.__stir_mode.clear(datetime.now())
 
     def on_enter_wash_backwash(self):
         logger.info("Entering backwash state")
