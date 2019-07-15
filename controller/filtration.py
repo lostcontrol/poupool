@@ -319,7 +319,11 @@ class Filtration(PoupoolActor):
         # since there is actually no state change). So we jump to the reload state and back to
         # workaround this.
         self.__machine.add_transition("reload", ["eco", "standby", "overflow"], "reload")
-        # self.__machine.get_graph().draw("filtration.png", prog="dot")
+        # Export the FSM
+        from transitions.extensions import HierarchicalGraphMachine
+        if isinstance(self.__machine, HierarchicalGraphMachine):
+            args = "-Grankdir=LR -Goverlap=false -Gsplines=true -Gratio=1 -Gsep=.3"
+            self.__machine.get_graph().draw("filtration.svg", prog="dot", args=args)
 
     def __reload_eco(self):
         if self.is_eco(allow_substates=True):
