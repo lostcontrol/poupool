@@ -165,21 +165,17 @@ class StirMode(object):
             logger.info("Stir duration set to: %s" % self.__duration)
 
     def __pause(self, now):
-        if self.__stir_state or now is None:
-            delay = max(timedelta(), self.__period - self.__duration)
-        else:
-            self.__current.update(now)
-            delay = self.__current.remaining
+        if now is None:
+            self.__current.delay = max(timedelta(), self.__period - self.__duration)
         self.__stir_state = False
-        self.__current.delay = delay
         self.__devices.get_pump("boost").off()
-        logger.info("Stir deactivated for %s" % self.__current.delay)
+        logger.info("Stir deactivated for %s" % self.__current.remaining)
 
     def __stir(self):
         self.__stir_state = True
         self.__current.delay = self.__duration
         self.__devices.get_pump("boost").on()
-        logger.info("Stir activated for %s" % self.__current.delay)
+        logger.info("Stir activated for %s" % self.__current.remaining)
 
     def clear(self, now):
         self.__pause(now)
