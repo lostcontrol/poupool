@@ -11,4 +11,4 @@ lcdbackpack==1.0.0b1
 codecov==2.0.15
 pytest==5.1.2
 pytest-cov==2.7.1
-pytest-mock==1.10.4
+pytest-mock==1.11.1
