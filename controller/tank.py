@@ -82,7 +82,7 @@ class Tank(PoupoolActor):
 
     def set_mode(self, mode):
         logger.info("Tank level set to %s" % mode)
-        self.levels = self.levels_eco if mode is "eco" else self.levels_overflow
+        self.levels = self.levels_eco if mode == "eco" else self.levels_overflow
 
     def on_enter_halt(self):
         logger.info("Entering halt state")
