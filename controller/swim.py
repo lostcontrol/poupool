@@ -74,7 +74,8 @@ class Swim(PoupoolActor):
 
     def filtration_allow_swim(self):
         actor = self.get_actor("Filtration")
-        is_opened = actor.is_overflow_normal().get() or actor.is_standby_normal().get() or actor.is_comfort().get()
+        is_opened = actor.is_overflow_normal().get() or actor.is_standby_normal().get()
+        is_opened = is_opened or actor.is_comfort().get()
         return is_opened or self.filtration_is_wintering()
 
     def filtration_is_wintering(self):

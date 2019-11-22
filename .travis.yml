@@ -9,7 +9,7 @@ before_install:
 install:
   - pip install -r requirements.txt
 script:
-  - flake8 --max-line-length=120 *.py controller/
+  - flake8 --max-line-length=100 *.py controller/
   - pytest --cov=controller --cov-report term test/
   - python poupool.py --fake-devices --test-start
 after_success:
