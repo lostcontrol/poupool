@@ -42,7 +42,6 @@ class EcoMode(object):
         self.period_duration = timedelta(hours=1)
         self.off_duration = timedelta()
         self.on_duration = timedelta()
-        self.stir_duration = timedelta()
         self.tank_duration = timedelta()
         self.__duration_last_save = datetime.now()
 
