@@ -28,7 +28,7 @@ Bridge mqtt:broker:unsecure [ host="poupool", secure=false ] {
         Type number : Filtration_BackwashRinseDuration [ stateTopic="/settings/filtration/backwash/rinse_duration", commandTopic="/settings/filtration/backwash/rinse_duration", retained="true" ]
         Type string : Filtration_BackwashLast [ stateTopic="/status/filtration/backwash/last" ]
 
-        Type string : Swim_Mode [ commandTopic="/settings/swim/mode" ]
+        Type string : Swim_Mode [ stateTopic="/status/swim/state", commandTopic="/settings/swim/mode" ]
         Type string : Swim_State [ stateTopic="/status/swim/state" ]
         Type number : Swim_Timer [ stateTopic="/settings/swim/timer", commandTopic="/settings/swim/timer", retained="true" ]
         Type number : Swim_Speed [ stateTopic="/settings/swim/speed", commandTopic="/settings/swim/speed", retained="true" ]
@@ -47,7 +47,7 @@ Bridge mqtt:broker:unsecure [ host="poupool", secure=false ] {
         Type number : Heating_HourOfStart [ stateTopic="/settings/heating/start_hour", commandTopic="/settings/heating/start_hour", retained="true" ]
         Type number : Heating_MinTemp [ stateTopic="/settings/heating/min_temp", commandTopic="/settings/heating/min_temp", retained="true" ]
 
-        Type string : Light_Mode [ commandTopic="/settings/light/mode" ]
+        Type string : Light_Mode [ stateTopic="/status/light/state", commandTopic="/settings/light/mode" ]
         Type string : Light_State [ stateTopic="/status/light/state" ]
 
         Type string : Disinfection_State [ stateTopic="/status/disinfection/state" ]

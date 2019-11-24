@@ -9,12 +9,10 @@ sitemap poupool label="Poupool"
     }
     Frame label="Nage contre-courant" icon="socket" {
         Switch item=Poupool_Swim_Mode icon="settings" mappings=[halt="Stop", timed="Temporisé", continuous="Continue"]
-        Text item=Poupool_Swim_State icon="zoom"
         Slider item=Poupool_Swim_Speed icon="flow" minValue=10 maxValue=100
     }
     Frame label="Lumières" icon="light" {
-        Switch item=Poupool_Light_Mode icon="settings" mappings=[halt="Stop", on="Allumé"]
-        Text item=Poupool_Light_State icon="zoom"
+        Switch item=Poupool_Light_Mode icon="light" mappings=[halt="Stop", on="Allumé"]
     }
     Frame label="Plus d'options" icon="settings" {
         Text label="Informations" icon="zoom" {
