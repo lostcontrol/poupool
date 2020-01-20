@@ -5,7 +5,7 @@ pyserial==3.4
 transitions==0.7.1
 astral==1.10.1
 RPi.GPIO==0.7.0
-adafruit-circuitpython-ads1x15==2.1.1
+adafruit-circuitpython-ads1x15==2.1.2
 adafruit-circuitpython-mcp4725==1.2.0
 lcdbackpack==1.0.0b1
 codecov==2.0.15
