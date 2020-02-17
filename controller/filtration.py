@@ -19,7 +19,7 @@ import pykka
 from datetime import datetime, timedelta
 import time
 import logging
-from astral import Astral
+from astral import geocoder, sun
 from .actor import PoupoolModel
 from .actor import PoupoolActor
 from .actor import do_repeat
@@ -145,7 +145,7 @@ class StirMode(object):
         self.__current = Timer("stir")
         self.__period = timedelta(seconds=3600)
         self.__duration = timedelta(seconds=120)
-        self.__astral = Astral()[StirMode.LOCATION]
+        self.__city = geocoder.lookup(StirMode.LOCATION, geocoder.database())
 
     def stir_period(self, value):
         period = timedelta(seconds=value)
@@ -187,7 +187,7 @@ class StirMode(object):
         if self.__period > timedelta() and self.__current.elapsed():
             if self.__stir_state:
                 self.__pause(None)
-            elif self.__astral.solar_elevation() >= StirMode.SOLAR_ELEVATION:
+            elif sun.elevation(self.__city) >= StirMode.SOLAR_ELEVATION:
                 self.__stir()
 
 
