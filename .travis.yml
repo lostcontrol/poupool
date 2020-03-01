@@ -7,7 +7,7 @@ cache: pip
 before_install:
   - sudo apt-get install -y mosquitto
 install:
-  - pip install -r requirements.txt
+  - pip install -r requirements-dev.txt
 script:
   - flake8 --max-line-length=100 *.py controller/
   - pytest --cov=controller --cov-report term test/
