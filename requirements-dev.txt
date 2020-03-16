@@ -1,7 +1,7 @@
 -r requirements.txt
 
 codecov==2.0.15
-pytest==5.3.5
+pytest==5.4.1
 pytest-cov==2.8.1
 pytest-mock==2.0.0
 flake8==3.7.9
