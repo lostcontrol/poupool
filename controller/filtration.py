@@ -187,7 +187,7 @@ class StirMode(object):
         if self.__period > timedelta() and self.__current.elapsed():
             if self.__stir_state:
                 self.__pause(None)
-            elif sun.elevation(self.__city) >= StirMode.SOLAR_ELEVATION:
+            elif sun.elevation(self.__city) >= StirMode.SOLAR_ELEVATION and self.__duration > 0:
                 self.__stir()
 
 
