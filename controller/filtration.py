@@ -185,9 +185,10 @@ class StirMode(object):
         # No need to stir at night, this mode is meant to lower the solar cover
         # temperature.
         if self.__period > timedelta() and self.__current.elapsed():
+            elevation = sun.elevation(self.__city)
             if self.__stir_state:
                 self.__pause(None)
-            elif sun.elevation(self.__city) >= StirMode.SOLAR_ELEVATION and self.__duration > 0:
+            elif elevation >= StirMode.SOLAR_ELEVATION and self.__duration > timedelta():
                 self.__stir()
 
 
