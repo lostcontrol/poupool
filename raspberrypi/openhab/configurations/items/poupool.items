@@ -1,4 +1,6 @@
 Group Poupool_Temperature
+Group Poupool_Disinfection_PH_Chart
+Group Poupool_Disinfection_ORP_Chart
 Group Poupool_Disinfection_Feedback
 
 String Poupool_Mode "Mode []" {channel="mqtt:topic:unsecure:poupool:Mode", autoupdate="false"}
@@ -54,11 +56,17 @@ String Poupool_Disinfection_State "État [MAP(state.map):%s]" {channel="mqtt:top
 Switch Poupool_Disinfection_PH_Enable "pH régulation activée" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH_Enable"}
 Number Poupool_Disinfection_PH_Setpoint "pH consigne [%.1f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH_Setpoint"}
 Number Poupool_Disinfection_PH_Pterm "pH valeur P [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH_Pterm"}
-Number Poupool_Disinfection_PH "pH [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH", expire="2m"}
+Number Poupool_Disinfection_PH "pH [%.2f]" (Poupool_Disinfection_PH_Chart) {channel="mqtt:topic:unsecure:poupool:Disinfection_PH", expire="2m"}
 Number Poupool_Disinfection_Cl_Constant "Chlore pourcentage constant [%.1f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_Cl_Constant"}
 Switch Poupool_Disinfection_ORP_Enable "ORP régulation activée" {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Enable"}
 Number Poupool_Disinfection_ORP_Setpoint "ORP consigne [%d]" {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Setpoint"}
 Number Poupool_Disinfection_ORP_Pterm "ORP valeur P [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Pterm"}
-Number Poupool_Disinfection_ORP "ORP [%d]" {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP", expire="2m"}
+Number Poupool_Disinfection_ORP "ORP [%d]" (Poupool_Disinfection_ORP_Chart) {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP", expire="2m"}
 Number Poupool_Disinfection_Feedback_PH "pH feedback [%d%%]" (Poupool_Disinfection_Feedback) {channel="mqtt:topic:unsecure:poupool:Disinfection_Feedback_PH"}
 Number Poupool_Disinfection_Feedback_Cl "Chlore feedback [%d%%]" (Poupool_Disinfection_Feedback) {channel="mqtt:topic:unsecure:poupool:Disinfection_Feedback_Cl"}
+
+// Dummy items to have a fix y-scale in charts
+Number Poupool_Disinfection_PH_Low "pH low" (Poupool_Disinfection_PH_Chart)
+Number Poupool_Disinfection_PH_High "pH high" (Poupool_Disinfection_PH_Chart)
+Number Poupool_Disinfection_ORP_Low "ORP low" (Poupool_Disinfection_ORP_Chart)
+Number Poupool_Disinfection_ORP_High "ORP high" (Poupool_Disinfection_ORP_Chart)

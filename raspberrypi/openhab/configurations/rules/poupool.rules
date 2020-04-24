@@ -1,0 +1,9 @@
+rule "System started"
+when
+    System started
+then
+    Poupool_Disinfection_PH_Low.postUpdate(6.8)
+    Poupool_Disinfection_PH_High.postUpdate(7.8)
+    Poupool_Disinfection_ORP_Low.postUpdate(650)
+    Poupool_Disinfection_ORP_High.postUpdate(800)
+end

@@ -71,10 +71,10 @@ sitemap poupool label="Poupool"
                 }
                 Text label="Désinfection" icon="water" {
                     Frame label="pH (24h)" {
-                        Chart item=Poupool_Disinfection_PH period=d refresh=60000
+                        Chart item=Poupool_Disinfection_PH_Chart period=d refresh=60000
                     }
                     Frame label="ORP (24h)" {
-                        Chart item=Poupool_Disinfection_ORP period=d refresh=60000
+                        Chart item=Poupool_Disinfection_ORP_Chart period=d refresh=60000
                     }
                     Frame label="Feedback (24h)" {
                         Chart item=Poupool_Disinfection_Feedback period=d refresh=60000
