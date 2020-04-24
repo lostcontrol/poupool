@@ -293,7 +293,7 @@ class Dispatcher(object):
             ),
             "/settings/disinfection/orp/setpoint": (
                 disinfection,
-                between(500, 700),
+                between(500, 800),
                 lambda _: "orp_setpoint",
                 to_int,
                 False,
