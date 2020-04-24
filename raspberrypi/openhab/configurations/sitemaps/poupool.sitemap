@@ -46,38 +46,38 @@ sitemap poupool label="Poupool"
             Frame label="Statistiques" icon="zoom" {
                 Text label="Températures" icon="temperature" {
                     Frame label="Température piscine (24h)" {
-                        Chart item=Poupool_Temperature_Pool period=d refresh=60000
+                        Chart item=Poupool_Temperature_Pool period=d refresh=60000 service="rrd4j"
                     }
                     Frame label="Températures (24h)" {
-                        Chart item=Poupool_Temperature period=d refresh=60000
+                        Chart item=Poupool_Temperature period=d refresh=60000 service="rrd4j"
                     }
                     Frame label="Températures (1 semaine)" {
-                        Chart item=Poupool_Temperature period=W refresh=600000
+                        Chart item=Poupool_Temperature period=W refresh=600000 service="rrd4j"
                     }
                     Frame label="Températures (1 mois)" {
-                        Chart item=Poupool_Temperature period=M refresh=1440000
+                        Chart item=Poupool_Temperature period=M refresh=1440000 service="rrd4j"
                     }
                 }
                 Text label="Tampon" icon="cistern" {
                     Frame label="Hauteur (1h)" {
-                        Chart item=Poupool_Tank_Height period=h refresh=20000
+                        Chart item=Poupool_Tank_Height period=h refresh=20000 service="rrd4j"
                     }
                     Frame label="Hauteur (24h)" {
-                        Chart item=Poupool_Tank_Height period=d refresh=60000
+                        Chart item=Poupool_Tank_Height period=d refresh=60000 service="rrd4j"
                     }
                     Frame label="Hauteur (1 semaine)" {
-                        Chart item=Poupool_Tank_Height period=W refresh=600000
+                        Chart item=Poupool_Tank_Height period=W refresh=600000 service="rrd4j"
                     }
                 }
                 Text label="Désinfection" icon="water" {
                     Frame label="pH (24h)" {
-                        Chart item=Poupool_Disinfection_PH_Chart period=d refresh=60000
+                        Chart item=Poupool_Disinfection_PH_Chart period=d refresh=60000 service="rrd4j"
                     }
                     Frame label="ORP (24h)" {
-                        Chart item=Poupool_Disinfection_ORP_Chart period=d refresh=60000
+                        Chart item=Poupool_Disinfection_ORP_Chart period=d refresh=60000 service="rrd4j"
                     }
                     Frame label="Feedback (24h)" {
-                        Chart item=Poupool_Disinfection_Feedback period=d refresh=60000
+                        Chart item=Poupool_Disinfection_Feedback period=d refresh=60000 service="rrd4j"
                     }
                 }
             }
