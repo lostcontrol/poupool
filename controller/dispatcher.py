@@ -181,7 +181,7 @@ class Dispatcher(object):
             ),
             "/settings/tank/force_empty": (
                 tank,
-                lambda x: x in ("0", "1"),
+                lambda x: x.lower() in ("0", "1", "off", "on"),
                 lambda _: "force_empty",
                 to_bool,
                 False,
@@ -223,7 +223,7 @@ class Dispatcher(object):
             ),
             "/settings/heating/enable": (
                 heating,
-                lambda x: x in ("0", "1"),
+                lambda x: x.lower() in ("0", "1", "off", "on"),
                 lambda _: "enable",
                 to_bool,
                 False,
@@ -265,7 +265,7 @@ class Dispatcher(object):
             ),
             "/settings/disinfection/ph/enable": (
                 disinfection,
-                lambda x: x in ("0", "1"),
+                lambda x: x.lower() in ("0", "1", "off", "on"),
                 lambda _: "ph_enable",
                 to_bool,
                 False,
@@ -286,7 +286,7 @@ class Dispatcher(object):
             ),
             "/settings/disinfection/orp/enable": (
                 disinfection,
-                lambda x: x in ("0", "1"),
+                lambda x: x.lower() in ("0", "1", "off", "on"),
                 lambda _: "orp_enable",
                 to_bool,
                 False,
