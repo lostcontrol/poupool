@@ -34,6 +34,7 @@ Bridge mqtt:broker:unsecure [ host="poupool", secure=false ] {
         Type number : Swim_Speed [ stateTopic="/settings/swim/speed", commandTopic="/settings/swim/speed", retained="true" ]
 
         Type number : Temperature_Pool [ stateTopic="/status/temperature/pool" ]
+        Type number : Temperature_Pool_Slope [ stateTopic="/status/temperature/pool_slope" ]
         Type number : Temperature_Air [ stateTopic="/status/temperature/air" ]
         Type number : Temperature_Local [ stateTopic="/status/temperature/local" ]
         Type number : Temperature_Ncc [ stateTopic="/status/temperature/ncc" ]

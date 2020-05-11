@@ -36,6 +36,7 @@ Number Poupool_Swim_Timer "Durée temporisation (minute) [%d]" {channel="mqtt:to
 Number Poupool_Swim_Speed "Vitesse (%) [%d]" {channel="mqtt:topic:unsecure:poupool:Swim_Speed"}
 
 Number Poupool_Temperature_Pool "Température piscine [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Pool", expire="2m"}
+Number Poupool_Temperature_Pool_Slope "Pente température piscine [%.1f°C/h]" {channel="mqtt:topic:unsecure:poupool:Temperature_Pool_Slope"}
 Number Poupool_Temperature_Air "Température air [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Air", expire="2m"}
 Number Poupool_Temperature_Local "Température local [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Local", expire="2m"}
 Number Poupool_Temperature_Ncc "Température trappe [%.1f°C]" (Poupool_Temperature) {channel="mqtt:topic:unsecure:poupool:Temperature_Ncc", expire="2m"}

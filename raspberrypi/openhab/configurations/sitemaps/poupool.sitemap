@@ -19,6 +19,7 @@ sitemap poupool label="Poupool"
         Text label="Informations" icon="zoom" {
             Frame label="Température" icon="temperature" {
                 Text item=Poupool_Temperature_Pool icon="temperature"
+                Text item=Poupool_Temperature_Pool_Slope icon="temperature"
                 Text item=Poupool_Temperature_Air icon="temperature"
                 Text item=Poupool_Temperature_Local icon="temperature"
                 Text item=Poupool_Temperature_Ncc icon="temperature"
