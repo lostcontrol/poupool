@@ -35,6 +35,9 @@ class MovingAverage:
     def push(self, value):
         self.__data.append(value)
 
+    def all(self):
+        return list(self.__data)
+
     def mean(self):
         return statistics.mean(self.__data) if self.__data else None
 
@@ -113,6 +116,17 @@ class TemperatureReader(BaseReader):
     def get_all_temperatures(self):
         return {k: v.mean() for k, v in self.values.items()}
 
+    def get_temperature_slope(self, name):
+        """Return the slope in degree/hour"""
+        values = self.values[name].all()
+        size = len(values)
+        if size < 2:
+            return 0
+        duration = self.DELAY_SECONDS * (size - 1)
+        first = values[0]
+        last = values[size - 1]
+        return (last - first) / duration * 3600
+
     def do_read(self):
         super().do_read()
         self.do_delay(self.DELAY_SECONDS, self.do_read.__name__)
@@ -136,4 +150,8 @@ class TemperatureWriter(PoupoolActor):
                 f(rounded)
             else:
                 logger.warning("Temperature (%s) cannot be read!!!" % name)
+        # Special handling for temperature slope for the pool
+        rounded = round(self.__reader.get_temperature_slope("temperature_pool").get(), 1)
+        logger.debug("Temperature slope for pool is %.1f°C/hour" % rounded)
+        self.__encoder.temperature_pool__slope(rounded)
         self.do_delay(self.DELAY_SECONDS, self.do_write.__name__)
