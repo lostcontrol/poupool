@@ -2,6 +2,7 @@ sitemap poupool label="Poupool"
 {
     Frame label="Mode" icon="computer" {
         Switch item=Poupool_Mode icon="settings" mappings=[eco="Eco", standby="Veille", overflow="Débordement", comfort="Confort"]
+        Switch item=Poupool_Heating_Enable icon="settings"
         Text item=Poupool_Filtration_State icon="zoom"
         Setpoint item=Poupool_Heating_Setpoint icon="temperature" minValue=10 maxValue=30 step=0.5
         Text item=Poupool_Temperature_Pool icon="temperature"
