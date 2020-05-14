@@ -151,7 +151,7 @@ class TemperatureWriter(PoupoolActor):
             else:
                 logger.warning("Temperature (%s) cannot be read!!!" % name)
         # Special handling for temperature slope for the pool
-        rounded = round(self.__reader.get_temperature_slope("temperature_pool").get(), 1)
-        logger.debug("Temperature slope for pool is %.1f°C/hour" % rounded)
+        rounded = round(self.__reader.get_temperature_slope("temperature_pool").get(), 2)
+        logger.debug("Temperature slope for pool is %.2f°C/hour" % rounded)
         self.__encoder.temperature_pool__slope(rounded)
         self.do_delay(self.DELAY_SECONDS, self.do_write.__name__)
