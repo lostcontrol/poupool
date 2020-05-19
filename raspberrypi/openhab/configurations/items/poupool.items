@@ -16,6 +16,8 @@ Number Poupool_Filtration_StirPeriod "Période brassage (secondes)" {channel="mq
 Number Poupool_Filtration_SpeedEco "Vitesse pompe en éco" {channel="mqtt:topic:unsecure:poupool:Filtration_SpeedEco"}
 Number Poupool_Filtration_SpeedStandby "Vitesse pompe en veille" {channel="mqtt:topic:unsecure:poupool:Filtration_SpeedStandby"}
 Number Poupool_Filtration_SpeedOverflow "Vitesse pompe en débordement" {channel="mqtt:topic:unsecure:poupool:Filtration_SpeedOverflow"}
+Switch Poupool_Filtration_OverflowInComfort "Débordement en mode confort" {channel="mqtt:topic:unsecure:poupool:Filtration_OverflowInComfort"}
+
 String Poupool_Filtration_NextEvent "Prochain événement [%s]" {channel="mqtt:topic:unsecure:poupool:Filtration_NextEvent"}
 String Poupool_Filtration_RemainingDuration "Durée journalière restante [%s]" {channel="mqtt:topic:unsecure:poupool:Filtration_RemainingDuration"}
 

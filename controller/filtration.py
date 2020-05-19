@@ -247,6 +247,7 @@ class Filtration(PoupoolActor):
         self.__speed_eco = 1
         self.__speed_standby = 1
         self.__speed_overflow = 4
+        self.__overflow_in_comfort = False
         self.__backwash_backwash_duration = 120
         self.__backwash_rinse_duration = 60
         self.__backwash_period = 30
@@ -298,7 +299,9 @@ class Filtration(PoupoolActor):
         # Allow manual boost mode
         self.__machine.add_transition("overflow", "overflow_normal", "overflow_boost")
         # Comfort
-        self.__machine.add_transition("comfort", ["standby", "overflow"], "comfort")
+        self.__machine.add_transition(
+            "comfort", ["standby", "overflow"], "comfort", after=self.reload_comfort)
+        self.__machine.add_transition("reload", ["comfort"], None, after=self.reload_comfort)
         # Sweep
         self.__machine.add_transition("sweep", "standby", "sweep")
         # Stop
@@ -397,6 +400,13 @@ class Filtration(PoupoolActor):
             # Jump to the reload state so that we can jump back into overflow mode
             self._proxy.reload.defer()
             self._proxy.overflow.defer()
+
+    def overflow_in_comfort(self, value):
+        self.__overflow_in_comfort = value
+        logger.info("Overflow in comfort mode is %sable" % ("en" if value else "dis"))
+        if self.is_comfort():
+            # Reload settings
+            self._proxy.reload.defer()
 
     def backwash_backwash_duration(self, value):
         self.__backwash_backwash_duration = timedelta(seconds=value)
@@ -730,11 +740,17 @@ class Filtration(PoupoolActor):
         logger.info("Entering comfort state")
         self.__encoder.filtration_state("comfort")
         self.__devices.get_valve("gravity").off()
-        self.__devices.get_valve("tank").off()
         self.__devices.get_pump("variable").speed(2)
         self.__devices.get_pump("boost").off()
         # Use a constant chlorine flow
         self.__disinfection_constant()
+
+    def reload_comfort(self):
+        valve = self.__devices.get_valve("tank")
+        if self.__overflow_in_comfort:
+            valve.on()
+        else:
+            valve.off()
 
     def do_repeat_comfort(self):
         self.__eco_mode.update(datetime.now(), 0.5)

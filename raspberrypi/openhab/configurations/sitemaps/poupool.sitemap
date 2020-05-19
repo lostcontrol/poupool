@@ -101,6 +101,7 @@ sitemap poupool label="Poupool"
                     Selection item=Poupool_Filtration_SpeedEco icon="settings" mappings=[1="1", 2="2", 3="3"]
                     Selection item=Poupool_Filtration_SpeedStandby icon="settings" mappings=[0="0", 1="1", 2="2"]
                     Selection item=Poupool_Filtration_SpeedOverflow icon="settings" mappings=[1="1", 2="2", 3="3", 4="4"]
+                    Switch item=Poupool_Filtration_OverflowInComfort icon="settings"
                 }
                 Text label="Volet" icon="blinds" {
                     Selection item=Poupool_Cover_PositionEco icon="settings" mappings=[0="Fermé", 25="Un peu ouvert", 50="A moitié ouvert", 100="Ouvert"]

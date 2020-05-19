@@ -14,6 +14,7 @@ Bridge mqtt:broker:unsecure [ host="poupool", secure=false ] {
         Type number : Filtration_SpeedEco [ stateTopic="/settings/filtration/speed/eco", commandTopic="/settings/filtration/speed/eco", retained="true" ]
         Type number : Filtration_SpeedStandby [ stateTopic="/settings/filtration/speed/standby", commandTopic="/settings/filtration/speed/standby", retained="true" ]
         Type number : Filtration_SpeedOverflow [ stateTopic="/settings/filtration/speed/overflow", commandTopic="/settings/filtration/speed/overflow", retained="true" ]
+        Type switch : Filtration_OverflowInComfort [ stateTopic="/settings/filtration/overflow_in_comfort", commandTopic="/settings/filtration/overflow_in_comfort", retained="true" ]
         Type string : Filtration_NextEvent [ stateTopic="/status/filtration/next" ]
         Type string : Filtration_RemainingDuration [ stateTopic="/status/filtration/remaining" ]
 

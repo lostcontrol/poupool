@@ -172,6 +172,13 @@ class Dispatcher(object):
                 to_int,
                 False,
             ),
+            "/settings/filtration/overflow_in_comfort": (
+                filtration,
+                lambda x: x.lower() in ("0", "1", "off", "on"),
+                lambda _: "overflow_in_comfort",
+                to_bool,
+                False,
+            ),
             "/settings/cover/position/eco": (
                 filtration,
                 between(0, 100),
