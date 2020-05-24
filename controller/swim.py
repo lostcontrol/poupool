@@ -119,7 +119,7 @@ class Swim(PoupoolActor):
     def do_repeat_wintering_waiting(self):
         if self.__machine.get_time_in_state() > timedelta(seconds=Swim.WINTERING_PERIOD):
             temperature = self.__temperature.get_temperature("temperature_ncc").get()
-            if temperature <= Swim.WINTERING_ONLY_BELOW:
+            if temperature is None or temperature <= Swim.WINTERING_ONLY_BELOW:
                 self._proxy.wintering_stir.defer()
                 return
         self.do_delay(2 * 60, self.do_repeat_wintering_waiting.__name__)
