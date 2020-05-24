@@ -234,14 +234,15 @@ class Heating(PoupoolActor):
         if not self.__enable:
             self._proxy.wait.defer()
             return
-        temperature_pool = self.__read_temperature()
-        if temperature_pool is None or temperature_pool >= self.__setpoint + Heating.HYSTERESIS_UP:
+        # Check pool temperature
+        temperature = self.__read_temperature()
+        if temperature is None or temperature >= self.__setpoint + Heating.HYSTERESIS_UP:
             self._proxy.wait.defer()
             return
         # If the air temperature goes too low, we stop the heat pump otherwise the efficiency
         # will be too bad.
-        temperature_air = self.__read_temperature("temperature_air")
-        if temperature_air is not None and temperature_air < self.__min_temp - Heating.HYSTERESIS_MIN_TEMP:
+        temperature = self.__read_temperature("temperature_air")
+        if temperature is not None and temperature < self.__min_temp - Heating.HYSTERESIS_MIN_TEMP:
             self._proxy.wait.defer()
             return
         self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_heating.__name__)
