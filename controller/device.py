@@ -335,8 +335,7 @@ class ArduinoDevice(StoppableDevice):
 
     @property
     def water_counter(self):
-        value = self.__send("debug")
-        logger.info(value)
+        self.__send_debug()
         value = self.__send("water")
         return int(value.replace("water ", "")) if value else None
 
@@ -377,6 +376,32 @@ class ArduinoDevice(StoppableDevice):
             logger.exception("Serial sensor %s had an error. Reconnecting..." % self.name)
             self.__reconnect()
         return None
+
+    def __send_debug(self):
+        try:
+            # flush buffer (should be empty but we can receive an "emergency stop")
+            logger.debug("Flushing read buffer")
+            read = self.__sio.readline()
+            while not read.strip() == "":
+                logger.error("Unexpected buffer content: %s" % read.strip())
+                read = self.__sio.readline()
+            # send
+            logger.debug("Writing 'debug' to serial port")
+            self.__sio.write("debug\n")
+            self.__sio.flush()
+            # receive
+            logger.debug("Reading response")
+            counter = 0
+            read = self.__sio.readline()
+            while not read.startswith("***") and counter < 20:
+                logger.info(read.strip())
+                read = self.__sio.readline()
+                counter += 1
+            logger.debug("Received response")
+        except Exception:
+            # We catch everything in the hope that we recover with a reconnect.
+            logger.exception("Serial sensor %s had an error. Reconnecting..." % self.name)
+            self.__reconnect()
 
 
 class LcdDevice(StoppableDevice):
