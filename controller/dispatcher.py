@@ -237,7 +237,7 @@ class Dispatcher(object):
             ),
             "/settings/heating/setpoint": (
                 heating,
-                between(10, 30),
+                between(10, 32),
                 lambda _: "setpoint",
                 to_float,
                 False,
