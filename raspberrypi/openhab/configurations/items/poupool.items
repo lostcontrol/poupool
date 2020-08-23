@@ -60,7 +60,6 @@ Switch Poupool_Disinfection_PH_Enable "pH régulation activée" {channel="mqtt:t
 Number Poupool_Disinfection_PH_Setpoint "pH consigne [%.1f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH_Setpoint"}
 Number Poupool_Disinfection_PH_Pterm "pH valeur P [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_PH_Pterm"}
 Number Poupool_Disinfection_PH "pH [%.2f]" (Poupool_Disinfection_PH_Chart) {channel="mqtt:topic:unsecure:poupool:Disinfection_PH", expire="2m"}
-Number Poupool_Disinfection_Cl_Constant "Chlore pourcentage constant [%.1f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_Cl_Constant"}
 Switch Poupool_Disinfection_ORP_Enable "ORP régulation activée" {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Enable"}
 Number Poupool_Disinfection_ORP_Setpoint "ORP consigne [%d]" {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Setpoint"}
 Number Poupool_Disinfection_ORP_Pterm "ORP valeur P [%.2f]" {channel="mqtt:topic:unsecure:poupool:Disinfection_ORP_Pterm"}

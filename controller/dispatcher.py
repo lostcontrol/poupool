@@ -263,13 +263,6 @@ class Dispatcher(object):
                 to_int,
                 True,
             ),
-            "/settings/disinfection/cl/constant": (
-                disinfection,
-                between(0, 50),
-                lambda _: "cl_constant",
-                to_float,
-                False,
-            ),
             "/settings/disinfection/ph/enable": (
                 disinfection,
                 lambda x: x.lower() in ("0", "1", "off", "on"),

@@ -57,7 +57,6 @@ Bridge mqtt:broker:unsecure [ host="poupool", secure=false ] {
         Type number : Disinfection_PH_Setpoint [ stateTopic="/settings/disinfection/ph/setpoint", commandTopic="/settings/disinfection/ph/setpoint", retained="true" ]
         Type number : Disinfection_PH_Pterm [ stateTopic="/settings/disinfection/ph/pterm", commandTopic="/settings/disinfection/ph/pterm", retained="true" ]
         Type number : Disinfection_PH [ stateTopic="/status/disinfection/ph/value" ]
-        Type number : Disinfection_Cl_Constant [ stateTopic="/settings/disinfection/cl/constant", commandTopic="/settings/disinfection/cl/constant", retained="true" ]
         Type switch : Disinfection_ORP_Enable [ stateTopic="/settings/disinfection/orp/enable", commandTopic="/settings/disinfection/orp/enable", retained="true" ]
         Type number : Disinfection_ORP_Setpoint [ stateTopic="/settings/disinfection/orp/setpoint", commandTopic="/settings/disinfection/orp/setpoint", retained="true" ]
         Type number : Disinfection_ORP_Pterm [ stateTopic="/settings/disinfection/orp/pterm", commandTopic="/settings/disinfection/orp/pterm", retained="true" ]

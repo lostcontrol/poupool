@@ -20,7 +20,6 @@ from datetime import datetime, timedelta
 import logging
 from .actor import PoupoolModel
 from .actor import PoupoolActor
-from .actor import do_repeat
 from .util import constrain, Timer
 from .config import config
 
@@ -109,12 +108,10 @@ class Disinfection(PoupoolActor):
     WAITING_DELAY = int(config["disinfection", "waiting_delay"])
     PH_PWM_PERIOD = int(config["disinfection", "ph_pwm_period"])
     CL_PWM_PERIOD = int(config["disinfection", "cl_pwm_period"])
-    CL_PWM_PERIOD_CONSTANT = int(config["disinfection", "cl_pwm_period_constant"])
 
     states = [
         "halt",
         "waiting",
-        "constant",
         {"name": "running", "initial": "adjusting", "children": [
             "adjusting",
             "treating"]}]
@@ -139,14 +136,12 @@ class Disinfection(PoupoolActor):
         # Chlorine
         self.__cl = PWM.start("cl", self.__devices.get_pump("cl")).proxy()
         self.__cl.period = Disinfection.CL_PWM_PERIOD
-        self.__cl_constant = 5.0
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Disinfection.states, initial="halt")
 
         self.__machine.add_transition("run", "halt", "waiting", unless="is_disabled")
         self.__machine.add_transition("run", "waiting", "running")
-        self.__machine.add_transition("halt", ["constant", "waiting", "running"], "halt")
-        self.__machine.add_transition("constant", ["halt", "waiting", "running"], "constant")
+        self.__machine.add_transition("halt", ["waiting", "running"], "halt")
         self.__machine.add_transition("adjust", "running_treating", "running_adjusting")
         self.__machine.add_transition("treat", "running_adjusting", "running_treating")
 
@@ -161,10 +156,6 @@ class Disinfection(PoupoolActor):
     def ph_setpoint(self, value):
         self.__ph_controller.setpoint = value
         logger.info("pH setpoint set to: %.2f" % self.__ph_controller.setpoint)
-
-    def cl_constant(self, value):
-        self.__cl_constant = value
-        logger.info("Chlore constant value set to: %.2f" % self.__cl_constant)
 
     def orp_setpoint(self, value):
         self.__orp_controller.setpoint = value
@@ -197,21 +188,6 @@ class Disinfection(PoupoolActor):
         logger.info("Entering waiting state")
         self.__encoder.disinfection_state("waiting")
         self.do_delay(Disinfection.START_DELAY, "run")
-
-    @do_repeat()
-    def on_enter_constant(self):
-        logger.info("Entering constant state")
-        self.__encoder.disinfection_state("constant")
-        self.__ph.do_cancel.defer()
-        self.__cl.period = Disinfection.CL_PWM_PERIOD_CONSTANT
-        self.__cl.do_run.defer()
-        self.__sensors_writer.do_cancel.defer()
-
-    def do_repeat_constant(self):
-        cl_feedback = self.__cl_constant / 100. if self.__orp_enable else 0
-        self.__encoder.disinfection_cl_feedback(int(round(100 * cl_feedback)))
-        self.__cl.value = cl_feedback
-        self.do_delay(10, self.do_repeat_constant.__name__)
 
     def on_enter_running(self):
         logger.info("Entering running state")

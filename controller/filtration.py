@@ -468,11 +468,6 @@ class Filtration(PoupoolActor):
     def __disinfection_start(self):
         self.__actor_run("Disinfection")
 
-    def __disinfection_constant(self):
-        actor = self.get_actor("Disinfection")
-        if not actor.is_constant().get():
-            actor.constant.defer()
-
     def __actor_run(self, name):
         actor = self.get_actor(name)
         if actor.is_halt().get():
