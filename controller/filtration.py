@@ -696,11 +696,11 @@ class Filtration(PoupoolActor):
     def on_enter_standby(self):
         logger.info("Entering standby state")
         self.__devices.get_valve("gravity").off()
-        self.__actor_halt("Disinfection")
 
     def on_enter_standby_boost(self):
         logger.info("Entering standby boost state")
         self.__encoder.filtration_state("standby_boost")
+        self.__actor_halt("Disinfection")
         self.__devices.get_valve("tank").on()
         self.__devices.get_pump("boost").on()
         self.__devices.get_pump("variable").speed(3)
@@ -717,6 +717,8 @@ class Filtration(PoupoolActor):
         # If filtration is running, enable disinfection
         if self.__speed_standby > 0:
             self.__disinfection_start()
+        else:
+            self.__actor_halt("Disinfection")
 
     def do_repeat_standby_normal(self):
         factor = 1 if self.__speed_standby > 0 else 0
@@ -742,8 +744,8 @@ class Filtration(PoupoolActor):
         self.__devices.get_valve("gravity").off()
         self.__devices.get_pump("variable").speed(2)
         self.__devices.get_pump("boost").off()
-        # Use a constant chlorine flow
-        self.__disinfection_constant()
+        # Start disinfection
+        self.__disinfection_start()
 
     def reload_comfort(self):
         valve = self.__devices.get_valve("tank")
@@ -771,6 +773,7 @@ class Filtration(PoupoolActor):
     def on_enter_overflow_boost(self):
         logger.info("Entering overflow boost state")
         self.__encoder.filtration_state("overflow_boost")
+        self.__actor_halt("Disinfection")
         self.__devices.get_pump("variable").speed(3)
         self.__devices.get_pump("boost").on()
         self.do_delay(self.__boost_duration.total_seconds(), "overflow")
@@ -785,8 +788,12 @@ class Filtration(PoupoolActor):
             self.__devices.get_pump("boost").on()
         else:
             self.__devices.get_pump("boost").off()
-        # Use a constant chlorine flow
-        self.__disinfection_constant()
+        # Only start disinfection if the speed is 1 or 2 to have an appropriate
+        # flow for measurement
+        if 0 < speed < 3:
+            self.__disinfection_start()
+        else:
+            self.__actor_halt("Disinfection")
 
     def on_exit_overflow_normal(self):
         logger.info("Exiting overflow_normal state")
