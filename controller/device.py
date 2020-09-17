@@ -335,7 +335,7 @@ class ArduinoDevice(StoppableDevice):
 
     @property
     def water_counter(self):
-        self.__send_debug()
+        # self.__send_debug()
         value = self.__send("water")
         return int(value.replace("water ", "")) if value else None
 
