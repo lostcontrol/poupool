@@ -287,7 +287,7 @@ class Button {
     }
 
     void setup() {
-      constexpr InputDebounce::SwitchType type = InputDebounce::ST_NORMALLY_CLOSED;
+      constexpr InputDebounce::SwitchType type = InputDebounce::ST_NORMALLY_OPEN;
       constexpr unsigned long limits_delay = 2000;
 
       m_open.registerCallbacks(open_pressed, open_close_released);
