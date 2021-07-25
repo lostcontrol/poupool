@@ -1,1 +1,1 @@
-ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="arduino", TAG+="systemd"
+ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0043", SYMLINK+="arduino", TAG+="systemd"
