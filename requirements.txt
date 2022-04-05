@@ -2,7 +2,7 @@ wheel
 paho-mqtt==1.6.1
 pykka==3.0.2
 pyserial==3.4
-transitions==0.8.9
+transitions==0.8.11
 astral==2.2
 RPi.GPIO==0.7.1
 adafruit-circuitpython-ads1x15==2.2.8
