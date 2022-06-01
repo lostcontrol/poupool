@@ -1,6 +1,6 @@
 wheel
 paho-mqtt==1.6.1
-pykka==3.0.2
+pykka==3.1.1
 pyserial==3.4
 transitions==0.8.9
 astral==2.2
