@@ -78,6 +78,14 @@ Water  0.0 Air   0.0
 pH     7.1 ORP   654
 Next event  00:00:00"""
 
+    def test_ph_greater_than_10_orp_defined(self, lcd):
+        lcd.update("disinfection_ph_value", "12.3")
+        lcd.update("disinfection_orp_value", "654")
+        assert lcd.get_printable_string() == """Mode              --
+Water  0.0 Air   0.0
+pH    12.3 ORP   654
+Next event  00:00:00"""
+
     def test_state_width_limit(self, lcd):
         lcd.update("filtration_state", "this is waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay too long!!!")
         assert len(lcd.get_string()) == 80

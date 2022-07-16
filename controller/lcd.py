@@ -74,7 +74,7 @@ class Lcd(PoupoolActor):
         try:
             ph = float(self.__cache.get("disinfection_ph_value", None))
             orp = int(self.__cache.get("disinfection_orp_value", None))
-            s += "pH     {:>3.1f} ORP {:>5d}".format(ph, orp)[:20]
+            s += "pH    {:>4.1f} ORP {:>5d}".format(ph, orp)[:20]
         except (TypeError, ValueError):
             s += "pH     -.- ORP   ---"
         next_event = self.__cache.get("filtration_next", "00:00:00")
