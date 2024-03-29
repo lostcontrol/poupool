@@ -68,5 +68,5 @@ User interface:
 
 Development tools:
 
-* autopep8
+* ruff
 * pytest
