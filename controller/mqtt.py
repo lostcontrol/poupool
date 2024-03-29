@@ -28,7 +28,7 @@ class Mqtt(PoupoolActor):
         super().__init__()
         self.__run = True
         self.__dispatcher = dispatcher
-        self.__client = mqtt.Client()
+        self.__client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
         self.__client.on_connect = self.__on_connect
         self.__client.on_message = self.__on_message
         self.__client.on_disconnect = self.__on_disconnect
