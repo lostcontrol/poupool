@@ -7,5 +7,6 @@
     "editor.codeActionsOnSave": {
         "source.fixAll": "explicit",
         "source.organizeImports": "explicit"
-    }
+    },
+    "python.analysis.autoImportCompletions": true
 }
