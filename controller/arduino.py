@@ -16,16 +16,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import logging
+
 # from transitions.extensions import GraphMachine as Machine
-from .actor import PoupoolActor
-from .actor import PoupoolModel
-from .actor import do_repeat
+from .actor import PoupoolActor, PoupoolModel, do_repeat
 
 logger = logging.getLogger(__name__)
 
 
 class Arduino(PoupoolActor):
-
     STATE_REFRESH_DELAY = 60
 
     states = ["halt", "run"]

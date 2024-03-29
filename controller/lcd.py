@@ -16,14 +16,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import logging
-from .actor import PoupoolActor
+
 from serial.serialutil import SerialException
+
+from .actor import PoupoolActor
 
 logger = logging.getLogger(__name__)
 
 
 class Lcd(PoupoolActor):
-
     UPDATE_DELAY = 2
 
     def __init__(self, lcdbackpack):
@@ -67,21 +68,21 @@ class Lcd(PoupoolActor):
 
     def get_string(self):
         state = self.__cache.get("filtration_state", "--")
-        s = "Mode {:>15}\n".format(state.upper())[:20]
+        s = f"Mode {state.upper():>15}\n"[:20]
         pool = float(self.__cache.get("temperature_pool", 0))
         air = float(self.__cache.get("temperature_air", 0))
-        s += "Water {:>4.1f} Air {:>5.1f}".format(pool, air)[:20]
+        s += f"Water {pool:>4.1f} Air {air:>5.1f}"[:20]
         try:
             ph = float(self.__cache.get("disinfection_ph_value", None))
             orp = int(self.__cache.get("disinfection_orp_value", None))
-            s += "pH    {:>4.1f} ORP {:>5d}".format(ph, orp)[:20]
+            s += f"pH    {ph:>4.1f} ORP {orp:>5d}"[:20]
         except (TypeError, ValueError):
             s += "pH     -.- ORP   ---"
         next_event = self.__cache.get("filtration_next", "00:00:00")
-        s += "Next event  {:>8}\n".format(next_event)[:20]
+        s += f"Next event  {next_event:>8}\n"[:20]
         return s
 
     def get_printable_string(self):
         # The display is a 4x20 LCD.
         message = self.get_string()
-        return "\n".join(message[20 * i: 20 * i + 20] for i in range(4))
+        return "\n".join(message[20 * i : 20 * i + 20] for i in range(4))

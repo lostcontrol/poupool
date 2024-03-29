@@ -15,14 +15,15 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pytest
-import pykka
 import time
+
+import pykka
+import pytest
+
 from controller.actor import PoupoolActor
 
 
 class MyPoupoolActor(PoupoolActor):
-
     def __init__(self):
         super().__init__()
         self.cancelled = 0
@@ -47,14 +48,13 @@ class MyPoupoolActor(PoupoolActor):
         self.do_delay(1, self.do_run.__name__)
 
 
-@pytest.fixture
+@pytest.fixture()
 def poupool_actor():
     yield MyPoupoolActor.start().proxy()
     pykka.ActorRegistry.stop_all()
 
 
 class TestPoupoolActor:
-
     def test_run_cancel(self, poupool_actor):
         poupool_actor.do_run()
         time.sleep(4.5)
@@ -80,7 +80,9 @@ class TestPoupoolActor:
     def test_multithread_delay(self, poupool_actor):
         from threading import Thread
 
-        def target(): return poupool_actor.do_delay(1, "do_single")
+        def target():
+            return poupool_actor.do_delay(1, "do_single")
+
         for thread in [Thread(target=target) for _ in range(5)]:
             thread.start()
         time.sleep(2)

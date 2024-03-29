@@ -17,29 +17,27 @@
 
 import logging
 from datetime import datetime, timedelta
+
 # from transitions.extensions import GraphMachine as Machine
-from .actor import PoupoolActor
-from .actor import PoupoolModel
-from .actor import do_repeat
-from .util import Timer
+from .actor import PoupoolActor, PoupoolModel, do_repeat
 from .config import config
+from .util import Timer
 
 logger = logging.getLogger(__name__)
 
 
 class Swim(PoupoolActor):
-
     STATE_REFRESH_DELAY = 1  # faster refresh rate because speed can change
     WINTERING_PERIOD = int(config["wintering", "swim_period"])
     WINTERING_ONLY_BELOW = float(config["wintering", "swim_only_below"])
     WINTERING_DURATION = int(config["wintering", "swim_duration"])
 
-    states = ["halt",
-              "timed",
-              "continuous",
-              {"name": "wintering", "initial": "waiting", "children": [
-                  "stir",
-                  "waiting"]}]
+    states = [
+        "halt",
+        "timed",
+        "continuous",
+        {"name": "wintering", "initial": "waiting", "children": ["stir", "waiting"]},
+    ]
 
     def __init__(self, temperature, encoder, devices):
         super().__init__()
@@ -52,16 +50,12 @@ class Swim(PoupoolActor):
         self.__machine = PoupoolModel(model=self, states=Swim.states, initial="halt")
 
         self.__machine.add_transition("timed", "halt", "timed", conditions="filtration_allow_swim")
-        self.__machine.add_transition("wintering", "halt", "wintering",
-                                      conditions="filtration_is_wintering")
+        self.__machine.add_transition("wintering", "halt", "wintering", conditions="filtration_is_wintering")
         self.__machine.add_transition("wintering_stir", "wintering_waiting", "wintering_stir")
         self.__machine.add_transition("wintering_waiting", "wintering_stir", "wintering_waiting")
-        self.__machine.add_transition("timed", "continuous", "timed",
-                                      conditions="filtration_allow_swim")
-        self.__machine.add_transition("continuous", "halt", "continuous",
-                                      conditions="filtration_allow_swim")
-        self.__machine.add_transition("continuous", "timed", "continuous",
-                                      conditions="filtration_allow_swim")
+        self.__machine.add_transition("timed", "continuous", "timed", conditions="filtration_allow_swim")
+        self.__machine.add_transition("continuous", "halt", "continuous", conditions="filtration_allow_swim")
+        self.__machine.add_transition("continuous", "timed", "continuous", conditions="filtration_allow_swim")
         self.__machine.add_transition("halt", ["timed", "continuous", "wintering"], "halt")
 
     def timer(self, value):

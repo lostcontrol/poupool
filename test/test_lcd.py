@@ -19,19 +19,19 @@ import pytest
 from serial.serialutil import SerialException
 
 
-@pytest.fixture
+@pytest.fixture()
 def lcdbackpack(mocker):
     return mocker.Mock()
 
 
-@pytest.fixture
+@pytest.fixture()
 def lcd(lcdbackpack):
     from controller.lcd import Lcd
+
     return Lcd(lcdbackpack)
 
 
 class TestLcd:
-
     def test_do_connect(self, lcd, lcdbackpack):
         lcd.do_start()
         lcdbackpack.connect.assert_called_once_with()
@@ -51,40 +51,54 @@ class TestLcd:
     def test_do_update(self, lcd, lcdbackpack):
         lcd.do_update()
         lcdbackpack.set_cursor_home.assert_called_once_with()
-        lcdbackpack.write.assert_called_once_with("""Mode              --
+        lcdbackpack.write.assert_called_once_with(
+            """Mode              --
 Water  0.0 Air   0.0
 pH     -.- ORP   ---
-Next event  00:00:00""".replace("\n", ""))
+Next event  00:00:00""".replace("\n", "")
+        )
 
     def test_halt_mode(self, lcd):
         lcd.update("filtration_state", "halt")
-        assert lcd.get_printable_string() == """Mode            HALT
+        assert (
+            lcd.get_printable_string()
+            == """Mode            HALT
 Water  0.0 Air   0.0
 pH     -.- ORP   ---
 Next event  00:00:00"""
+        )
 
     def test_negative_temperature(self, lcd):
         lcd.update("temperature_air", "-12.3")
-        assert lcd.get_printable_string() == """Mode              --
+        assert (
+            lcd.get_printable_string()
+            == """Mode              --
 Water  0.0 Air -12.3
 pH     -.- ORP   ---
 Next event  00:00:00"""
+        )
 
     def test_ph_orp_defined(self, lcd):
         lcd.update("disinfection_ph_value", "7.1")
         lcd.update("disinfection_orp_value", "654")
-        assert lcd.get_printable_string() == """Mode              --
+        assert (
+            lcd.get_printable_string()
+            == """Mode              --
 Water  0.0 Air   0.0
 pH     7.1 ORP   654
 Next event  00:00:00"""
+        )
 
     def test_ph_greater_than_10_orp_defined(self, lcd):
         lcd.update("disinfection_ph_value", "12.3")
         lcd.update("disinfection_orp_value", "654")
-        assert lcd.get_printable_string() == """Mode              --
+        assert (
+            lcd.get_printable_string()
+            == """Mode              --
 Water  0.0 Air   0.0
 pH    12.3 ORP   654
 Next event  00:00:00"""
+        )
 
     def test_state_width_limit(self, lcd):
         lcd.update("filtration_state", "this is waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay too long!!!")

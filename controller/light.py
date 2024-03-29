@@ -16,15 +16,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import logging
+
 # from transitions.extensions import GraphMachine as Machine
-from .actor import PoupoolActor
-from .actor import PoupoolModel
+from .actor import PoupoolActor, PoupoolModel
 
 logger = logging.getLogger(__name__)
 
 
 class Light(PoupoolActor):
-
     STATE_REFRESH_DELAY = 10
 
     states = ["halt", "on"]

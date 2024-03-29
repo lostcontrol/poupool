@@ -17,18 +17,19 @@
 
 from unittest.mock import PropertyMock
 
-from pykka._threading import ThreadingFuture
 import pytest
+from pykka._threading import ThreadingFuture
 
 
-@pytest.fixture
+@pytest.fixture()
 def encoder(mocker):
     return mocker.Mock()
 
 
-@pytest.fixture
+@pytest.fixture()
 def devices(mocker):
     from controller.device import DeviceRegistry, PumpDevice
+
     registry = DeviceRegistry()
     pump = mocker.Mock(PumpDevice)
     type(pump).name = PropertyMock(return_value="swim")
@@ -36,15 +37,17 @@ def devices(mocker):
     return registry
 
 
-@pytest.fixture
+@pytest.fixture()
 def filtration(mocker):
     from controller.filtration import Filtration
+
     return mocker.Mock(Filtration)
 
 
-@pytest.fixture
+@pytest.fixture()
 def swim(mocker, encoder, devices, filtration):
     from controller.swim import Swim
+
     proxy = Swim.start(None, encoder, devices).proxy()
     # We suppose get_actor always return the filtration actor
     proxy.get_actor = mocker.Mock(return_value=filtration)
@@ -53,7 +56,6 @@ def swim(mocker, encoder, devices, filtration):
 
 
 class TestSwim:
-
     def test_registered(self, swim):
         assert swim.get_actor("Swim") is not None
 

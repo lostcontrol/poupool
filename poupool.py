@@ -15,34 +15,34 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import os
-import time
-import pykka
-import logging.config
 import argparse
 import itertools
+import logging.config
+import os
 import signal
 import sys
+import time
+
+import pykka
 
 from controller.arduino import Arduino
-from controller.filtration import Filtration
+from controller.config import as_list, config
+from controller.device import DeviceRegistry
 from controller.disinfection import Disinfection
-from controller.heating import Heating, Heater
-from controller.light import Light
-from controller.tank import Tank
-from controller.swim import Swim
 from controller.dispatcher import Dispatcher
 from controller.encoder import Encoder
-from controller.mqtt import Mqtt
-from controller.sensor import TemperatureReader, TemperatureWriter
-from controller.sensor import DisinfectionReader, DisinfectionWriter
-from controller.device import DeviceRegistry
-from controller.config import config, as_list
+from controller.filtration import Filtration
+from controller.heating import Heater, Heating
 from controller.lcd import Lcd
+from controller.light import Light
+from controller.mqtt import Mqtt
+from controller.sensor import DisinfectionReader, DisinfectionWriter, TemperatureReader, TemperatureWriter
+from controller.swim import Swim
+from controller.tank import Tank
 
 
 def setup_gpio(registry, gpio):
-    from controller.device import SwitchDevice, PumpDevice
+    from controller.device import PumpDevice, SwitchDevice
 
     def create(device, name):
         pins = as_list(config["pins", name])
@@ -68,20 +68,29 @@ def setup_gpio(registry, gpio):
 
 
 def setup_rpi(registry):
-    from controller.device import SwimPumpDevice, TempSensorDevice, TankSensorDevice
-    from controller.device import ArduinoDevice, EZOSensorDevice, LcdDevice
-
     # Relay
     import RPi.GPIO as GPIO
+
+    from controller.device import (
+        ArduinoDevice,
+        EZOSensorDevice,
+        LcdDevice,
+        SwimPumpDevice,
+        TankSensorDevice,
+        TempSensorDevice,
+    )
+
     setup_gpio(registry, GPIO)
 
     # Initialize I2C bus.
     import board
     import busio
+
     i2c = busio.I2C(board.SCL, board.SDA)
 
     # ADC
     import adafruit_ads1x15.ads1015 as ADS
+
     # Create the ADC object using the I2C bus
     adc = ADS.ADS1015(i2c)
     # With a gain of 2/3 and a sensor output of 0.25V-5V, the values should be around 83 and 1665
@@ -90,6 +99,7 @@ def setup_rpi(registry):
 
     # DAC
     import adafruit_mcp4725
+
     dac = adafruit_mcp4725.MCP4725(i2c)
     registry.add_pump(SwimPumpDevice("swim", GPIO, int(config["pins", "swim"]), dac))
 
@@ -115,9 +125,9 @@ def setup_rpi(registry):
 
 
 def setup_fake(registry):
-    from controller.device import SensorDevice, SwimPumpDevice, StoppableDevice
+    from controller.device import SensorDevice, StoppableDevice, SwimPumpDevice
 
-    class FakeGpio(object):
+    class FakeGpio:
         OUT = "OUT"
         BCM = "BCM"
 
@@ -148,10 +158,10 @@ def setup_fake(registry):
         @property
         def value(self):
             import random
+
             return random.uniform(self.__min, self.__max)
 
     class FakeArduino(StoppableDevice):
-
         def __init__(self, name):
             super().__init__(name)
             self.__cover_position = 0
@@ -184,8 +194,7 @@ def setup_fake(registry):
         def stop(self):
             self.cover_stop()
 
-    class FakeDAC(object):
-
+    class FakeDAC:
         def __init__(self):
             self.__value = 0
 
@@ -206,7 +215,6 @@ def setup_fake(registry):
             self.__value = value
 
     class FakeLcd(StoppableDevice):
-
         def __init__(self, name):
             super().__init__(name)
             self.__counter = 0
@@ -221,7 +229,7 @@ def setup_fake(registry):
         def write(self, value):
             if self.__counter % 5 == 0:
                 # The display is a 4x20 LCD.
-                print("\n" + "\n".join(value[20 * i: 20 * i + 20] for i in range(4)) + "\n")
+                print("\n" + "\n".join(value[20 * i : 20 * i + 20] for i in range(4)) + "\n")
             self.__counter += 1
 
     # Relay
@@ -318,8 +326,12 @@ def main(args, devices):
     encoder = Encoder(mqtt, lcd)
 
     # Temperature
-    sensors = [devices.get_sensor("temperature_pool"), devices.get_sensor("temperature_local"),
-               devices.get_sensor("temperature_air"), devices.get_sensor("temperature_ncc")]
+    sensors = [
+        devices.get_sensor("temperature_pool"),
+        devices.get_sensor("temperature_local"),
+        devices.get_sensor("temperature_air"),
+        devices.get_sensor("temperature_ncc"),
+    ]
     temperature_reader = TemperatureReader.start(sensors).proxy()
     temperature_writer = TemperatureWriter.start(encoder, temperature_reader).proxy()
 
@@ -337,11 +349,7 @@ def main(args, devices):
     disinfection_reader = DisinfectionReader.start(sensors).proxy()
     disinfection_writer = DisinfectionWriter.start(encoder, disinfection_reader).proxy()
     disinfection = Disinfection.start(
-        encoder,
-        devices,
-        disinfection_reader,
-        disinfection_writer,
-        args.no_disinfection
+        encoder, devices, disinfection_reader, disinfection_writer, args.no_disinfection
     ).proxy()
 
     # Heating
@@ -390,12 +398,10 @@ def sigterm_handler(signo, stack_frame):
     running = False
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--log-config", action="store",
-                        default="logging.conf", help="log configuration file")
-    parser.add_argument("--no-disinfection", action="store_true",
-                        help="disable disinfection support")
+    parser.add_argument("--log-config", action="store", default="logging.conf", help="log configuration file")
+    parser.add_argument("--no-disinfection", action="store_true", help="disable disinfection support")
     parser.add_argument("--test-mode", action="store_true", help="test mode for the hardware")
     parser.add_argument("--fake-devices", action="store_true", help="fake the underlying hardware")
     parser.add_argument("--test-start", action="store_true", help="test application start")
@@ -433,4 +439,5 @@ if __name__ == '__main__':
         # Ensure all the pins are configured back as inputs
         if not args.fake_devices:
             import RPi.GPIO as GPIO
+
             GPIO.cleanup()

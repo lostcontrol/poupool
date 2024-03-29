@@ -15,24 +15,26 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pytest
 from unittest import mock
 
+import pytest
 
-@pytest.fixture
+
+@pytest.fixture()
 def pump(mocker):
     from controller.device import SwitchDevice
+
     return mocker.Mock(SwitchDevice)
 
 
-@pytest.fixture
+@pytest.fixture()
 def pwm(pump):
     from controller.disinfection import PWM
+
     return PWM("test", pump, min_runtime=0)
 
 
 class TestPWM:
-
     @pytest.mark.parametrize("value", [round(x * 0.2, 1) for x in range(0, 6)])
     @pytest.mark.parametrize("period", [10, 60, 150])
     def test_pwm(self, period, value, pwm, pump):

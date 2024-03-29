@@ -15,16 +15,17 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from unittest.mock import DEFAULT, PropertyMock, call
+
 import pytest
-from unittest.mock import call, DEFAULT, PropertyMock
 
 
-@pytest.fixture
+@pytest.fixture()
 def gpio(mocker):
     return mocker.Mock()
 
 
-@pytest.fixture
+@pytest.fixture()
 def dac(mocker):
     return mocker.Mock()
 
@@ -32,21 +33,22 @@ def dac(mocker):
 PIN = 11
 
 
-@pytest.fixture
+@pytest.fixture()
 def swim_pump_device(gpio, dac):
     from controller.device import SwimPumpDevice
+
     return SwimPumpDevice("swim", gpio, PIN, dac)
 
 
-@pytest.fixture
+@pytest.fixture()
 def swim_pump_device_without_dac(gpio, dac):
     from controller.device import SwimPumpDevice
+
     dac.value.side_effect = OSError()
     return SwimPumpDevice("swim", gpio, PIN, dac)
 
 
 class TestSwimPumpDevice:
-
     def test_name(self, swim_pump_device):
         assert swim_pump_device.name == "swim"
 
@@ -106,8 +108,9 @@ class TestSwimPumpDevice:
         def side_effect(value):
             side_effect.counter += 1
             if side_effect.counter == 1:
-                raise OSError()
+                raise OSError
             return DEFAULT
+
         side_effect.counter = 0
         normalized_value = PropertyMock()
         normalized_value.side_effect = side_effect

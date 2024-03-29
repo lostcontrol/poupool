@@ -17,9 +17,8 @@
 
 import logging
 from datetime import datetime, timedelta
-from .actor import PoupoolActor
-from .actor import PoupoolModel
-from .actor import do_repeat
+
+from .actor import PoupoolActor, PoupoolModel, do_repeat
 from .config import config
 from .util import Duration
 
@@ -27,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class Heater(PoupoolActor):
-
     STATE_REFRESH_DELAY = 10
     HYSTERESIS_DOWN = float(config["heater", "hysteresis_down"])
     HYSTERESIS_UP = float(config["heater", "hysteresis_up"])
@@ -42,8 +40,7 @@ class Heater(PoupoolActor):
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Heating.states, initial="halt")
 
-        self.__machine.add_transition(
-            "wait", ["halt", "heating"], "waiting", conditions="has_heater")
+        self.__machine.add_transition("wait", ["halt", "heating"], "waiting", conditions="has_heater")
         self.__machine.add_transition("heat", "waiting", "heating")
         self.__machine.add_transition("halt", ["waiting", "heating"], "halt")
 
@@ -89,7 +86,6 @@ class Heater(PoupoolActor):
 
 
 class Heating(PoupoolActor):
-
     STATE_REFRESH_DELAY = 10
     HYSTERESIS_DOWN = float(config["heating", "hysteresis_down"])
     HYSTERESIS_UP = float(config["heating", "hysteresis_up"])
@@ -98,8 +94,7 @@ class Heating(PoupoolActor):
 
     states = ["halt", "waiting", "heating", "forcing", "recovering"]
 
-    class DurationEncoderCallback(object):
-
+    class DurationEncoderCallback:
         def __init__(self, encoder):
             self.__encoder = encoder
 
@@ -122,11 +117,9 @@ class Heating(PoupoolActor):
         self.__machine = PoupoolModel(model=self, states=Heating.states, initial="halt")
 
         self.__machine.add_transition("wait", "halt", "waiting")
-        self.__machine.add_transition("heat", ["halt", "waiting"], "heating",
-                                      conditions="filtration_allow_heating")
+        self.__machine.add_transition("heat", ["halt", "waiting"], "heating", conditions="filtration_allow_heating")
         self.__machine.add_transition("force", ["halt", "waiting"], "forcing")
-        self.__machine.add_transition(
-            "halt", ["waiting", "heating", "forcing", "recovering"], "halt")
+        self.__machine.add_transition("halt", ["waiting", "heating", "forcing", "recovering"], "halt")
         self.__machine.add_transition("wait", ["heating", "forcing"], "recovering")
         self.__machine.add_transition("recover_done", "recovering", "waiting")
 
@@ -135,8 +128,7 @@ class Heating(PoupoolActor):
 
     def __set_next_start(self):
         tm = datetime.now()
-        self.__next_start = tm.replace(hour=self.__next_start_hour,
-                                       minute=0, second=0, microsecond=0)
+        self.__next_start = tm.replace(hour=self.__next_start_hour, minute=0, second=0, microsecond=0)
         self.__next_start += timedelta(days=1)
 
     def total_seconds(self, value):

@@ -15,19 +15,18 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import logging
 import time
 from datetime import datetime, timedelta
-import logging
-from .actor import PoupoolModel
-from .actor import PoupoolActor
-from .util import constrain, Timer
+
+from .actor import PoupoolActor, PoupoolModel
 from .config import config
+from .util import Timer, constrain
 
 logger = logging.getLogger(__name__)
 
 
 class PWM(PoupoolActor):
-
     SECURITY_DURATION = int(config["disinfection", "security_duration"])
 
     def __init__(self, name, pump, period=120, min_runtime=3):
@@ -66,8 +65,10 @@ class PWM(PoupoolActor):
                 duty_on = self.period
             duty_off = self.period - duty_on
             if int(now) % 10 == 0:
-                logger.debug("%s duty (on/off): %.1f/%.1f state: %d duration: %.1f" %
-                             (self.__name, duty_on, duty_off, self.__state, self.__duration))
+                logger.debug(
+                    "%s duty (on/off): %.1f/%.1f state: %d duration: %.1f"
+                    % (self.__name, duty_on, duty_off, self.__state, self.__duration)
+                )
             if self.__state:
                 self.__security_duration.update(datetime.now())
                 if self.__duration >= duty_on and duty_on != self.period:
@@ -88,8 +89,7 @@ class PWM(PoupoolActor):
         self.do_delay(1, self.do_run.__name__)
 
 
-class PController(object):
-
+class PController:
     def __init__(self, pterm=0.1, scale=1.0):
         self.setpoint = 0
         self.current = 0
@@ -102,19 +102,13 @@ class PController(object):
 
 
 class Disinfection(PoupoolActor):
-
     STATE_REFRESH_DELAY = 10
     START_DELAY = int(config["disinfection", "start_delay"])
     WAITING_DELAY = int(config["disinfection", "waiting_delay"])
     PH_PWM_PERIOD = int(config["disinfection", "ph_pwm_period"])
     CL_PWM_PERIOD = int(config["disinfection", "cl_pwm_period"])
 
-    states = [
-        "halt",
-        "waiting",
-        {"name": "running", "initial": "adjusting", "children": [
-            "adjusting",
-            "treating"]}]
+    states = ["halt", "waiting", {"name": "running", "initial": "adjusting", "children": ["adjusting", "treating"]}]
 
     def __init__(self, encoder, devices, sensors_reader, sensors_writer, disable=False):
         super().__init__()

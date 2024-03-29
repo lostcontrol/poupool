@@ -15,24 +15,26 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from datetime import datetime, timedelta
+
 import pytest
-from datetime import timedelta, datetime
 
 
-@pytest.fixture
+@pytest.fixture()
 def util_timer():
     from controller.util import Timer
+
     return Timer("test")
 
 
-@pytest.fixture
+@pytest.fixture()
 def util_duration():
     from controller.util import Duration
+
     return Duration("test")
 
 
 class TestUtilDuration:
-
     def test_update(self, util_duration):
         util_duration.init(timedelta(seconds=100))
         assert util_duration.duration == timedelta(seconds=100)
@@ -71,7 +73,6 @@ class TestUtilDuration:
 
 
 class TestUtilTimer:
-
     def test_initial(self, util_timer):
         assert util_timer.remaining == timedelta()
         assert util_timer.duration == timedelta()
@@ -138,21 +139,23 @@ class TestUtilTimer:
 
 
 class TestMapping:
-
-    @pytest.mark.parametrize("x,y", [(0., 0.), (0.001, 1), (0.01, 10), (0.1, 100), (1., 1000)])
+    @pytest.mark.parametrize("x,y", [(0.0, 0.0), (0.001, 1), (0.01, 10), (0.1, 100), (1.0, 1000)])
     def test_mapping_upscale(self, x, y):
         from controller.util import mapping
+
         # More or less 1%
         assert mapping(x, 0, 1, 0, 1000) == pytest.approx(y, rel=0.01)
 
     @pytest.mark.parametrize("x,y", [(-127, -50), (0, 0), (127, 50), (255, 100), (512, 200)])
     def test_mapping_byte(self, x, y):
         from controller.util import mapping
+
         # More or less 1%
         assert mapping(x, 0, 255, 0, 100) == pytest.approx(y, rel=0.01)
 
-    @pytest.mark.parametrize("x,y", [(-100., -1.), (0., 0.), (50., 0.5), (100., 1.), (200., 2.)])
+    @pytest.mark.parametrize("x,y", [(-100.0, -1.0), (0.0, 0.0), (50.0, 0.5), (100.0, 1.0), (200.0, 2.0)])
     def test_mapping_float(self, x, y):
         from controller.util import mapping
+
         # More or less 1%
         assert mapping(x, 0, 100, 0, 1) == pytest.approx(y, rel=0.01)

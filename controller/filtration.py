@@ -15,22 +15,21 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pykka
-from datetime import datetime, timedelta
-import time
 import logging
+import time
+from datetime import datetime, timedelta
+
+import pykka
 from astral import geocoder, sun
-from .actor import PoupoolModel
-from .actor import PoupoolActor
-from .actor import do_repeat
-from .util import round_timedelta, Timer
+
+from .actor import PoupoolActor, PoupoolModel, do_repeat
 from .config import config
+from .util import Timer, round_timedelta
 
 logger = logging.getLogger(__name__)
 
 
-class EcoMode(object):
-
+class EcoMode:
     def __init__(self, encoder):
         self.__encoder = encoder
         self.filtration = Timer("filtration")
@@ -88,8 +87,9 @@ class EcoMode(object):
         assert self.period_duration > timedelta()
         remaining_periods = max(1, int(remaining_duration / self.period_duration))
         remaining_time = max(timedelta(), self.reset_hour - datetime.now())
-        logger.info("Remaining duration: %s periods: %d time: %s" %
-                    (remaining_duration, remaining_periods, remaining_time))
+        logger.info(
+            "Remaining duration: %s periods: %d time: %s" % (remaining_duration, remaining_periods, remaining_time)
+        )
         self.on_duration = min(remaining_time, remaining_duration / remaining_periods)
         if self.on_duration < timedelta(hours=1):
             self.on_duration = timedelta(hours=1)
@@ -101,8 +101,7 @@ class EcoMode(object):
             self.tank_duration = timedelta(minutes=1)
         if self.on_duration > self.tank_duration:
             self.on_duration -= self.tank_duration
-        logger.info("Duration on: %s tank: %s off: %s" %
-                    (self.on_duration, self.tank_duration, self.off_duration))
+        logger.info("Duration on: %s tank: %s off: %s" % (self.on_duration, self.tank_duration, self.off_duration))
 
     def set_current(self, duration):
         self.current.delay = duration
@@ -134,8 +133,7 @@ class EcoMode(object):
         return self.current.elapsed() and not self.filtration.elapsed()
 
 
-class StirMode(object):
-
+class StirMode:
     LOCATION = config["misc", "location"]
     SOLAR_ELEVATION = int(config["misc", "solar_elevation"])
 
@@ -193,7 +191,6 @@ class StirMode(object):
 
 
 class Filtration(PoupoolActor):
-
     STATE_REFRESH_DELAY = 10
     HEATING_DELAY_TO_ECO = int(config["heating", "delay_to_eco"])
     HEATING_DELAY_TO_OPEN = int(config["heating", "delay_to_open"])
@@ -202,37 +199,24 @@ class Filtration(PoupoolActor):
     WINTERING_DURATION = int(config["wintering", "duration"])
     WINTERING_PUMP_SPEED = int(config["wintering", "pump_speed"])
 
-    states = ["halt",
-              "closing",
-              {"name": "opening", "children": [
-                  "standby",
-                  "overflow"]},
-              {"name": "eco", "initial": "compute", "children": [
-                  "compute",
-                  "normal",
-                  "tank",
-                  "waiting"]},
-              {"name": "heating", "initial": "running", "children": [
-                  "running",
-                  {"name": "delay", "initial": "none", "children": [
-                      "none",
-                      "standby",
-                      "overflow"]}]},
-              {"name": "standby", "initial": "normal", "children": [
-                  "boost",
-                  "normal"]},
-              {"name": "overflow", "initial": "normal", "children": [
-                  "boost",
-                  "normal"]},
-              "comfort",
-              "sweep",
-              "reload",
-              {"name": "wash", "initial": "backwash", "children": [
-                  "backwash",
-                  "rinse"]},
-              {"name": "wintering", "initial": "waiting", "children": [
-                  "stir",
-                  "waiting"]}]
+    states = [
+        "halt",
+        "closing",
+        {"name": "opening", "children": ["standby", "overflow"]},
+        {"name": "eco", "initial": "compute", "children": ["compute", "normal", "tank", "waiting"]},
+        {
+            "name": "heating",
+            "initial": "running",
+            "children": ["running", {"name": "delay", "initial": "none", "children": ["none", "standby", "overflow"]}],
+        },
+        {"name": "standby", "initial": "normal", "children": ["boost", "normal"]},
+        {"name": "overflow", "initial": "normal", "children": ["boost", "normal"]},
+        "comfort",
+        "sweep",
+        "reload",
+        {"name": "wash", "initial": "backwash", "children": ["backwash", "rinse"]},
+        {"name": "wintering", "initial": "waiting", "children": ["stir", "waiting"]},
+    ]
 
     def __init__(self, temperature, encoder, devices):
         super().__init__()
@@ -253,16 +237,16 @@ class Filtration(PoupoolActor):
         self.__backwash_period = 30
         self.__backwash_last = datetime.fromtimestamp(0)
         # Initialize the state machine
-        self.__machine = PoupoolModel(model=self, states=Filtration.states, initial="halt",
-                                      before_state_change=[self.__before_state_change])
+        self.__machine = PoupoolModel(
+            model=self, states=Filtration.states, initial="halt", before_state_change=[self.__before_state_change]
+        )
         # Transitions
         # Eco
         self.__machine.add_transition("eco", ["standby", "overflow", "opening"], "closing")
         # Special transition from halt to eco because we need to start the tank FSM. However, we
         # cannot start it on_exit of halt because when going from halt to wintering, the tank will
         # remain in the halt state.
-        self.__machine.add_transition("eco", "halt", "eco", before=[
-                                      "arduino_start", "tank_start", "heating_start"])
+        self.__machine.add_transition("eco", "halt", "eco", before=["arduino_start", "tank_start", "heating_start"])
         self.__machine.add_transition("eco", ["reload", "wash_rinse"], "eco")
         self.__machine.add_transition("closed", "closing", "eco")
         self.__machine.add_transition("eco_normal", ["eco_compute", "eco_waiting"], "eco_normal")
@@ -270,48 +254,43 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("heat", ["eco_waiting", "eco_normal"], "heating")
         self.__machine.add_transition("heating_delay", "heating", "heating_delay_none")
         self.__machine.add_transition("heating_delayed", "heating_delay_none", "eco")
-        self.__machine.add_transition(
-            "eco_waiting", ["eco_compute", "eco_normal", "eco_tank"], "eco_waiting")
+        self.__machine.add_transition("eco_waiting", ["eco_compute", "eco_normal", "eco_tank"], "eco_waiting")
         self.__machine.add_transition("opened", "opening_standby", "standby_boost")
         self.__machine.add_transition("opened", "opening_overflow", "overflow_boost")
         # Standby
-        self.__machine.add_transition("standby", "heating_running",
-                                      "heating_delay_standby", unless="tank_is_low")
-        self.__machine.add_transition("heating_delayed", "heating_delay_standby",
-                                      "opening_standby", unless="tank_is_low")
+        self.__machine.add_transition("standby", "heating_running", "heating_delay_standby", unless="tank_is_low")
         self.__machine.add_transition(
-            "standby", ["eco", "closing"], "opening_standby", unless="tank_is_low")
+            "heating_delayed", "heating_delay_standby", "opening_standby", unless="tank_is_low"
+        )
+        self.__machine.add_transition("standby", ["eco", "closing"], "opening_standby", unless="tank_is_low")
         self.__machine.add_transition("standby", ["overflow", "sweep", "reload"], "standby")
-        self.__machine.add_transition("standby", "comfort", "standby",
-                                      unless="pump_stopped_in_standby")
+        self.__machine.add_transition("standby", "comfort", "standby", unless="pump_stopped_in_standby")
         self.__machine.add_transition("standby", "standby_boost", "standby_normal")
         # Allow manual boost mode
         self.__machine.add_transition("standby", "standby_normal", "standby_boost")
         # Overflow
-        self.__machine.add_transition("overflow", "heating_running",
-                                      "heating_delay_overflow", unless="tank_is_low")
-        self.__machine.add_transition("heating_delayed", "heating_delay_overflow",
-                                      "opening_overflow", unless="tank_is_low")
+        self.__machine.add_transition("overflow", "heating_running", "heating_delay_overflow", unless="tank_is_low")
         self.__machine.add_transition(
-            "overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
+            "heating_delayed", "heating_delay_overflow", "opening_overflow", unless="tank_is_low"
+        )
+        self.__machine.add_transition("overflow", ["eco", "closing"], "opening_overflow", unless="tank_is_low")
         self.__machine.add_transition("overflow", ["standby", "comfort", "reload"], "overflow")
         self.__machine.add_transition("overflow", "overflow_boost", "overflow_normal")
         # Allow manual boost mode
         self.__machine.add_transition("overflow", "overflow_normal", "overflow_boost")
         # Comfort
-        self.__machine.add_transition(
-            "comfort", ["standby", "overflow"], "comfort", after=self.reload_comfort)
+        self.__machine.add_transition("comfort", ["standby", "overflow"], "comfort", after=self.reload_comfort)
         self.__machine.add_transition("reload", ["comfort"], None, after=self.reload_comfort)
         # Sweep
         self.__machine.add_transition("sweep", "standby", "sweep")
         # Stop
-        self.__machine.add_transition("halt",
-                                      ["eco", "heating", "standby", "overflow", "comfort",
-                                       "sweep", "opening", "closing", "wash", "wintering"],
-                                      "halt")
-        # (Back)wash
         self.__machine.add_transition(
-            "wash", ["eco_normal", "eco_waiting"], "wash", conditions="tank_is_high")
+            "halt",
+            ["eco", "heating", "standby", "overflow", "comfort", "sweep", "opening", "closing", "wash", "wintering"],
+            "halt",
+        )
+        # (Back)wash
+        self.__machine.add_transition("wash", ["eco_normal", "eco_waiting"], "wash", conditions="tank_is_high")
         self.__machine.add_transition("rinse", "wash_backwash", "wash_rinse")
         # Wintering
         self.__machine.add_transition("wintering", "halt", "wintering")
@@ -325,6 +304,7 @@ class Filtration(PoupoolActor):
         self.__machine.add_transition("reload", ["eco", "standby", "overflow"], "reload")
         # Export the FSM
         from transitions.extensions import HierarchicalGraphMachine
+
         if isinstance(self.__machine, HierarchicalGraphMachine):
             args = "-Grankdir=LR -Goverlap=false -Gsplines=true -Gratio=1 -Gsep=.3"
             self.__machine.get_graph().draw("filtration.svg", prog="dot", args=args)
@@ -350,8 +330,7 @@ class Filtration(PoupoolActor):
 
     def restore_duration(self, value):
         self.__eco_mode.filtration.duration = timedelta(seconds=value)
-        logger.info("Elapsed duration for filtration set to: %s" %
-                    self.__eco_mode.filtration.duration)
+        logger.info("Elapsed duration for filtration set to: %s" % self.__eco_mode.filtration.duration)
 
     def cover_position_eco(self, value):
         self.__cover_position_eco = value

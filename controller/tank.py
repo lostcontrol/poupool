@@ -15,19 +15,17 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import logging
 import datetime
+import logging
+
 # from transitions.extensions import GraphMachine as Machine
-from .actor import PoupoolActor
-from .actor import PoupoolModel
-from .actor import StopRepeatException, do_repeat
+from .actor import PoupoolActor, PoupoolModel, StopRepeatException, do_repeat
 from .config import config
 
 logger = logging.getLogger(__name__)
 
 
 class Tank(PoupoolActor):
-
     STATE_REFRESH_DELAY = 10
 
     states = ["halt", "fill", "low", "normal", "high"]

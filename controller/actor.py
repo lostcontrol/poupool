@@ -15,14 +15,16 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import functools
+import logging
+import re
+from datetime import datetime
+from threading import Timer
+
 import pykka
+
 # from transitions.extensions import HierarchicalGraphMachine as Machine
 from transitions.extensions import HierarchicalMachine as Machine
-from datetime import datetime
-import logging
-import functools
-import re
-from threading import Timer
 
 logger = logging.getLogger(__name__)
 
@@ -43,20 +45,16 @@ def do_repeat():
                 method = re.sub("on_enter_", "do_repeat_", func.__name__)
                 function = getattr(self._proxy, method)
                 function.defer()
+
         return wrapped_func
+
     return wrap
 
 
 class PoupoolModel(Machine):
-
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("before_state_change", []).extend(["do_cancel", self.__update_state_time])
-        super().__init__(
-            auto_transitions=False,
-            ignore_invalid_triggers=True,
-            *args,
-            **kwargs
-        )
+        super().__init__(auto_transitions=False, ignore_invalid_triggers=True, *args, **kwargs)
         self.__state_time = None
 
     def __update_state_time(self):
@@ -67,7 +65,6 @@ class PoupoolModel(Machine):
 
 
 class PoupoolActor(pykka.ThreadingActor):
-
     def __init__(self):
         super().__init__()
         self._proxy = self.actor_ref.proxy()

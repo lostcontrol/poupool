@@ -15,14 +15,16 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import time
+import io
 import logging
 import re
-import serial
-import io
 import subprocess
-from abc import abstractmethod, ABC
-from .util import mapping, constrain
+import time
+from abc import ABC, abstractmethod
+
+import serial
+
+from .util import constrain, mapping
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +33,7 @@ class SensorError(Exception):
     pass
 
 
-class DeviceRegistry(object):
-
+class DeviceRegistry:
     def __init__(self):
         self.__valves = {}
         self.__pumps = {}
@@ -80,14 +81,12 @@ class DeviceRegistry(object):
         return self.__devices.get(name)
 
 
-class Device(object):
-
+class Device:
     def __init__(self, name):
         self.name = name
 
 
 class StoppableDevice(ABC, Device):
-
     def __init__(self, name):
         super().__init__(name)
 
@@ -97,7 +96,6 @@ class StoppableDevice(ABC, Device):
 
 
 class SwitchDevice(Device):
-
     def __init__(self, name, gpio, pin):
         super().__init__(name)
         self.__gpio = gpio
@@ -115,7 +113,6 @@ class SwitchDevice(Device):
 
 
 class PumpDevice(Device):
-
     def __init__(self, name, gpio, pins):
         super().__init__(name)
         self.__gpio = gpio
@@ -138,7 +135,6 @@ class PumpDevice(Device):
 
 
 class SwimPumpDevice(SwitchDevice):
-
     def __init__(self, name, gpio, pins, dac):
         super().__init__(name, gpio, pins)
         self.__speed = -1
@@ -167,7 +163,7 @@ class SwimPumpDevice(SwitchDevice):
         for _ in range(3):
             try:
                 if self.__dac is not None:
-                    self.__dac.normalized_value = value / 100.
+                    self.__dac.normalized_value = value / 100.0
                 self.__speed = value
                 logger.debug("Swim pump %s speed %d" % (self.name, value))
                 return
@@ -177,7 +173,6 @@ class SwimPumpDevice(SwitchDevice):
 
 
 class SensorDevice(ABC, Device):
-
     def __init__(self, name):
         super().__init__(name)
 
@@ -188,7 +183,6 @@ class SensorDevice(ABC, Device):
 
 
 class TempSensorDevice(SensorDevice):
-
     CRE = re.compile(r" t=(-?\d+)$")
 
     def __init__(self, name, address, offset=0.0):
@@ -198,7 +192,7 @@ class TempSensorDevice(SensorDevice):
         self.__offset = offset
 
     def __read_temp_raw(self):
-        with open(self.__path, "r") as f:
+        with open(self.__path) as f:
             return [line.strip() for line in f.readlines()]
 
     @property
@@ -213,7 +207,7 @@ class TempSensorDevice(SensorDevice):
                         logger.debug("Temp sensor raw data: %s" % str(data))
                         # CRC valid, read the data
                         match = TempSensorDevice.CRE.search(data)
-                        temperature = int(match.group(1)) / 1000. + self.__offset if match else None
+                        temperature = int(match.group(1)) / 1000.0 + self.__offset if match else None
                         # Range check, sometimes bad values pass the CRC check
                         if -20 < temperature < 80:
                             return temperature
@@ -228,7 +222,6 @@ class TempSensorDevice(SensorDevice):
 
 
 class TankSensorDevice(SensorDevice):
-
     def __init__(self, name, adc, channel, gain, low, high):
         super().__init__(name)
         self.__adc = adc
@@ -255,7 +248,6 @@ class TankSensorDevice(SensorDevice):
 
 
 class EZOSensorDevice(SensorDevice):
-
     def __init__(self, name, port):
         super().__init__(name)
         self.__serial = serial.Serial(port, timeout=0.1)
@@ -304,7 +296,6 @@ class EZOSensorDevice(SensorDevice):
 
 
 class ArduinoDevice(StoppableDevice):
-
     def __init__(self, name, port):
         super().__init__(name)
         # Disable hangup-on-close to avoid having the Arduino resetting when closing the
@@ -349,7 +340,7 @@ class ArduinoDevice(StoppableDevice):
             # flush buffer (should be empty but we can receive an "emergency stop")
             logger.debug("Flushing read buffer")
             read = self.__sio.readline()
-            while not read.strip() == "":
+            while read.strip() != "":
                 logger.error("Unexpected buffer content: %s" % read.strip())
                 read = self.__sio.readline()
             # send
@@ -382,7 +373,7 @@ class ArduinoDevice(StoppableDevice):
             # flush buffer (should be empty but we can receive an "emergency stop")
             logger.debug("Flushing read buffer")
             read = self.__sio.readline()
-            while not read.strip() == "":
+            while read.strip() != "":
                 logger.error("Unexpected buffer content: %s" % read.strip())
                 read = self.__sio.readline()
             # send
@@ -405,10 +396,10 @@ class ArduinoDevice(StoppableDevice):
 
 
 class LcdDevice(StoppableDevice):
-
     def __init__(self, name, port):
         super().__init__(name)
         from lcdbackpack import LcdBackpack
+
         self.__lcdbackpack = LcdBackpack(port, 115200)
 
     def stop(self):

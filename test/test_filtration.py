@@ -15,26 +15,26 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-from datetime import timedelta, datetime
-from freezegun import freeze_time
+from datetime import datetime, timedelta
+
 import pytest
-from unittest import mock
+from freezegun import freeze_time
 
 
-@pytest.fixture
+@pytest.fixture()
 def encoder(mocker):
     return mocker.Mock()
 
 
-@pytest.fixture
+@pytest.fixture()
 def eco_mode(encoder):
     from controller.filtration import EcoMode
+
     with freeze_time("1981-05-30 00:00:01"):
         return EcoMode(encoder)
 
 
 class TestEcoMode:
-
     @pytest.mark.parametrize("period", [1, 2, 3, 4])
     def test_24h_available_10h_daily_with_period(self, period, eco_mode):
         eco_mode.tank_percentage = 0.1

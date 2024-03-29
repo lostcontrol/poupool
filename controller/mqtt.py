@@ -15,15 +15,16 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import paho.mqtt.client as mqtt
 import logging
+
+import paho.mqtt.client as mqtt
+
 from .actor import PoupoolActor
 
 logger = logging.getLogger(__name__)
 
 
 class Mqtt(PoupoolActor):
-
     def __init__(self, dispatcher):
         super().__init__()
         self.__run = True

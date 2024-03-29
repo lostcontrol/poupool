@@ -16,8 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-class Encoder(object):
-
+class Encoder:
     def __init__(self, mqtt, lcd):
         self.__mqtt = mqtt
         self.__lcd = lcd

@@ -15,14 +15,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
 
-class Duration(object):
-
+class Duration:
     def __init__(self, name):
         self.__name = name
         self.__total_duration = timedelta()
@@ -55,8 +54,7 @@ class Duration(object):
             self.__callback(self.__total_duration)
 
 
-class Timer(object):
-
+class Timer:
     def __init__(self, name):
         self.__duration = timedelta()
         self.__name = name
@@ -97,8 +95,7 @@ class Timer(object):
             self.__duration += factor * (now - self.__last)
             remaining = max(timedelta(), self.delay - self.__duration)
             if self.__last_print + timedelta(seconds=20) <= now:
-                logger.debug("(%s) Timer: %s Remaining: %s" %
-                             (self.__name, self.__duration, remaining))
+                logger.debug("(%s) Timer: %s Remaining: %s" % (self.__name, self.__duration, remaining))
                 self.__last_print = now
         self.__last = now
 

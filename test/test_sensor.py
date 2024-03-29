@@ -16,21 +16,21 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import pytest
+
 from controller.sensor import MovingAverage
 
 
-@pytest.fixture
+@pytest.fixture()
 def temperature_reader(mocker):
     from controller.sensor import TemperatureReader
+
     reader = TemperatureReader({})
     return reader
 
 
 class TestTemperatureReader:
-
     def test_slope_empty(self, mocker, temperature_reader):
-        mock_values = mocker.patch(
-            "controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
+        mock_values = mocker.patch("controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
         mock_values.return_value = {"pool": MovingAverage(10)}
         assert temperature_reader.get_temperature_slope("pool") == 0
 
@@ -38,8 +38,7 @@ class TestTemperatureReader:
         average = MovingAverage(10)
         for i in range(1):
             average.push(20)
-        mock_values = mocker.patch(
-            "controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
+        mock_values = mocker.patch("controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
         mock_values.return_value = {"pool": average}
         assert temperature_reader.get_temperature_slope("pool") == 0
 
@@ -47,8 +46,7 @@ class TestTemperatureReader:
         average = MovingAverage(10)
         for i in range(2):
             average.push(i)
-        mock_values = mocker.patch(
-            "controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
+        mock_values = mocker.patch("controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
         mock_values.return_value = {"pool": average}
         assert temperature_reader.get_temperature_slope("pool") == 60
 
@@ -56,8 +54,7 @@ class TestTemperatureReader:
         average = MovingAverage(10)
         for i in range(10):
             average.push(20)
-        mock_values = mocker.patch(
-            "controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
+        mock_values = mocker.patch("controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
         mock_values.return_value = {"pool": average}
         assert temperature_reader.get_temperature_slope("pool") == 0
 
@@ -65,8 +62,7 @@ class TestTemperatureReader:
         average = MovingAverage(10)
         for i in range(10):
             average.push(i)
-        mock_values = mocker.patch(
-            "controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
+        mock_values = mocker.patch("controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
         mock_values.return_value = {"pool": average}
         assert temperature_reader.get_temperature_slope("pool") == 60
 
@@ -74,8 +70,7 @@ class TestTemperatureReader:
         average = MovingAverage(10)
         for i in range(10, 0, -1):
             average.push(i)
-        mock_values = mocker.patch(
-            "controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
+        mock_values = mocker.patch("controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
         mock_values.return_value = {"pool": average}
         assert temperature_reader.get_temperature_slope("pool") == -60
 
@@ -83,7 +78,6 @@ class TestTemperatureReader:
         average = MovingAverage(10)
         for i in range(5):
             average.push(i)
-        mock_values = mocker.patch(
-            "controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
+        mock_values = mocker.patch("controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
         mock_values.return_value = {"pool": average}
         assert temperature_reader.get_temperature_slope("pool") == 60

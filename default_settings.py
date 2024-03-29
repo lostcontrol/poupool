@@ -16,12 +16,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import datetime
-from controller.mqtt import Mqtt
+
 from controller.dispatcher import Dispatcher
+from controller.mqtt import Mqtt
 
 
-class FakeDispatcher(object):
-
+class FakeDispatcher:
     def topics(self):
         return []
 
@@ -84,11 +84,12 @@ def main():
 
     # Don't stop the client too quickly or not all messages will be published.
     import time
+
     time.sleep(1)
 
     mqtt.do_stop()
     mqtt.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

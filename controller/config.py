@@ -19,7 +19,6 @@ import configparser
 
 
 class Config:
-
     def __init__(self, config_files):
         self.__config = configparser.ConfigParser()
         self.__config.read(config_files)

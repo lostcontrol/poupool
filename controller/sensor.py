@@ -15,17 +15,17 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import collections
 import logging
 import statistics
-import collections
-from .actor import PoupoolActor
 from datetime import timedelta
+
+from .actor import PoupoolActor
 
 logger = logging.getLogger(__name__)
 
 
 class MovingAverage:
-
     def __init__(self, maxlen):
         self.__data = collections.deque(maxlen=maxlen)
 
@@ -43,7 +43,6 @@ class MovingAverage:
 
 
 class BaseReader(PoupoolActor):
-
     def __init__(self, sensors, maxlen=10):
         super().__init__()
         self.__sensors = sensors
@@ -63,7 +62,6 @@ class BaseReader(PoupoolActor):
 
 
 class DisinfectionReader(BaseReader):
-
     DELAY_SECONDS = 60
     DURATION = timedelta(minutes=5)
 
@@ -83,7 +81,6 @@ class DisinfectionReader(BaseReader):
 
 
 class DisinfectionWriter(PoupoolActor):
-
     DELAY_SECONDS = 60
 
     def __init__(self, encoder, reader):
@@ -102,7 +99,6 @@ class DisinfectionWriter(PoupoolActor):
 
 
 class TemperatureReader(BaseReader):
-
     DELAY_SECONDS = 60
     DURATION = timedelta(minutes=30)
 
@@ -133,7 +129,6 @@ class TemperatureReader(BaseReader):
 
 
 class TemperatureWriter(PoupoolActor):
-
     DELAY_SECONDS = 60
 
     def __init__(self, encoder, reader):

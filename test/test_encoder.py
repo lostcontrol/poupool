@@ -18,24 +18,24 @@
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture()
 def mqtt(mocker):
     return mocker.Mock()
 
 
-@pytest.fixture
+@pytest.fixture()
 def lcd(mocker):
     return mocker.Mock()
 
 
-@pytest.fixture
+@pytest.fixture()
 def encoder(mqtt, lcd):
     from controller.encoder import Encoder
+
     return Encoder(mqtt, lcd)
 
 
 class TestEncoder:
-
     def test_publish_int(self, mqtt, lcd, encoder):
         value = 10
         encoder.foo(value)

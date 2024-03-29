@@ -44,8 +44,7 @@ def to_string(x):
     return str(x)
 
 
-class Dispatcher(object):
-
+class Dispatcher:
     def __init__(self):
         self.__mapping = {}
 
@@ -53,16 +52,7 @@ class Dispatcher(object):
         self.__mapping = {
             "/settings/mode": (
                 filtration,
-                lambda x: x in (
-                    "halt",
-                    "eco",
-                    "standby",
-                    "overflow",
-                    "comfort",
-                    "sweep",
-                    "wash",
-                    "wintering"
-                ),
+                lambda x: x in ("halt", "eco", "standby", "overflow", "comfort", "sweep", "wash", "wintering"),
                 lambda x: x,
                 None,
                 False,
