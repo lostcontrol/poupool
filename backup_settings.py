@@ -16,15 +16,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from datetime import datetime
+from typing import Final
 
 from controller.dispatcher import Dispatcher
 from controller.mqtt import Mqtt
 
 
 class BackupDispatcher(Dispatcher):
-    ignore = [
-        "/status/filtration/duration",
-    ]
+    ignore: Final = ["/status/filtration/duration"]
 
     def __init__(self, fd):
         self.__fd = fd
@@ -33,7 +32,7 @@ class BackupDispatcher(Dispatcher):
         if topic in self.ignore:
             return
         data = payload.decode("utf-8")
-        self.__fd.write('mosquitto_pub -t %s -m "%s" -r\n' % (topic, data))
+        self.__fd.write(f'mosquitto_pub -t {topic} -m "{data}" -r\n')
 
 
 def main():

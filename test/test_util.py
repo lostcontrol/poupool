@@ -139,21 +139,21 @@ class TestUtilTimer:
 
 
 class TestMapping:
-    @pytest.mark.parametrize("x,y", [(0.0, 0.0), (0.001, 1), (0.01, 10), (0.1, 100), (1.0, 1000)])
+    @pytest.mark.parametrize(("x", "y"), [(0.0, 0.0), (0.001, 1), (0.01, 10), (0.1, 100), (1.0, 1000)])
     def test_mapping_upscale(self, x, y):
         from controller.util import mapping
 
         # More or less 1%
         assert mapping(x, 0, 1, 0, 1000) == pytest.approx(y, rel=0.01)
 
-    @pytest.mark.parametrize("x,y", [(-127, -50), (0, 0), (127, 50), (255, 100), (512, 200)])
+    @pytest.mark.parametrize(("x", "y"), [(-127, -50), (0, 0), (127, 50), (255, 100), (512, 200)])
     def test_mapping_byte(self, x, y):
         from controller.util import mapping
 
         # More or less 1%
         assert mapping(x, 0, 255, 0, 100) == pytest.approx(y, rel=0.01)
 
-    @pytest.mark.parametrize("x,y", [(-100.0, -1.0), (0.0, 0.0), (50.0, 0.5), (100.0, 1.0), (200.0, 2.0)])
+    @pytest.mark.parametrize(("x", "y"), [(-100.0, -1.0), (0.0, 0.0), (50.0, 0.5), (100.0, 1.0), (200.0, 2.0)])
     def test_mapping_float(self, x, y):
         from controller.util import mapping
 

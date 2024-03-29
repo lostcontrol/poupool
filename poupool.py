@@ -135,10 +135,10 @@ def setup_fake(registry):
             print("Set mode to %s" % mode)
 
         def setup(self, pins, pins_type):
-            print("Setup pin(s) %s to %s" % (str(pins), pins_type))
+            print(f"Setup pin(s) {pins!s} to {pins_type}")
 
         def output(self, pins, values):
-            print("Set pin(s) %s to %s" % (str(pins), str(values)))
+            print(f"Set pin(s) {pins!s} to {values!s}")
 
     class FakeSensor(SensorDevice):
         def __init__(self, name, value):
@@ -150,10 +150,10 @@ def setup_fake(registry):
             return self.__value
 
     class FakeRandomSensor(SensorDevice):
-        def __init__(self, name, min, max):
+        def __init__(self, name, min_value, max_value):
             super().__init__(name)
-            self.__min = min
-            self.__max = max
+            self.__min = min_value
+            self.__max = max_value
 
         @property
         def value(self):
@@ -383,7 +383,7 @@ def main(args, devices):
         time.sleep(2)
 
     # Wait forever or until SIGTERM is caught
-    while running and all([actor.is_alive() for actor in main_actors]):
+    while running and all(actor.is_alive() for actor in main_actors):
         time.sleep(0.5)
 
     # If possible try to stop the filtration actor which in turn will stop others.

@@ -17,6 +17,7 @@
 
 import logging
 from datetime import datetime, timedelta
+from typing import Final
 
 from .actor import PoupoolActor, PoupoolModel, do_repeat
 from .config import config
@@ -30,7 +31,7 @@ class Heater(PoupoolActor):
     HYSTERESIS_DOWN = float(config["heater", "hysteresis_down"])
     HYSTERESIS_UP = float(config["heater", "hysteresis_up"])
 
-    states = ["halt", "waiting", "heating"]
+    states: Final = ["halt", "waiting", "heating"]
 
     def __init__(self, temperature, heater):
         super().__init__()
@@ -92,7 +93,7 @@ class Heating(PoupoolActor):
     HYSTERESIS_MIN_TEMP = float(config["heating", "hysteresis_min_temp"])
     RECOVER_PERIOD = int(config["heating", "recover_period"])
 
-    states = ["halt", "waiting", "heating", "forcing", "recovering"]
+    states: Final = ["halt", "waiting", "heating", "forcing", "recovering"]
 
     class DurationEncoderCallback:
         def __init__(self, encoder):

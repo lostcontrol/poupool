@@ -17,6 +17,7 @@
 
 import datetime
 import logging
+from typing import Final
 
 # from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor, PoupoolModel, StopRepeatException, do_repeat
@@ -28,15 +29,15 @@ logger = logging.getLogger(__name__)
 class Tank(PoupoolActor):
     STATE_REFRESH_DELAY = 10
 
-    states = ["halt", "fill", "low", "normal", "high"]
+    states: Final = ["halt", "fill", "low", "normal", "high"]
 
     hysteresis = int(config["tank", "hysteresis"])
     levels_too_low = int(config["tank", "too_low"])
-    levels_eco = {
+    levels_eco: Final = {
         "low": int(config["tank", "eco_low"]),
         "high": int(config["tank", "eco_high"]),
     }
-    levels_overflow = {
+    levels_overflow: Final = {
         "low": int(config["tank", "overflow_low"]),
         "high": int(config["tank", "overflow_high"]),
     }
@@ -126,7 +127,7 @@ class Tank(PoupoolActor):
         if height >= self.levels["low"] + self.hysteresis:
             self._proxy.normal.defer()
             return
-        elif height < self.levels_too_low:
+        if height < self.levels_too_low:
             logger.warning("Tank TOO LOW, stopping: %d" % height)
             self.get_actor("Filtration").halt.defer()
             return
@@ -143,7 +144,7 @@ class Tank(PoupoolActor):
         if height < self.levels["low"] - self.hysteresis:
             self._proxy.low.defer()
             return
-        elif height >= self.levels["high"] + self.hysteresis:
+        if height >= self.levels["high"] + self.hysteresis:
             self._proxy.high.defer()
             return
         self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_normal.__name__)

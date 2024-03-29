@@ -95,7 +95,7 @@ class Timer:
             self.__duration += factor * (now - self.__last)
             remaining = max(timedelta(), self.delay - self.__duration)
             if self.__last_print + timedelta(seconds=20) <= now:
-                logger.debug("(%s) Timer: %s Remaining: %s" % (self.__name, self.__duration, remaining))
+                logger.debug(f"({self.__name}) Timer: {self.__duration} Remaining: {remaining}")
                 self.__last_print = now
         self.__last = now
 

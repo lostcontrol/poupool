@@ -18,6 +18,7 @@
 import logging
 import time
 from datetime import datetime, timedelta
+from typing import Final
 
 from .actor import PoupoolActor, PoupoolModel
 from .config import config
@@ -108,7 +109,11 @@ class Disinfection(PoupoolActor):
     PH_PWM_PERIOD = int(config["disinfection", "ph_pwm_period"])
     CL_PWM_PERIOD = int(config["disinfection", "cl_pwm_period"])
 
-    states = ["halt", "waiting", {"name": "running", "initial": "adjusting", "children": ["adjusting", "treating"]}]
+    states: Final = [
+        "halt",
+        "waiting",
+        {"name": "running", "initial": "adjusting", "children": ["adjusting", "treating"]},
+    ]
 
     def __init__(self, encoder, devices, sensors_reader, sensors_writer, disable=False):
         super().__init__()
@@ -198,7 +203,7 @@ class Disinfection(PoupoolActor):
         self.__ph_controller.current = ph
         ph_feedback = self.__ph_controller.compute() if self.__ph_enable else 0
         self.__encoder.disinfection_ph_feedback(int(round(ph_feedback * 100)))
-        logger.debug("pH: %.2f feedback: %.2f" % (ph, ph_feedback))
+        logger.debug(f"pH: {ph:.2f} feedback: {ph_feedback:.2f}")
         self.__ph.value = ph_feedback
         # ORP/Chlorine
         orp = self.__sensors_reader.get_orp().get()

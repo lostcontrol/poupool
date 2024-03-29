@@ -140,7 +140,7 @@ class TemperatureWriter(PoupoolActor):
         for name, value in self.__reader.get_all_temperatures().get().items():
             if value is not None:
                 rounded = round(value, 1)
-                logger.debug("Temperature (%s) is %.1f°C" % (name, rounded))
+                logger.debug(f"Temperature ({name}) is {rounded:.1f}°C")
                 f = getattr(self.__encoder, name)
                 f(rounded)
             else:

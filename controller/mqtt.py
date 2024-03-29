@@ -73,6 +73,6 @@ class Mqtt(PoupoolActor):
     def publish(self, topic, payload, qos=0, retain=False):
         result, _ = self.__client.publish(topic, payload, qos, retain)
         if result != 0:
-            logger.error("Unable to publish topic '%s':'%s'" % (topic, str(payload)))
+            logger.error(f"Unable to publish topic '{topic}':'{payload!s}'")
             return False
         return True

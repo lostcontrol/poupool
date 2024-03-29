@@ -79,7 +79,7 @@ class TestSwimPumpDevice:
         normalized_value = PropertyMock()
         type(dac).normalized_value = normalized_value
         swim_pump_device.speed(speed)
-        gpio.output.assert_has_calls([call(PIN, True), call(PIN, True if speed == 0 else False)])
+        gpio.output.assert_has_calls([call(PIN, True), call(PIN, speed == 0)])
         normalized_value.assert_called_once_with(speed / 100)
 
     @pytest.mark.parametrize("speed", [-1, 101, 999])

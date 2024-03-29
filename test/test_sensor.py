@@ -24,8 +24,7 @@ from controller.sensor import MovingAverage
 def temperature_reader(mocker):
     from controller.sensor import TemperatureReader
 
-    reader = TemperatureReader({})
-    return reader
+    return TemperatureReader({})
 
 
 class TestTemperatureReader:
@@ -36,7 +35,7 @@ class TestTemperatureReader:
 
     def test_slope_one_value(self, mocker, temperature_reader):
         average = MovingAverage(10)
-        for i in range(1):
+        for _ in range(1):
             average.push(20)
         mock_values = mocker.patch("controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
         mock_values.return_value = {"pool": average}
@@ -52,7 +51,7 @@ class TestTemperatureReader:
 
     def test_slope_constant_values(self, mocker, temperature_reader):
         average = MovingAverage(10)
-        for i in range(10):
+        for _ in range(10):
             average.push(20)
         mock_values = mocker.patch("controller.sensor.TemperatureReader.values", new_callable=mocker.PropertyMock)
         mock_values.return_value = {"pool": average}

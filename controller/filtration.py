@@ -18,6 +18,7 @@
 import logging
 import time
 from datetime import datetime, timedelta
+from typing import Final
 
 import pykka
 from astral import geocoder, sun
@@ -101,7 +102,7 @@ class EcoMode:
             self.tank_duration = timedelta(minutes=1)
         if self.on_duration > self.tank_duration:
             self.on_duration -= self.tank_duration
-        logger.info("Duration on: %s tank: %s off: %s" % (self.on_duration, self.tank_duration, self.off_duration))
+        logger.info(f"Duration on: {self.on_duration} tank: {self.tank_duration} off: {self.off_duration}")
 
     def set_current(self, duration):
         self.current.delay = duration
@@ -199,7 +200,7 @@ class Filtration(PoupoolActor):
     WINTERING_DURATION = int(config["wintering", "duration"])
     WINTERING_PUMP_SPEED = int(config["wintering", "pump_speed"])
 
-    states = [
+    states: Final = [
         "halt",
         "closing",
         {"name": "opening", "children": ["standby", "overflow"]},
@@ -437,8 +438,7 @@ class Filtration(PoupoolActor):
             if self.tank_is_high():
                 logger.info("Time for a backwash and tank is high")
                 return True
-            else:
-                logger.debug("Time for a backwash but tank is NOT HIGH")
+            logger.debug("Time for a backwash but tank is NOT HIGH")
         return False
 
     def __before_state_change(self):

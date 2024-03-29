@@ -57,7 +57,7 @@ class DeviceRegistry:
         self.__valves[device.name] = device
 
     def add_pump(self, device):
-        assert isinstance(device, (SwitchDevice, PumpDevice))
+        assert isinstance(device, SwitchDevice | PumpDevice)
         self.__pumps[device.name] = device
 
     def add_sensor(self, device):
@@ -211,8 +211,7 @@ class TempSensorDevice(SensorDevice):
                         # Range check, sometimes bad values pass the CRC check
                         if -20 < temperature < 80:
                             return temperature
-                        else:
-                            logger.debug("Temp outside range: %f" % temperature)
+                        logger.debug("Temp outside range: %f" % temperature)
                     else:
                         logger.debug("Bad CRC: %s" % str(raw))
                 time.sleep(0.1)
@@ -253,7 +252,7 @@ class EZOSensorDevice(SensorDevice):
         self.__serial = serial.Serial(port, timeout=0.1)
         self.__sio = io.TextIOWrapper(io.BufferedRWPair(self.__serial, self.__serial))
         info = self.__send("i")
-        logger.info("EZO sensor %s says: %s" % (name, info))
+        logger.info(f"EZO sensor {name} says: {info}")
         # Disable continuous mode
         self.__send("C,0")
         if self.__send("C,?") == "?C,0":
@@ -286,8 +285,7 @@ class EZOSensorDevice(SensorDevice):
                 read = self.__sio.readline()
             if read.strip() == "*OK":
                 return response
-            else:
-                logger.error("Bad response: %s" % read.strip())
+            logger.error("Bad response: %s" % read.strip())
         except Exception:
             # We catch everything in the hope that we recover with a reconnect.
             logger.exception("Serial sensor %s had an error. Reconnecting..." % self.name)
@@ -360,8 +358,7 @@ class ArduinoDevice(StoppableDevice):
             logger.debug("Received response")
             if read.strip() == "***" and response.startswith(value):
                 return response
-            else:
-                logger.error("Bad response: %s %s" % (response, read.strip()))
+            logger.error(f"Bad response: {response} {read.strip()}")
         except Exception:
             # We catch everything in the hope that we recover with a reconnect.
             logger.exception("Serial sensor %s had an error. Reconnecting..." % self.name)

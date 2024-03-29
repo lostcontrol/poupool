@@ -17,6 +17,7 @@
 
 import logging
 from datetime import datetime, timedelta
+from typing import Final
 
 # from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor, PoupoolModel, do_repeat
@@ -32,7 +33,7 @@ class Swim(PoupoolActor):
     WINTERING_ONLY_BELOW = float(config["wintering", "swim_only_below"])
     WINTERING_DURATION = int(config["wintering", "swim_duration"])
 
-    states = [
+    states: Final = [
         "halt",
         "timed",
         "continuous",

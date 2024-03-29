@@ -52,9 +52,9 @@ def do_repeat():
 
 
 class PoupoolModel(Machine):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         kwargs.setdefault("before_state_change", []).extend(["do_cancel", self.__update_state_time])
-        super().__init__(auto_transitions=False, ignore_invalid_triggers=True, *args, **kwargs)
+        super().__init__(auto_transitions=False, ignore_invalid_triggers=True, **kwargs)
         self.__state_time = None
 
     def __update_state_time(self):
@@ -93,7 +93,7 @@ class PoupoolActor(pykka.ThreadingActor):
         self.__do_cancel()
 
     def do_delay(self, delay, method, *args, **kwargs):
-        assert type(method) == str
+        assert isinstance(method, str)
         assert delay >= 0
         # Stop an already running timer
         self.__do_cancel()

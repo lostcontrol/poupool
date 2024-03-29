@@ -326,4 +326,4 @@ class Dispatcher:
                         logger.debug("Removing %s, only processed once" % topic)
                         del self.__mapping[topic]
             except Exception:
-                logger.exception("Unable to process data for %s: %s" % (topic, str(payload)))
+                logger.exception(f"Unable to process data for {topic}: {payload!s}")
