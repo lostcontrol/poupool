@@ -15,10 +15,10 @@ After=dev-ezo_orp.device
 
 [Service]
 Type=simple
-User=pi
-ExecStart=/home/pi/poupool/env/bin/python /home/pi/poupool/poupool.py \
-            --log-config=/home/pi/poupool/logging-file.conf
-WorkingDirectory=/home/pi/poupool
+User=poupool
+ExecStart=/home/poupool/poupool/.venv/bin/python /home/poupool/poupool/poupool.py \
+            --log-config=/home/poupool/poupool/logging-file.conf
+WorkingDirectory=/home/poupool/poupool
 Restart=on-failure
 
 [Install]
