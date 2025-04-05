@@ -132,7 +132,7 @@ def setup_fake(registry):
         BCM = "BCM"
 
         def setmode(self, mode):
-            print("Set mode to %s" % mode)
+            print(f"Set mode to {mode}")
 
         def setup(self, pins, pins_type):
             print(f"Setup pin(s) {pins!s} to {pins_type}")
@@ -260,7 +260,7 @@ def setup_fake(registry):
 
 
 def toggle_test(device):
-    print("Toggling %s " % device.name, end="")
+    print(f"Toggling {device.name} ", end="")
     result = input("[y/N]: ")
     if result == "y":
         device.on()
@@ -269,7 +269,7 @@ def toggle_test(device):
 
 
 def read_test(device):
-    print("Read %s " % device.name, end="")
+    print(f"Read {device.name} ", end="")
     try:
         result = int(input("[0-10000]: "))
         if 0 < result <= 10000:
@@ -282,11 +282,11 @@ def read_test(device):
 
 def test(args, devices):
     pump = devices.get_pump("variable")
-    print("Toggling %s " % pump.name, end="")
+    print(f"Toggling {pump.name} ", end="")
     result = input("[y/N]: ")
     if result == "y":
         for speed in reversed(range(4)):
-            print("%s: speed %d" % (pump.name, speed))
+            print(f"{pump.name}: speed {speed}")
             pump.speed(speed)
             time.sleep(2)
     toggle_test(devices.get_pump("boost"))
@@ -411,7 +411,7 @@ if __name__ == "__main__":
     if os.path.isfile(args.log_config):
         logging.config.fileConfig(args.log_config, disable_existing_loggers=False)
     else:
-        logging.error("Log configuration file (%s) cannot be used" % args.log_config)
+        logging.error(f"Log configuration file ({args.log_config}) cannot be used")
 
     # Handle SIGTERM nicely. It is used by systemd to stop us.
     signal.signal(signal.SIGTERM, sigterm_handler)

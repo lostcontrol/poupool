@@ -61,11 +61,11 @@ class Swim(PoupoolActor):
 
     def timer(self, value):
         self.__timer.delay = timedelta(minutes=value)
-        logger.info("Timer for swim set to: %s" % self.__timer.delay)
+        logger.info(f"Timer for swim set to: {self.__timer.delay}")
 
     def speed(self, value):
         self.__speed = value
-        logger.info("Speed for swim pump set to: %d" % self.__speed)
+        logger.info(f"Speed for swim pump set to: {self.__speed}")
 
     def filtration_allow_swim(self):
         actor = self.get_actor("Filtration")

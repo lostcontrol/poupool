@@ -38,7 +38,7 @@ class PWM(PoupoolActor):
         self.__last = None
         self.__duration = 0
         self.__state = False
-        self.__security_duration = Timer("PWM for %s" % name)
+        self.__security_duration = Timer(f"PWM for {name}")
         self.__security_duration.delay = timedelta(hours=PWM.SECURITY_DURATION)
         self.__security_reset = datetime.now() + timedelta(days=1)
         self.__min_runtime = min_runtime
@@ -67,8 +67,8 @@ class PWM(PoupoolActor):
             duty_off = self.period - duty_on
             if int(now) % 10 == 0:
                 logger.debug(
-                    "%s duty (on/off): %.1f/%.1f state: %d duration: %.1f"
-                    % (self.__name, duty_on, duty_off, self.__state, self.__duration)
+                    f"{self.__name} duty (on/off): {duty_on:.1f}/{duty_off:.1f} "
+                    "state: {self.__state} duration: {self.__duration:.1f}"
                 )
             if self.__state:
                 self.__security_duration.update(datetime.now())
@@ -154,20 +154,20 @@ class Disinfection(PoupoolActor):
 
     def ph_setpoint(self, value):
         self.__ph_controller.setpoint = value
-        logger.info("pH setpoint set to: %.2f" % self.__ph_controller.setpoint)
+        logger.info(f"pH setpoint set to: {self.__ph_controller.setpoint:.2f}")
 
     def orp_setpoint(self, value):
         self.__orp_controller.setpoint = value
-        logger.info("ORP setpoint set to: %d" % self.__orp_controller.setpoint)
+        logger.info(f"ORP setpoint set to: {self.__orp_controller.setpoint}")
 
     def ph_pterm(self, value):
         # We assume here that we use "pH minus" chemicals, therefore inverse the term.
         self.__ph_controller.pterm = -value
-        logger.info("pH pterm set to: %.2f" % self.__ph_controller.pterm)
+        logger.info(f"pH pterm set to: {self.__ph_controller.pterm:.2f}")
 
     def orp_pterm(self, value):
         self.__orp_controller.pterm = value
-        logger.info("ORP pterm set to: %.2f" % self.__orp_controller.pterm)
+        logger.info(f"ORP pterm set to: {self.__orp_controller.pterm:.2f}")
 
     def is_disabled(self):
         return self.__is_disabled
@@ -202,15 +202,15 @@ class Disinfection(PoupoolActor):
         ph = self.__sensors_reader.get_ph().get()
         self.__ph_controller.current = ph
         ph_feedback = self.__ph_controller.compute() if self.__ph_enable else 0
-        self.__encoder.disinfection_ph_feedback(int(round(ph_feedback * 100)))
+        self.__encoder.disinfection_ph_feedback(round(ph_feedback * 100))
         logger.debug(f"pH: {ph:.2f} feedback: {ph_feedback:.2f}")
         self.__ph.value = ph_feedback
         # ORP/Chlorine
         orp = self.__sensors_reader.get_orp().get()
         self.__orp_controller.current = orp
         cl_feedback = self.__orp_controller.compute() if self.__orp_enable else 0
-        self.__encoder.disinfection_cl_feedback(int(round(cl_feedback * 100)))
-        logger.debug("ORP: %d feedback: %.2f" % (orp, cl_feedback))
+        self.__encoder.disinfection_cl_feedback(round(cl_feedback * 100))
+        logger.debug(f"ORP: {orp} feedback: {cl_feedback:.2f}")
         self.__cl.value = cl_feedback
         self._proxy.treat.defer()
 

@@ -59,8 +59,8 @@ class Tank(PoupoolActor):
 
     def __get_tank_height(self):
         height = self.__devices.get_sensor("tank").value
-        logger.debug("Tank level: %d" % height)
-        self.__encoder.tank_height(int(round(height)))
+        logger.debug(f"Tank level: {height}")
+        self.__encoder.tank_height(round(height))
         return height
 
     def force_empty(self, value):
@@ -80,7 +80,7 @@ class Tank(PoupoolActor):
         return self.__force_empty
 
     def set_mode(self, mode):
-        logger.info("Tank level set to %s" % mode)
+        logger.info(f"Tank level set to {mode}")
         self.levels = self.levels_eco if mode == "eco" else self.levels_overflow
 
     def on_enter_halt(self):
@@ -128,7 +128,7 @@ class Tank(PoupoolActor):
             self._proxy.normal.defer()
             return
         if height < self.levels_too_low:
-            logger.warning("Tank TOO LOW, stopping: %d" % height)
+            logger.warning(f"Tank TOO LOW, stopping: {height}")
             self.get_actor("Filtration").halt.defer()
             return
         self.do_delay(self.STATE_REFRESH_DELAY / 2, self.do_repeat_low.__name__)

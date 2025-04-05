@@ -48,7 +48,7 @@ class MyPoupoolActor(PoupoolActor):
         self.do_delay(1, self.do_run.__name__)
 
 
-@pytest.fixture()
+@pytest.fixture
 def poupool_actor():
     yield MyPoupoolActor.start().proxy()
     pykka.ActorRegistry.stop_all()

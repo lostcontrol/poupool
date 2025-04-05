@@ -21,12 +21,12 @@ import pytest
 from pykka._threading import ThreadingFuture
 
 
-@pytest.fixture()
+@pytest.fixture
 def encoder(mocker):
     return mocker.Mock()
 
 
-@pytest.fixture()
+@pytest.fixture
 def devices(mocker):
     from controller.device import DeviceRegistry, PumpDevice
 
@@ -37,14 +37,14 @@ def devices(mocker):
     return registry
 
 
-@pytest.fixture()
+@pytest.fixture
 def filtration(mocker):
     from controller.filtration import Filtration
 
     return mocker.Mock(Filtration)
 
 
-@pytest.fixture()
+@pytest.fixture
 def swim(mocker, encoder, devices, filtration):
     from controller.swim import Swim
 

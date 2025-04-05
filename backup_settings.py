@@ -41,7 +41,7 @@ def main():
         dispatcher = BackupDispatcher(fd)
         dispatcher.register(None, None, None, None, None, None, None, None)
 
-        fd.write("# Backup from %s\n" % datetime.now())
+        fd.write(f"# Backup from {datetime.now()}\n")
 
         mqtt = Mqtt.start(dispatcher).proxy()
         mqtt.do_start()

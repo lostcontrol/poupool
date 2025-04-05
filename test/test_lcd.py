@@ -19,12 +19,12 @@ import pytest
 from serial.serialutil import SerialException
 
 
-@pytest.fixture()
+@pytest.fixture
 def lcdbackpack(mocker):
     return mocker.Mock()
 
 
-@pytest.fixture()
+@pytest.fixture
 def lcd(lcdbackpack):
     from controller.lcd import Lcd
 

@@ -323,7 +323,7 @@ class Dispatcher:
                     # Remove the entry if it should be processed only once e.g. for
                     # configuration restore at startup.
                     if once:
-                        logger.debug("Removing %s, only processed once" % topic)
+                        logger.debug(f"Removing {topic}, only processed once")
                         del self.__mapping[topic]
             except Exception:
                 logger.exception(f"Unable to process data for {topic}: {payload!s}")

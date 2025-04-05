@@ -20,14 +20,14 @@ from unittest import mock
 import pytest
 
 
-@pytest.fixture()
+@pytest.fixture
 def pump(mocker):
     from controller.device import SwitchDevice
 
     return mocker.Mock(SwitchDevice)
 
 
-@pytest.fixture()
+@pytest.fixture
 def pwm(pump):
     from controller.disinfection import PWM
 

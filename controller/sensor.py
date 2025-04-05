@@ -91,10 +91,10 @@ class DisinfectionWriter(PoupoolActor):
     def do_write(self):
         orp = self.__reader.get_orp().get()
         if orp:
-            self.__encoder.disinfection_orp_value("%d" % orp)
+            self.__encoder.disinfection_orp_value(f"{orp}")
         ph = self.__reader.get_ph().get()
         if ph:
-            self.__encoder.disinfection_ph_value("%.2f" % ph)
+            self.__encoder.disinfection_ph_value(f"{ph:.2f}")
         self.do_delay(self.DELAY_SECONDS, self.do_write.__name__)
 
 
@@ -144,9 +144,9 @@ class TemperatureWriter(PoupoolActor):
                 f = getattr(self.__encoder, name)
                 f(rounded)
             else:
-                logger.warning("Temperature (%s) cannot be read!!!" % name)
+                logger.warning(f"Temperature ({name}) cannot be read!!!")
         # Special handling for temperature slope for the pool
         rounded = round(self.__reader.get_temperature_slope("temperature_pool").get(), 2)
-        logger.debug("Temperature slope for pool is %.2f°C/hour" % rounded)
+        logger.debug(f"Temperature slope for pool is {rounded:.2f}°C/hour")
         self.__encoder.temperature_pool__slope(rounded)
         self.do_delay(self.DELAY_SECONDS, self.do_write.__name__)

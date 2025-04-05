@@ -53,7 +53,7 @@ class Heater(PoupoolActor):
 
     def setpoint(self, value):
         self.__setpoint = value
-        logger.info("Setpoint set to %.1f" % self.__setpoint)
+        logger.info(f"Setpoint set to {self.__setpoint:.1f}")
 
     def on_enter_halt(self):
         logger.info("Entering halt state")
@@ -135,7 +135,7 @@ class Heating(PoupoolActor):
     def total_seconds(self, value):
         duration = timedelta(seconds=value)
         self.__total_duration.init(duration)
-        logger.info("Total running hours set to %s" % duration)
+        logger.info(f"Total running hours set to {duration}")
 
     def enable(self, value):
         self.__enable = value
@@ -143,22 +143,22 @@ class Heating(PoupoolActor):
 
     def setpoint(self, value):
         self.__setpoint = value
-        logger.info("Setpoint set to %.1f" % self.__setpoint)
+        logger.info(f"Setpoint set to {self.__setpoint:.1f}")
         # Hack. Restart the heating if the setpoint is changed
         if self.__next_start > datetime.now():
             self.__next_start -= timedelta(days=1)
 
     def start_hour(self, value):
-        logger.info("Hour for heating start set to: %s" % value)
+        logger.info(f"Hour for heating start set to: {value}")
         self.__next_start_hour = value
         self.__set_next_start()
         if self.__next_start < datetime.now():
             self.__next_start -= timedelta(days=1)
-        logger.info("Next heating scheduled for %s" % self.__next_start)
+        logger.info(f"Next heating scheduled for {self.__next_start}")
 
     def min_temp(self, value):
         self.__min_temp = value
-        logger.info("Minimum temperature for heating set to %d" % self.__min_temp)
+        logger.info(f"Minimum temperature for heating set to {self.__min_temp}")
 
     def filtration_ready_for_heating(self):
         actor = self.get_actor("Filtration")
@@ -194,7 +194,7 @@ class Heating(PoupoolActor):
         if temp is not None and (temp - Heating.HYSTERESIS_DOWN) >= self.__setpoint:
             # No need to heat today. Schedule for next day
             self.__set_next_start()
-            logger.info("No heating needed today. Scheduled for %s" % self.__next_start)
+            logger.info(f"No heating needed today. Scheduled for {self.__next_start}")
             self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_waiting.__name__)
             return
         # We ensure the outside temperature is high enough to get a good efficiency from the
@@ -247,7 +247,7 @@ class Heating(PoupoolActor):
         # If the heating is aborted by the user, we also consider it as done and will heat again
         # the next day. If the heating ends normally then we are anyway done for the day.
         self.__set_next_start()
-        logger.info("Heating done for today. Scheduled for %s" % self.__next_start)
+        logger.info(f"Heating done for today. Scheduled for {self.__next_start}")
         # Only change the filtration state if we are running in heating_running state
         if self.filtration_allow_heating():
             self.get_actor("Filtration").heating_delay.defer()

@@ -17,7 +17,6 @@
 
 import functools
 import logging
-import re
 from datetime import datetime
 from threading import Timer
 
@@ -42,7 +41,7 @@ def do_repeat():
             except StopRepeatException:
                 pass
             else:
-                method = re.sub("on_enter_", "do_repeat_", func.__name__)
+                method = func.__name__.replace("on_enter_", "do_repeat_")
                 function = getattr(self._proxy, method)
                 function.defer()
 
@@ -81,7 +80,7 @@ class PoupoolActor(pykka.ThreadingActor):
         fsm = pykka.ActorRegistry.get_by_class_name(name)
         if fsm:
             return fsm[0].proxy()
-        logger.critical("Actor %s not found!!!" % name)
+        logger.critical(f"Actor {name} not found!!!")
         return None
 
     def __do_cancel(self):

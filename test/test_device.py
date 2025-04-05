@@ -20,12 +20,12 @@ from unittest.mock import DEFAULT, PropertyMock, call
 import pytest
 
 
-@pytest.fixture()
+@pytest.fixture
 def gpio(mocker):
     return mocker.Mock()
 
 
-@pytest.fixture()
+@pytest.fixture
 def dac(mocker):
     return mocker.Mock()
 
@@ -33,14 +33,14 @@ def dac(mocker):
 PIN = 11
 
 
-@pytest.fixture()
+@pytest.fixture
 def swim_pump_device(gpio, dac):
     from controller.device import SwimPumpDevice
 
     return SwimPumpDevice("swim", gpio, PIN, dac)
 
 
-@pytest.fixture()
+@pytest.fixture
 def swim_pump_device_without_dac(gpio, dac):
     from controller.device import SwimPumpDevice
 

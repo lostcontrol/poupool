@@ -104,11 +104,11 @@ class SwitchDevice(Device):
         self.__gpio.output(self.pin, True)
 
     def on(self):
-        logger.debug("Switch %s (%d) set to ON" % (self.name, self.pin))
+        logger.debug(f"Switch {self.name} ({self.pin}) set to ON")
         self.__gpio.output(self.pin, False)
 
     def off(self):
-        logger.debug("Switch %s (%d) set to OFF" % (self.name, self.pin))
+        logger.debug(f"Switch {self.name} ({self.pin}) set to OFF")
         self.__gpio.output(self.pin, True)
 
 
@@ -130,7 +130,7 @@ class PumpDevice(Device):
     def speed(self, value):
         assert 0 <= value <= 3
         values = [i != value for i in range(len(self.pins))]
-        logger.debug("Pump %s speed %d (%s:%s)" % (self.name, value, str(self.pins), str(values)))
+        logger.debug(f"Pump {self.name} speed {value} ({self.pins}:{values})")
         self.__gpio.output(self.pins, values)
 
 
@@ -165,10 +165,10 @@ class SwimPumpDevice(SwitchDevice):
                 if self.__dac is not None:
                     self.__dac.normalized_value = value / 100.0
                 self.__speed = value
-                logger.debug("Swim pump %s speed %d" % (self.name, value))
+                logger.debug(f"Swim pump {self.name} speed {value}")
                 return
             except OSError:
-                logger.exception("Unable to set %s pump speed" % self.name)
+                logger.exception(f"Unable to set {self.name} pump speed")
                 time.sleep(0.2)
 
 
@@ -188,7 +188,7 @@ class TempSensorDevice(SensorDevice):
     def __init__(self, name, address, offset=0.0):
         super().__init__(name)
         self.__address = address
-        self.__path = "/sys/bus/w1/devices/%s/w1_slave" % address
+        self.__path = f"/sys/bus/w1/devices/{address}/w1_slave"
         self.__offset = offset
 
     def __read_temp_raw(self):
@@ -204,19 +204,19 @@ class TempSensorDevice(SensorDevice):
                 if len(raw) == 2:
                     crc, data = raw
                     if crc.endswith("YES"):
-                        logger.debug("Temp sensor raw data: %s" % str(data))
+                        logger.debug(f"Temp sensor raw data: {data!s}")
                         # CRC valid, read the data
                         match = TempSensorDevice.CRE.search(data)
                         temperature = int(match.group(1)) / 1000.0 + self.__offset if match else None
                         # Range check, sometimes bad values pass the CRC check
                         if -20 < temperature < 80:
                             return temperature
-                        logger.debug("Temp outside range: %f" % temperature)
+                        logger.debug(f"Temp outside range: {temperature:f}")
                     else:
-                        logger.debug("Bad CRC: %s" % str(raw))
+                        logger.debug(f"Bad CRC: {raw!s}")
                 time.sleep(0.1)
         except OSError:
-            logger.exception("Unable to read temperature (%s)" % self.name)
+            logger.exception(f"Unable to read temperature ({self.name})")
         return None
 
 
@@ -237,12 +237,12 @@ class TankSensorDevice(SensorDevice):
                 values.append(self.__adc.read(self.__channel))
                 time.sleep(0.05)
             except OSError:
-                logger.exception("Unable to read ADC %s" % self.name)
+                logger.exception(f"Unable to read ADC {self.name}")
                 time.sleep(0.5)
         # In case we got really no readings, we return 0 in order for the system to go into
         # emergency stop.
         value = sum(values) / len(values) if values else 0
-        logger.debug("Tank sensor average ADC=%.2f" % value)
+        logger.debug(f"Tank sensor average ADC={value:.2f}")
         return constrain(mapping(value, self.__low, self.__high, 0, 100), 0, 100)
 
 
@@ -258,7 +258,7 @@ class EZOSensorDevice(SensorDevice):
         if self.__send("C,?") == "?C,0":
             logger.debug("Disabled continuous readings")
         else:
-            logger.error("Unable to disable continuous readings for %s" % name)
+            logger.error(f"Unable to disable continuous readings for {name}")
 
     def __reconnect(self):
         self.__serial.close()
@@ -285,10 +285,10 @@ class EZOSensorDevice(SensorDevice):
                 read = self.__sio.readline()
             if read.strip() == "*OK":
                 return response
-            logger.error("Bad response: %s" % read.strip())
+            logger.error(f"Bad response: {read.strip()}")
         except Exception:
             # We catch everything in the hope that we recover with a reconnect.
-            logger.exception("Serial sensor %s had an error. Reconnecting..." % self.name)
+            logger.exception(f"Serial sensor {self.name} had an error. Reconnecting...")
             self.__reconnect()
         return None
 
@@ -339,10 +339,10 @@ class ArduinoDevice(StoppableDevice):
             logger.debug("Flushing read buffer")
             read = self.__sio.readline()
             while read.strip() != "":
-                logger.error("Unexpected buffer content: %s" % read.strip())
+                logger.error(f"Unexpected buffer content: {read.strip()}")
                 read = self.__sio.readline()
             # send
-            logger.debug("Writing '%s' to serial port" % value)
+            logger.debug(f"Writing '{value}' to serial port")
             self.__sio.write(value + "\n")
             self.__sio.flush()
             # receive
@@ -361,7 +361,7 @@ class ArduinoDevice(StoppableDevice):
             logger.error(f"Bad response: {response} {read.strip()}")
         except Exception:
             # We catch everything in the hope that we recover with a reconnect.
-            logger.exception("Serial sensor %s had an error. Reconnecting..." % self.name)
+            logger.exception(f"Serial sensor {self.name} had an error. Reconnecting...")
             self.__reconnect()
         return None
 
@@ -371,7 +371,7 @@ class ArduinoDevice(StoppableDevice):
             logger.debug("Flushing read buffer")
             read = self.__sio.readline()
             while read.strip() != "":
-                logger.error("Unexpected buffer content: %s" % read.strip())
+                logger.error(f"Unexpected buffer content: {read.strip()}")
                 read = self.__sio.readline()
             # send
             logger.debug("Writing 'debug' to serial port")
@@ -388,7 +388,7 @@ class ArduinoDevice(StoppableDevice):
             logger.debug("Received response")
         except Exception:
             # We catch everything in the hope that we recover with a reconnect.
-            logger.exception("Serial sensor %s had an error. Reconnecting..." % self.name)
+            logger.exception(f"Serial sensor {self.name} had an error. Reconnecting...")
             self.__reconnect()
 
 

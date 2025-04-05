@@ -20,14 +20,14 @@ from datetime import datetime, timedelta
 import pytest
 
 
-@pytest.fixture()
+@pytest.fixture
 def util_timer():
     from controller.util import Timer
 
     return Timer("test")
 
 
-@pytest.fixture()
+@pytest.fixture
 def util_duration():
     from controller.util import Duration
 

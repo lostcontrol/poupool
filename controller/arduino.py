@@ -43,7 +43,7 @@ class Arduino(PoupoolActor):
 
     def restore_water_counter(self, value):
         self.__water_counter = value
-        logger.info("Water counter set to: %d" % self.__water_counter)
+        logger.info(f"Water counter set to: {self.__water_counter}")
 
     def cover_open(self):
         self.__arduino.cover_open()

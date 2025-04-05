@@ -21,12 +21,12 @@ import pytest
 from freezegun import freeze_time
 
 
-@pytest.fixture()
+@pytest.fixture
 def encoder(mocker):
     return mocker.Mock()
 
 
-@pytest.fixture()
+@pytest.fixture
 def eco_mode(encoder):
     from controller.filtration import EcoMode
 

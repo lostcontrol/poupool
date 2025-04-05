@@ -88,9 +88,7 @@ class EcoMode:
         assert self.period_duration > timedelta()
         remaining_periods = max(1, int(remaining_duration / self.period_duration))
         remaining_time = max(timedelta(), self.reset_hour - datetime.now())
-        logger.info(
-            "Remaining duration: %s periods: %d time: %s" % (remaining_duration, remaining_periods, remaining_time)
-        )
+        logger.info(f"Remaining duration: {remaining_duration} periods: {remaining_periods} time: {remaining_time}")
         self.on_duration = min(remaining_time, remaining_duration / remaining_periods)
         if self.on_duration < timedelta(hours=1):
             self.on_duration = timedelta(hours=1)
@@ -152,7 +150,7 @@ class StirMode:
             logger.error("Stir period must be greater than stir duration!!!")
         else:
             self.__period = period
-            logger.info("Stir period set to: %s" % self.__period)
+            logger.info(f"Stir period set to: {self.__period}")
 
     def stir_duration(self, value):
         duration = timedelta(seconds=value)
@@ -160,20 +158,20 @@ class StirMode:
             logger.error("Stir period must be greater than stir duration!!!")
         else:
             self.__duration = duration
-            logger.info("Stir duration set to: %s" % self.__duration)
+            logger.info(f"Stir duration set to: {self.__duration}")
 
     def __pause(self, now):
         if now is None:
             self.__current.delay = max(timedelta(), self.__period - self.__duration)
         self.__stir_state = False
         self.__devices.get_pump("boost").off()
-        logger.info("Stir deactivated for %s" % self.__current.remaining)
+        logger.info(f"Stir deactivated for {self.__current.remaining}")
 
     def __stir(self):
         self.__stir_state = True
         self.__current.delay = self.__duration
         self.__devices.get_pump("boost").on()
-        logger.info("Stir activated for %s" % self.__current.remaining)
+        logger.info(f"Stir activated for {self.__current.remaining}")
 
     def clear(self, now):
         self.__pause(now)
@@ -319,27 +317,27 @@ class Filtration(PoupoolActor):
     def duration(self, value):
         current_duration = self.__eco_mode.filtration.duration
         self.__eco_mode.daily = timedelta(seconds=value)
-        logger.info("Duration for daily filtration set to: %s" % self.__eco_mode.daily)
+        logger.info(f"Duration for daily filtration set to: {self.__eco_mode.daily}")
         # Restore today's elapsed duration
         self.__eco_mode.filtration.duration = current_duration
         self.__reload_eco()
 
     def period(self, value):
         self.__eco_mode.period = value
-        logger.info("Period(s) for filtration set to: %s" % self.__eco_mode.period)
+        logger.info(f"Period(s) for filtration set to: {self.__eco_mode.period}")
         self.__reload_eco()
 
     def restore_duration(self, value):
         self.__eco_mode.filtration.duration = timedelta(seconds=value)
-        logger.info("Elapsed duration for filtration set to: %s" % self.__eco_mode.filtration.duration)
+        logger.info(f"Elapsed duration for filtration set to: {self.__eco_mode.filtration.duration}")
 
     def cover_position_eco(self, value):
         self.__cover_position_eco = value
-        logger.info("Cover position during eco mode set to: %d" % self.__cover_position_eco)
+        logger.info(f"Cover position during eco mode set to: {self.__cover_position_eco}")
 
     def tank_percentage(self, value):
         self.__eco_mode.tank_percentage = value
-        logger.info("Percentage for tank filtration set to: %s" % self.__eco_mode.tank_percentage)
+        logger.info(f"Percentage for tank filtration set to: {self.__eco_mode.tank_percentage}")
         self.__reload_eco()
 
     def stir_duration(self, value):
@@ -350,16 +348,16 @@ class Filtration(PoupoolActor):
 
     def reset_hour(self, value):
         self.__eco_mode.reset_hour = value
-        logger.info("Hour for daily filtration reset set to: %s" % self.__eco_mode.reset_hour.hour)
+        logger.info(f"Hour for daily filtration reset set to: {self.__eco_mode.reset_hour.hour}")
         self.__reload_eco()
 
     def boost_duration(self, value):
         self.__boost_duration = timedelta(seconds=value)
-        logger.info("Duration for boost while going out of eco set to: %s" % self.__boost_duration)
+        logger.info(f"Duration for boost while going out of eco set to: {self.__boost_duration}")
 
     def speed_eco(self, value):
         self.__speed_eco = value
-        logger.info("Speed for eco mode set to: %d" % self.__speed_eco)
+        logger.info(f"Speed for eco mode set to: {self.__speed_eco}")
         if self.is_eco_normal():
             # Jump to the reload state so that we can jump back into standby mode
             self._proxy.reload.defer()
@@ -367,7 +365,7 @@ class Filtration(PoupoolActor):
 
     def speed_standby(self, value):
         self.__speed_standby = value
-        logger.info("Speed for standby mode set to: %d" % self.__speed_standby)
+        logger.info(f"Speed for standby mode set to: {self.__speed_standby}")
         if self.is_standby_normal():
             # Jump to the reload state so that we can jump back into standby mode
             self._proxy.reload.defer()
@@ -375,7 +373,7 @@ class Filtration(PoupoolActor):
 
     def speed_overflow(self, value):
         self.__speed_overflow = value
-        logger.info("Speed for overflow mode set to: %d" % self.__speed_overflow)
+        logger.info(f"Speed for overflow mode set to: {self.__speed_overflow}")
         if self.is_overflow_normal():
             # Jump to the reload state so that we can jump back into overflow mode
             self._proxy.reload.defer()
@@ -390,22 +388,22 @@ class Filtration(PoupoolActor):
 
     def backwash_backwash_duration(self, value):
         self.__backwash_backwash_duration = timedelta(seconds=value)
-        logger.info("Duration for backwash set to: %s" % self.__backwash_backwash_duration)
+        logger.info(f"Duration for backwash set to: {self.__backwash_backwash_duration}")
 
     def backwash_rinse_duration(self, value):
         self.__backwash_rinse_duration = timedelta(seconds=value)
-        logger.info("Duration for rinse set to: %s" % self.__backwash_rinse_duration)
+        logger.info(f"Duration for rinse set to: {self.__backwash_rinse_duration}")
 
     def backwash_period(self, value):
         if value < 2:
             logger.error("We do not allow backwash everyday!!!")
         else:
             self.__backwash_period = value
-            logger.info("Backwash period set to: %d" % self.__backwash_period)
+            logger.info(f"Backwash period set to: {self.__backwash_period}")
 
     def backwash_last(self, value):
         self.__backwash_last = datetime.strptime(value, "%c")
-        logger.info("Backwash last set to: %s" % self.__backwash_last)
+        logger.info(f"Backwash last set to: {self.__backwash_last}")
 
     def tank_start(self):
         tank = self.get_actor("Tank")
@@ -496,8 +494,8 @@ class Filtration(PoupoolActor):
 
     def do_repeat_closing(self):
         position = self.get_actor("Arduino").cover_position().get()
-        logger.debug("Cover position is %d" % position)
-        self.__encoder.filtration_state("closing_%d" % (position // 10 * 10))
+        logger.debug(f"Cover position is {position}")
+        self.__encoder.filtration_state(f"closing_{position // 10 * 10}")
         if position <= self.__cover_position_eco:
             # Because of roundings, the cover might still need to move just a little more to reach
             # 0. But if we want to stop the cover somewhere in between, we exit the state directly.
@@ -529,8 +527,8 @@ class Filtration(PoupoolActor):
 
     def do_repeat_opening(self):
         position = self.get_actor("Arduino").cover_position().get()
-        logger.debug("Cover position is %d" % position)
-        self.__encoder.filtration_state("opening_%d" % (position // 10 * 10))
+        logger.debug(f"Cover position is {position}")
+        self.__encoder.filtration_state(f"opening_{position // 10 * 10}")
         if position == 100:
             # Because of roundings, the cover might still need to move just a little more.
             # We wait a bit more before exiting the state.

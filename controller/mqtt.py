@@ -47,7 +47,7 @@ class Mqtt(PoupoolActor):
         self.__dispatcher.dispatch(message.topic, message.payload)
 
     def __on_disconnect(self, client, userdata, rc):
-        logger.warning("MQTT client disconnected: %d" % rc)
+        logger.warning(f"MQTT client disconnected: {rc}")
         if rc != 0 and self.__run:
             self.do_connect()
 
@@ -55,7 +55,7 @@ class Mqtt(PoupoolActor):
         try:
             self.__client.connect("localhost")
         except Exception as e:
-            logger.error("Unable to connect to MQTT broker: %s" % e)
+            logger.error(f"Unable to connect to MQTT broker: {e}")
             self.do_delay(5, self.do_connect.__name__)
 
     def do_start(self):

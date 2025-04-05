@@ -20,7 +20,7 @@ import pytest
 from controller.sensor import MovingAverage
 
 
-@pytest.fixture()
+@pytest.fixture
 def temperature_reader(mocker):
     from controller.sensor import TemperatureReader
 
