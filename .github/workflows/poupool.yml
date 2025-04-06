@@ -34,3 +34,6 @@ jobs:
     - name: Test start the application
       run: |
         python poupool.py --fake-devices --test-start
+    - name: Upload coverage report
+      run: |
+        codecov
