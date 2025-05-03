@@ -221,10 +221,8 @@ class TempSensorDevice(SensorDevice):
 
 
 class TankSensorDevice(SensorDevice):
-    def __init__(self, name, adc, channel, gain, low, high):
+    def __init__(self, name, channel, low, high):
         super().__init__(name)
-        self.__adc = adc
-        self.__adc.gain = gain
         self.__channel = channel
         self.__low = low
         self.__high = high
@@ -234,7 +232,7 @@ class TankSensorDevice(SensorDevice):
         values = []
         for _ in range(10):
             try:
-                values.append(self.__adc.read(self.__channel))
+                values.append(self.__channel.voltage)
                 time.sleep(0.05)
             except OSError:
                 logger.exception(f"Unable to read ADC {self.name}")
@@ -242,7 +240,7 @@ class TankSensorDevice(SensorDevice):
         # In case we got really no readings, we return 0 in order for the system to go into
         # emergency stop.
         value = sum(values) / len(values) if values else 0
-        logger.debug(f"Tank sensor average ADC={value:.2f}")
+        logger.debug(f"Tank sensor average ADC voltage={value:.2f}")
         return constrain(mapping(value, self.__low, self.__high, 0, 100), 0, 100)
 
 
