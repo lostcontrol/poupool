@@ -1,1 +1,1 @@
-ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0043", SYMLINK+="arduino", TAG+="systemd"
+SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0043", SYMLINK+="arduino", TAG+="systemd"
