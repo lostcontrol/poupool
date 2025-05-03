@@ -59,7 +59,7 @@ class Tank(PoupoolActor):
 
     def __get_tank_height(self):
         height = self.__devices.get_sensor("tank").value
-        logger.debug(f"Tank level: {height}")
+        logger.debug(f"Tank level: {height:.1f}")
         self.__encoder.tank_height(round(height))
         return height
 
