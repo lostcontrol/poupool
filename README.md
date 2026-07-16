@@ -1,6 +1,6 @@
 # Poupool - The swimming pool controller
 
-[![Build Status](https://travis-ci.com/lostcontrol/poupool.svg?branch=master)](https://travis-ci.com/lostcontrol/poupool)
+[![Poupool](https://github.com/lostcontrol/poupool/actions/workflows/poupool.yml/badge.svg)](https://github.com/lostcontrol/poupool/actions/workflows/poupool.yml)
 [![codecov](https://codecov.io/gh/lostcontrol/poupool/branch/master/graph/badge.svg)](https://codecov.io/gh/lostcontrol/poupool)
 
 Poupool is a swimming pool control software.
@@ -8,7 +8,7 @@ Poupool is a swimming pool control software.
 It is based on [Transitions](https://github.com/pytransitions/transitions),
 [Pykka](https://www.pykka.org) and [Paho MQTT](https://github.com/eclipse/paho.mqtt.python).
 The user interface is built using the excellent home automation server
-[openHAB](http://www.openhab.org). Though, any MQTT client could be used to interact with the
+[Home Assistant](https://www.home-assistant.io/). Though, any MQTT client could be used to interact with the
 system.
 
 ![The swimming pool](docs/images/pool-01.jpg)
@@ -37,12 +37,12 @@ Several other features are available like a wintering state stiring the pool to 
 possible to have the water freezing, a stiring feature when the cover is closed to dissipate the
 heat forming just under the cover, the control of a swimming pump and more.
 
-Here is a screenshot of the main menu in openHAB 2.5M1:
+Here is a screenshot of the main menu in Home Assistant:
 
-![openHAB main menu](docs/images/openhab-01.png)
+![Home Assistant main menu](docs/images/openhab-01.png)
 
-Of course, you can use the iOS or Android openHAB clients, write your own HABPanel interface or
-even use the REST API provided by openHAB.
+Of course, you can use the iOS or Android Home Assistant companion apps, write your own Lovelace dashboards or
+even use the REST API provided by Home Assistant.
 
 ## Dependencies
 
@@ -64,7 +64,7 @@ Raspberry Pi:
 
 User interface:
 
-* openHAB 2.5
+* Home Assistant
 
 Development tools:
 
