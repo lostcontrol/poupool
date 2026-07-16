@@ -1,9 +1,0 @@
-paho-mqtt==2.1.0
-pykka==4.4.2
-pyserial==3.5
-transitions==0.9.3
-astral==3.2
-rpi-gpio==0.7.1
-adafruit-circuitpython-ads1x15==3.0.5
-adafruit-circuitpython-mcp4725==1.4.21
-lcdbackpack==1.0.0b1

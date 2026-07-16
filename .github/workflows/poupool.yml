@@ -16,26 +16,29 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
     - name: Set up Python 3.11
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
     - name: Install dependencies
       run: |
         sudo apt-get install -y --no-install-recommends mosquitto
-        python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
+        uv sync
     - name: Lint with pre-commit
       run: |
-        pre-commit run -a
+        uv run pre-commit run -a
     - name: Test with pytest
       run: |
-        pytest --cov=controller --cov-report term test/
+        uv run pytest --cov=controller --cov-report term test/
     - name: Test start the application
       run: |
-        python poupool.py --fake-devices --test-start
+        uv run python poupool.py --fake-devices --test-start
     - name: Upload coverage report
       run: |
-        codecov
+        uv run codecov
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -46,8 +46,8 @@ even use the REST API provided by openHAB.
 
 ## Dependencies
 
-These are the external dependencies that can be install via `pip`. You will also need Python 3.5.
-Best is to setup a virtual environment.
+These are the external dependencies that can be installed via `uv`. You will also need Python 3.11+.
+Best is to setup a virtual environment by running `uv sync`.
 
 Frameworks:
 
