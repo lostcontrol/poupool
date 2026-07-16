@@ -1,0 +1,259 @@
+mqtt:
+  select:
+    - name: "Poupool Mode"
+      state_topic: "/settings/mode"
+      command_topic: "/settings/mode"
+      options:
+        - "halt"
+        - "comfort"
+        - "eco"
+        - "auto"
+        - "manual"
+
+    - name: "Poupool Swim Mode"
+      state_topic: "/status/swim/state"
+      command_topic: "/settings/swim/mode"
+      options:
+        - "halt"
+        - "auto"
+        - "manual"
+
+    - name: "Poupool Light Mode"
+      state_topic: "/status/light/state"
+      command_topic: "/settings/light/mode"
+      options:
+        - "halt"
+        - "auto"
+        - "manual"
+
+  sensor:
+    - name: "Poupool Filtration State"
+      state_topic: "/status/filtration/state"
+
+    - name: "Poupool Filtration Next Event"
+      state_topic: "/status/filtration/next"
+
+    - name: "Poupool Filtration Remaining Duration"
+      state_topic: "/status/filtration/remaining"
+
+    - name: "Poupool Tank State"
+      state_topic: "/status/tank/state"
+
+    - name: "Poupool Tank Height"
+      state_topic: "/status/tank/height"
+      unit_of_measurement: "%"
+      state_class: measurement
+
+    - name: "Poupool Filtration Backwash Last"
+      state_topic: "/status/filtration/backwash/last"
+
+    - name: "Poupool Swim State"
+      state_topic: "/status/swim/state"
+
+    - name: "Poupool Temperature Pool"
+      state_topic: "/status/temperature/pool"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+
+    - name: "Poupool Temperature Pool Slope"
+      state_topic: "/status/temperature/pool_slope"
+      unit_of_measurement: "°C/h"
+
+    - name: "Poupool Temperature Air"
+      state_topic: "/status/temperature/air"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+
+    - name: "Poupool Temperature Local"
+      state_topic: "/status/temperature/local"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+
+    - name: "Poupool Temperature Ncc"
+      state_topic: "/status/temperature/ncc"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+
+    - name: "Poupool Water Counter"
+      state_topic: "/status/water/counter"
+      unit_of_measurement: "L"
+      device_class: water
+      state_class: total_increasing
+
+    - name: "Poupool Heating State"
+      state_topic: "/status/heating/state"
+
+    - name: "Poupool Heating Total Hours"
+      state_topic: "/status/heating/total_seconds"
+      unit_of_measurement: "s"
+      device_class: duration
+      state_class: total_increasing
+
+    - name: "Poupool Light State"
+      state_topic: "/status/light/state"
+
+    - name: "Poupool Disinfection State"
+      state_topic: "/status/disinfection/state"
+
+    - name: "Poupool Disinfection PH"
+      state_topic: "/status/disinfection/ph/value"
+      state_class: measurement
+
+    - name: "Poupool Disinfection ORP"
+      state_topic: "/status/disinfection/orp/value"
+      state_class: measurement
+
+    - name: "Poupool Disinfection Feedback PH"
+      state_topic: "/status/disinfection/ph/feedback"
+      unit_of_measurement: "%"
+      state_class: measurement
+
+    - name: "Poupool Disinfection Feedback Cl"
+      state_topic: "/status/disinfection/cl/feedback"
+      unit_of_measurement: "%"
+      state_class: measurement
+
+  number:
+    - name: "Poupool Filtration Duration"
+      state_topic: "/settings/filtration/duration"
+      command_topic: "/settings/filtration/duration"
+      unit_of_measurement: "s"
+
+    - name: "Poupool Filtration Period"
+      state_topic: "/settings/filtration/period"
+      command_topic: "/settings/filtration/period"
+      min: 1
+      max: 24
+
+    - name: "Poupool Filtration Hour Of Reset"
+      state_topic: "/settings/filtration/reset_hour"
+      command_topic: "/settings/filtration/reset_hour"
+      min: 0
+      max: 23
+
+    - name: "Poupool Filtration Boost Duration"
+      state_topic: "/settings/filtration/boost_duration"
+      command_topic: "/settings/filtration/boost_duration"
+      unit_of_measurement: "s"
+
+    - name: "Poupool Filtration Tank Percentage"
+      state_topic: "/settings/filtration/tank_percentage"
+      command_topic: "/settings/filtration/tank_percentage"
+
+    - name: "Poupool Filtration Stir Duration"
+      state_topic: "/settings/filtration/stir_duration"
+      command_topic: "/settings/filtration/stir_duration"
+      unit_of_measurement: "s"
+
+    - name: "Poupool Filtration Stir Period"
+      state_topic: "/settings/filtration/stir_period"
+      command_topic: "/settings/filtration/stir_period"
+      unit_of_measurement: "s"
+
+    - name: "Poupool Filtration Speed Eco"
+      state_topic: "/settings/filtration/speed/eco"
+      command_topic: "/settings/filtration/speed/eco"
+
+    - name: "Poupool Filtration Speed Standby"
+      state_topic: "/settings/filtration/speed/standby"
+      command_topic: "/settings/filtration/speed/standby"
+
+    - name: "Poupool Filtration Speed Overflow"
+      state_topic: "/settings/filtration/speed/overflow"
+      command_topic: "/settings/filtration/speed/overflow"
+
+    - name: "Poupool Cover Position Eco"
+      state_topic: "/settings/cover/position/eco"
+      command_topic: "/settings/cover/position/eco"
+
+    - name: "Poupool Filtration Backwash Period"
+      state_topic: "/settings/filtration/backwash/period"
+      command_topic: "/settings/filtration/backwash/period"
+      unit_of_measurement: "days"
+
+    - name: "Poupool Filtration Backwash Duration"
+      state_topic: "/settings/filtration/backwash/backwash_duration"
+      command_topic: "/settings/filtration/backwash/backwash_duration"
+      unit_of_measurement: "s"
+
+    - name: "Poupool Filtration Rinse Duration"
+      state_topic: "/settings/filtration/backwash/rinse_duration"
+      command_topic: "/settings/filtration/backwash/rinse_duration"
+      unit_of_measurement: "s"
+
+    - name: "Poupool Swim Timer"
+      state_topic: "/settings/swim/timer"
+      command_topic: "/settings/swim/timer"
+      unit_of_measurement: "min"
+
+    - name: "Poupool Swim Speed"
+      state_topic: "/settings/swim/speed"
+      command_topic: "/settings/swim/speed"
+      unit_of_measurement: "%"
+
+    - name: "Poupool Heating Setpoint"
+      state_topic: "/settings/heating/setpoint"
+      command_topic: "/settings/heating/setpoint"
+      unit_of_measurement: "°C"
+
+    - name: "Poupool Heating Hour Of Start"
+      state_topic: "/settings/heating/start_hour"
+      command_topic: "/settings/heating/start_hour"
+      min: 0
+      max: 23
+
+    - name: "Poupool Heating Min Temp"
+      state_topic: "/settings/heating/min_temp"
+      command_topic: "/settings/heating/min_temp"
+      unit_of_measurement: "°C"
+
+    - name: "Poupool Disinfection PH Setpoint"
+      state_topic: "/settings/disinfection/ph/setpoint"
+      command_topic: "/settings/disinfection/ph/setpoint"
+
+    - name: "Poupool Disinfection PH Pterm"
+      state_topic: "/settings/disinfection/ph/pterm"
+      command_topic: "/settings/disinfection/ph/pterm"
+
+    - name: "Poupool Disinfection ORP Setpoint"
+      state_topic: "/settings/disinfection/orp/setpoint"
+      command_topic: "/settings/disinfection/orp/setpoint"
+
+    - name: "Poupool Disinfection ORP Pterm"
+      state_topic: "/settings/disinfection/orp/pterm"
+      command_topic: "/settings/disinfection/orp/pterm"
+
+  switch:
+    - name: "Poupool Filtration Overflow In Comfort"
+      state_topic: "/settings/filtration/overflow_in_comfort"
+      command_topic: "/settings/filtration/overflow_in_comfort"
+      payload_on: "1"
+      payload_off: "0"
+
+    - name: "Poupool Tank Force Empty"
+      state_topic: "/settings/tank/force_empty"
+      command_topic: "/settings/tank/force_empty"
+      payload_on: "1"
+      payload_off: "0"
+
+    - name: "Poupool Heating Enable"
+      state_topic: "/settings/heating/enable"
+      command_topic: "/settings/heating/enable"
+      payload_on: "1"
+      payload_off: "0"
+
+    - name: "Poupool Disinfection PH Enable"
+      state_topic: "/settings/disinfection/ph/enable"
+      command_topic: "/settings/disinfection/ph/enable"
+      payload_on: "1"
+      payload_off: "0"
+
+    - name: "Poupool Disinfection ORP Enable"
+      state_topic: "/settings/disinfection/orp/enable"
+      command_topic: "/settings/disinfection/orp/enable"
+      payload_on: "1"
+      payload_off: "0"
