@@ -1,31 +1,10 @@
 # Poupool User Manual
 
 ## Introduction
-Poupool is an advanced, fully automated overflow swimming pool control software. It takes care of everything: the buffer tank, filtration, chemical disinfection (pH and ORP monitoring), heating (via a heat pump), the pool cover, underwater lights, multiple temperature sensors, and a variable-speed counter-current swimming pump.
+Poupool is an advanced, fully automated overflow swimming pool control software.
+Unlike standard skimmer pools where the water level sits below the edge and surface debris is drawn into wall-mounted openings, an overflow pool keeps the water level perfectly flush with the surrounding deck. The water continuously spills over the edge into a perimeter gutter and flows into a dedicated buffer tank. This provides superior surface skimming, better water circulation, and a stunning "infinity edge" aesthetic. Poupool is explicitly designed to handle the complex valve and pump orchestration required to manage this buffer tank, alongside filtration, chemical disinfection (pH and ORP monitoring), heating (via a heat pump), the pool cover, underwater lights, multiple temperature sensors, and a variable-speed counter-current swimming pump.
 
 All the hardware is COTS (commercial off-the-shelf) based on a Raspberry Pi 3 as the central brain, connected to an Arduino for real-time hardware interaction, relay boards, and standard electronic components easily available online.
-
----
-
-## Core Concepts Explained
-To fully understand how Poupool manages your pool, it's helpful to grasp a few core chemical and control engineering concepts.
-
-### What is pH?
-pH is a scale used to specify the acidity or basicity of an aqueous solution. It ranges from 0 to 14:
-- A pH of 7 is neutral.
-- A pH less than 7 is acidic.
-- A pH greater than 7 is basic (alkaline).
-
-In a swimming pool, maintaining a pH between 7.0 and 7.4 is critical. If the pH is too high, the chlorine loses its effectiveness and scale can form on the pool walls. If it's too low, the water becomes corrosive to equipment and irritating to swimmers. Poupool automatically injects "pH minus" (acid) to lower the pH whenever it creeps above the target setpoint.
-
-### What is ORP?
-ORP stands for Oxidation-Reduction Potential, measured in millivolts (mV). While testing for "free chlorine" tells you how much chlorine is physically in the water, ORP tells you how *effective* that chlorine is at killing bacteria and oxidizing contaminants.
-A higher ORP means the water is actively sanitizing. A typical target for a clean, safe pool is around 600 mV to 700 mV. If the ORP drops below your setpoint, Poupool activates the chlorine dosing pump.
-
-### Proportional (P) Controllers
-Poupool uses Proportional controllers (a simplified version of PID controllers) to manage chemical dosing smoothly.
-Instead of simply turning a chemical pump on and leaving it on until the target is reached (which often leads to an overshoot, injecting too much chemical), a P-controller calculates an error: `Error = Setpoint - Current Value`.
-The injection pump is driven using Pulse Width Modulation (PWM) where the duration the pump is turned ON is *proportional* to the error. If the pool is far from the target pH, the pump runs longer. As it gets closer to the target, it injects smaller and smaller doses, ensuring perfectly balanced water.
 
 ---
 
@@ -182,3 +161,27 @@ The swimming pump powers the counter-current swimming jets.
 
 ## Light
 Underwater pool lights are controlled via a simple toggle relay. The system switches between `on` and `halt` states to activate the illumination.
+
+## Appendix: Knowledge Database
+
+## Core Concepts Explained
+To fully understand how Poupool manages your pool, it's helpful to grasp a few core chemical and control engineering concepts.
+
+### What is pH?
+pH is a scale used to specify the acidity or basicity of an aqueous solution. It ranges from 0 to 14:
+- A pH of 7 is neutral.
+- A pH less than 7 is acidic.
+- A pH greater than 7 is basic (alkaline).
+
+In a swimming pool, maintaining a pH between 7.0 and 7.4 is critical. If the pH is too high, the chlorine loses its effectiveness and scale can form on the pool walls. If it's too low, the water becomes corrosive to equipment and irritating to swimmers. Poupool automatically injects "pH minus" (acid) to lower the pH whenever it creeps above the target setpoint.
+
+### What is ORP?
+ORP stands for Oxidation-Reduction Potential, measured in millivolts (mV). While testing for "free chlorine" tells you how much chlorine is physically in the water, ORP tells you how *effective* that chlorine is at killing bacteria and oxidizing contaminants.
+A higher ORP means the water is actively sanitizing. A typical target for a clean, safe pool is around 600 mV to 700 mV. If the ORP drops below your setpoint, Poupool activates the chlorine dosing pump.
+
+### Proportional (P) Controllers
+Poupool uses Proportional controllers (a simplified version of PID controllers) to manage chemical dosing smoothly.
+Instead of simply turning a chemical pump on and leaving it on until the target is reached (which often leads to an overshoot, injecting too much chemical), a P-controller calculates an error: `Error = Setpoint - Current Value`.
+The injection pump is driven using Pulse Width Modulation (PWM) where the duration the pump is turned ON is *proportional* to the error. If the pool is far from the target pH, the pump runs longer. As it gets closer to the target, it injects smaller and smaller doses, ensuring perfectly balanced water.
+
+---
