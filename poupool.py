@@ -89,11 +89,10 @@ def setup_rpi(registry):
     i2c = busio.I2C(board.SCL, board.SDA)
 
     # ADC
-    import adafruit_ads1x15.ads1015 as ADS
-    from adafruit_ads1x15.analog_in import AnalogIn
+    from adafruit_ads1x15 import ADS1015, AnalogIn
 
     # Create the ADC object using the I2C bus
-    adc = ADS.ADS1015(i2c)
+    adc = ADS1015(i2c)
     adc.gain = float(config["adc", "gain"])
     channel = AnalogIn(adc, int(config["adc", "channel"]))
     registry.add_sensor(TankSensorDevice("tank", channel, float(config["adc", "low"]), float(config["adc", "high"])))
