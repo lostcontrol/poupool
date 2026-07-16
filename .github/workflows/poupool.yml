@@ -44,13 +44,3 @@ jobs:
       with:
         pytest-coverage-path: ./pytest-coverage.txt
         junitxml-path: ./pytest.xml
-    - name: Update README
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-      run: |
-        sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n${{ steps.coverage.outputs.coverageHtml }}\n<!-- Pytest Coverage Comment:End -->' ./README.md
-    - name: Commit changes
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-      uses: stefanzweifel/git-auto-commit-action@v5
-      with:
-        commit_message: 'docs: update coverage badge'
-        file_pattern: README.md
