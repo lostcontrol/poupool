@@ -64,6 +64,7 @@ class Cover {
     }
 
     void reset() {
+      InterruptGuard _{};
       m_position.position = 0;
       m_position.close = 0;
       m_position.open = 0;
@@ -88,7 +89,7 @@ class Cover {
             digitalWrite(pins.cover_open, LOW);
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
-            m_previous_time = now;
+            m_previous_time = millis();
             // Cancel a potential stop event
             m_do_stop_time = 0;
             break;
@@ -99,7 +100,7 @@ class Cover {
             digitalWrite(pins.cover_close, LOW);
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
-            m_previous_time = now;
+            m_previous_time = millis();
             // Cancel a potential stop event
             m_do_stop_time = 0;
             break;
@@ -184,30 +185,39 @@ class Cover {
           m_set_limits = SetLimit::CLOSE;
           break;
         case Direction::STOP:
-          switch (m_set_limits) {
-            case SetLimit::OPEN:
-              m_position.open = position;
-              break;
-            case SetLimit::CLOSE:
-              m_position.close = position;
-              break;
-            case SetLimit::NONE:
-              break;
+          {
+            InterruptGuard _{};
+            switch (m_set_limits) {
+              case SetLimit::OPEN:
+                m_position.open = position;
+                break;
+              case SetLimit::CLOSE:
+                m_position.close = position;
+                break;
+              case SetLimit::NONE:
+                break;
+            }
+            m_set_limits = SetLimit::NONE;
+            // Save settings to EEPROM. Update will not touch the EEPROM if the data is the same so
+            // it's safe to put it here.
+            EEPROM.updateBlock(0, m_position);
           }
-          m_set_limits = SetLimit::NONE;
-          // Save settings to EEPROM. Update will not touch the EEPROM if the data is the same so
-          // it's safe to put it here.
-          InterruptGuard _{};
-          EEPROM.updateBlock(0, m_position);
           break;
       }
     }
 
     byte get_position_percentage() const {
       const auto position = get_position();
-      const auto diff = m_position.open - m_position.close;
+      long open_pos = 0;
+      long close_pos = 0;
+      {
+        InterruptGuard _{};
+        open_pos = m_position.open;
+        close_pos = m_position.close;
+      }
+      const auto diff = open_pos - close_pos;
       if (diff == 0) return 0;
-      return constrain(100 * (position - m_position.close) / diff, 0, 100);
+      return constrain(100 * (position - close_pos) / diff, 0, 100);
     }
 
     void step() {
@@ -230,12 +240,21 @@ class Cover {
     }
 
     void debug() const {
+      long pos = 0;
+      long open_pos = 0;
+      long close_pos = 0;
+      {
+        InterruptGuard _{};
+        pos = m_position.position;
+        open_pos = m_position.open;
+        close_pos = m_position.close;
+      }
       Serial.print(F("position="));
-      Serial.println(m_position.position);
+      Serial.println(pos);
       Serial.print(F("open="));
-      Serial.println(m_position.open);
+      Serial.println(open_pos);
       Serial.print(F("close="));
-      Serial.println(m_position.close);
+      Serial.println(close_pos);
     }
 
   private:
