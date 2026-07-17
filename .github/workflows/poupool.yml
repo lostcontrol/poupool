@@ -7,7 +7,8 @@ on:
     branches: [ "master" ]
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
   build:
@@ -33,12 +34,13 @@ jobs:
         uv run pre-commit run -a
     - name: Test with pytest
       run: |
-        uv run pytest --cov=controller --cov-report term test/
+        uv run pytest --cov=controller --cov-report term --junitxml=pytest.xml --cov-report=term-missing:skip-covered test/ | tee pytest-coverage.txt
     - name: Test start the application
       run: |
         uv run python poupool.py --fake-devices --test-start
-    - name: Upload coverage report
-      run: |
-        uv run codecov
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    - name: Pytest coverage comment
+      id: coverage
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-coverage-path: ./pytest-coverage.txt
+        junitxml-path: ./pytest.xml

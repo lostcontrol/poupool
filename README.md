@@ -1,7 +1,6 @@
 # 🏊 Poupool - The swimming pool controller
 
 [![Poupool](https://github.com/lostcontrol/poupool/actions/workflows/poupool.yml/badge.svg)](https://github.com/lostcontrol/poupool/actions/workflows/poupool.yml)
-[![codecov](https://codecov.io/gh/lostcontrol/poupool/branch/master/graph/badge.svg)](https://codecov.io/gh/lostcontrol/poupool)
 
 **Poupool** is a swimming pool control software.
 
