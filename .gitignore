@@ -61,3 +61,7 @@ config.ini.local
 
 # Backup
 backup.txt
+docs/vendor/
+node_modules/
+Gemfile.lock
+docs/_site/
