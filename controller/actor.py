@@ -56,10 +56,12 @@ class PoupoolModel(Machine):
         super().__init__(auto_transitions=False, ignore_invalid_triggers=True, **kwargs)
         self.__state_time = None
 
-    def __update_state_time(self):
+    def __update_state_time(self, *args, **kwargs):
         self.__state_time = datetime.now()
 
     def get_time_in_state(self):
+        if self.__state_time is None:
+            return datetime.now() - datetime.now()
         return datetime.now() - self.__state_time
 
 
@@ -75,13 +77,6 @@ class PoupoolActor(pykka.ThreadingActor):
 
     def on_stop(self):
         self.do_cancel()
-
-    def get_actor(self, name):
-        fsm = pykka.ActorRegistry.get_by_class_name(name)
-        if fsm:
-            return fsm[0].proxy()
-        logger.critical(f"Actor {name} not found!!!")
-        return None
 
     def __do_cancel(self):
         if self.__timer:
