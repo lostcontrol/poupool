@@ -47,6 +47,7 @@ class Tank(PoupoolActor):
         self.__encoder = encoder
         self.__devices = devices
         self.__force_empty = False
+        self.__fault = False
         self.levels = self.levels_eco
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Tank.states, initial="halt")
@@ -71,10 +72,13 @@ class Tank(PoupoolActor):
             # In case the user enable the settings and we are running already, we stop everything.
             # The user can continue from the halt state.
             logger.warning("The tank is not in the halt state, stopping everything")
-            self.get_actor("Filtration").halt.defer()
+            self.__fault = True
         elif previous and not self.__force_empty and self.is_halt():
             # Deactivation of the function, we start the tank FSM.
             self._proxy.fill.defer()
+
+    def is_fault(self):
+        return self.__fault
 
     def is_force_empty(self):
         return self.__force_empty
@@ -103,7 +107,7 @@ class Tank(PoupoolActor):
         # Security feature: stop if we stay too long in this state
         if self.__machine.get_time_in_state() > datetime.timedelta(hours=2):
             logger.warning("Tank TOO LONG in fill state, stopping")
-            self.get_actor("Filtration").halt.defer()
+            self.__fault = True
             return
         height = self.__get_tank_height()
         if height > self.levels_too_low:
@@ -121,7 +125,7 @@ class Tank(PoupoolActor):
         # Security feature: stop if we stay too long in this state
         if self.__machine.get_time_in_state() > datetime.timedelta(hours=6):
             logger.warning("Tank TOO LONG in low state, stopping")
-            self.get_actor("Filtration").halt.defer()
+            self.__fault = True
             return
         height = self.__get_tank_height()
         if height >= self.levels["low"] + self.hysteresis:
@@ -129,7 +133,7 @@ class Tank(PoupoolActor):
             return
         if height < self.levels_too_low:
             logger.warning(f"Tank TOO LOW, stopping: {height}")
-            self.get_actor("Filtration").halt.defer()
+            self.__fault = True
             return
         self.do_delay(self.STATE_REFRESH_DELAY / 2, self.do_repeat_low.__name__)
 

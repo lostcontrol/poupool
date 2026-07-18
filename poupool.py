@@ -335,9 +335,6 @@ def main(args, devices):
     temperature_reader = TemperatureReader.start(sensors).proxy()
     temperature_writer = TemperatureWriter.start(encoder, temperature_reader).proxy()
 
-    # Filtration
-    filtration = Filtration.start(temperature_reader, encoder, devices).proxy()
-
     # Swimming pump
     swim = Swim.start(temperature_reader, encoder, devices).proxy()
 
@@ -362,6 +359,11 @@ def main(args, devices):
 
     # Cover and water meter
     arduino = Arduino.start(encoder, devices).proxy()
+
+    # Filtration
+    filtration = Filtration.start(
+        temperature_reader, encoder, devices, tank, swim, heating, disinfection, arduino, heater, light
+    ).proxy()
 
     dispatcher.register(filtration, tank, swim, light, heater, heating, disinfection, arduino)
 

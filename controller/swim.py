@@ -47,6 +47,8 @@ class Swim(PoupoolActor):
         self.__devices = devices
         self.__timer = Timer("swim")
         self.__speed = 50
+        self.__allow_swim = False
+        self.__is_wintering = False
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Swim.states, initial="halt")
 
@@ -67,15 +69,15 @@ class Swim(PoupoolActor):
         self.__speed = value
         logger.info(f"Speed for swim pump set to: {self.__speed}")
 
+    def set_filtration_state(self, allow_swim, is_wintering):
+        self.__allow_swim = allow_swim
+        self.__is_wintering = is_wintering
+
     def filtration_allow_swim(self):
-        actor = self.get_actor("Filtration")
-        is_opened = actor.is_overflow_normal().get() or actor.is_standby_normal().get()
-        is_opened = is_opened or actor.is_comfort().get()
-        return is_opened or self.filtration_is_wintering()
+        return self.__allow_swim or self.__is_wintering
 
     def filtration_is_wintering(self):
-        actor = self.get_actor("Filtration")
-        return actor.is_wintering_waiting().get() or actor.is_wintering_stir().get()
+        return self.__is_wintering
 
     def on_enter_halt(self):
         logger.info("Entering halt state")
