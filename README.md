@@ -63,3 +63,4 @@ Best is to setup a virtual environment by running `uv sync`.
 * **[ruff](https://github.com/astral-sh/ruff)** - Fast Python linter and code formatter
 * **[ty](https://github.com/astral-sh/ty)** - Fast Python type checker
 * **[pytest](https://github.com/pytest-dev/pytest)** - Testing framework
+* **[PlatformIO](https://platformio.org/)** - Build and flash the Arduino firmware (see `arduino/cover/README.md`)

@@ -24,6 +24,7 @@ dev = [
     "pytest-cov==7.1.0",
     "pytest-mock==3.16.0",
     "freezegun==1.5.5",
+    "platformio==6.2.0",
 ]
 
 [tool.ruff]
