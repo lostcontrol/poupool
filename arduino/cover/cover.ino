@@ -89,7 +89,7 @@ class Cover {
             digitalWrite(pins.cover_open, LOW);
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
-            m_previous_time = millis();
+            m_previous_time = now;
             // Cancel a potential stop event
             m_do_stop_time = 0;
             break;
@@ -100,7 +100,7 @@ class Cover {
             digitalWrite(pins.cover_close, LOW);
             // Update the time/position for consistency check when the cover starts moving
             m_previous_position = get_position();
-            m_previous_time = millis();
+            m_previous_time = now;
             // Cancel a potential stop event
             m_do_stop_time = 0;
             break;
@@ -208,16 +208,9 @@ class Cover {
 
     byte get_position_percentage() const {
       const auto position = get_position();
-      long open_pos = 0;
-      long close_pos = 0;
-      {
-        InterruptGuard _{};
-        open_pos = m_position.open;
-        close_pos = m_position.close;
-      }
-      const auto diff = open_pos - close_pos;
+      const auto diff = m_position.open - m_position.close;
       if (diff == 0) return 0;
-      return constrain(100 * (position - close_pos) / diff, 0, 100);
+      return constrain(100 * (position - m_position.close) / diff, 0, 100);
     }
 
     void step() {
@@ -240,21 +233,12 @@ class Cover {
     }
 
     void debug() const {
-      long pos = 0;
-      long open_pos = 0;
-      long close_pos = 0;
-      {
-        InterruptGuard _{};
-        pos = m_position.position;
-        open_pos = m_position.open;
-        close_pos = m_position.close;
-      }
       Serial.print(F("position="));
-      Serial.println(pos);
+      Serial.println(get_position());
       Serial.print(F("open="));
-      Serial.println(open_pos);
+      Serial.println(m_position.open);
       Serial.print(F("close="));
-      Serial.println(close_pos);
+      Serial.println(m_position.close);
     }
 
   private:
