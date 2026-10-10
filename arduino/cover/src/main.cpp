@@ -15,13 +15,16 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-// Requires InputDebounce and EEPROMex
-// Uncomment _EEPROMEX_DEBUG in EEPROMex.cpp to avoid the max EEPROM write limit
+// Dependencies (InputDebounce, EEPROMex) are declared in platformio.ini
 
+#include <Arduino.h>
 #include <string.h>
 #include <avr/wdt.h>
 #include <InputDebounce.h>
 #include <EEPROMex.h>
+
+static void water_isr();
+static void cover_isr();
 
 class InterruptGuard {
   public:
