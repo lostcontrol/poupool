@@ -1,0 +1,626 @@
+mqtt:
+  climate:
+    - name: "Heating"
+      unique_id: "heating"
+      icon: mdi:hvac
+      current_temperature_topic: "/status/temperature/pool"
+      temperature_command_topic: "/settings/heating/setpoint"
+      temperature_state_topic: "/settings/heating/setpoint"
+      min_temp: 10
+      max_temp: 30
+      modes:
+        - "off"
+        - "heat"
+      mode_command_topic: "/settings/heating/enable"
+      mode_command_template: "{{ 1 if value == 'heat' else 0 }}"
+      mode_state_topic: "/settings/heating/enable"
+      mode_state_template: "{{ 'heat' if value | int == 1 else 'off' }}"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+  light:
+    - name: "Light"
+      unique_id: "light"
+      state_topic: "/status/light/state"
+      command_topic: "/settings/light/mode"
+      payload_on: "on"
+      payload_off: "halt"
+      optimistic: false
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+  number:
+    # SWIM/NCC
+    - name: "Swim Timer"
+      unique_id: "swim_timer"
+      icon: mdi:swim
+      command_topic: "/settings/swim/timer"
+      state_topic: "/settings/swim/timer"
+      min: 1
+      max: 60
+      device_class: "duration"
+      unit_of_measurement: "min"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Swim Speed"
+      unique_id: "swim_speed"
+      icon: mdi:swim
+      command_topic: "/settings/swim/speed"
+      state_topic: "/settings/swim/speed"
+      min: 10
+      max: 100
+      unit_of_measurement: "%"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # FILTRATION
+    - name: "Filtration Duration"
+      unique_id: "filtration_duration"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/duration"
+      command_template: "{{ value * 3600 }}"
+      state_topic: "/settings/filtration/duration"
+      value_template: "{{ int(value) // 3600 }}"
+      min: 1
+      max: 24
+      unit_of_measurement: "h"
+      device_class: "duration"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Filtration Period"
+      unique_id: "filtration_period"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/period"
+      state_topic: "/settings/filtration/period"
+      min: 1
+      max: 10
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Filtration Reset Hour"
+      unique_id: "filtration_reset_hour"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/reset_hour"
+      state_topic: "/settings/filtration/reset_hour"
+      min: 0
+      max: 23
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Filtration Boost Duration"
+      unique_id: "filtration_boost_duration"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/boost_duration"
+      state_topic: "/settings/filtration/boost_duration"
+      min: 0
+      max: 600
+      step: 10
+      unit_of_measurement: "s"
+      device_class: "duration"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Filtration Tank Percentage"
+      unique_id: "filtration_tank_percentage"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/tank_percentage"
+      state_topic: "/settings/filtration/tank_percentage"
+      min: 0.0
+      max: 0.5
+      step: 0.1
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Filtration Stir Period"
+      unique_id: "filtration_stir_period"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/stir_period"
+      state_topic: "/settings/filtration/stir_period"
+      min: 0
+      max: 7200
+      step: 900
+      unit_of_measurement: "s"
+      device_class: "duration"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Filtration Stir Duration"
+      unique_id: "filtration_stir_duration"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/stir_duration"
+      state_topic: "/settings/filtration/stir_duration"
+      min: 0
+      max: 600
+      step: 10
+      unit_of_measurement: "s"
+      device_class: "duration"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # DESINFECTION
+    - name: "Desinfection pH Setpoint"
+      unique_id: "desinfection_ph_setpoint"
+      icon: mdi:chemical-weapon
+      command_topic: "/settings/disinfection/ph/setpoint"
+      state_topic: "/settings/disinfection/ph/setpoint"
+      min: 6
+      max: 8
+      step: 0.1
+      device_class: "ph"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Desinfection ORP Setpoint"
+      unique_id: "desinfection_orp_setpoint"
+      icon: mdi:chemical-weapon
+      command_topic: "/settings/disinfection/orp/setpoint"
+      state_topic: "/settings/disinfection/orp/setpoint"
+      min: 500
+      max: 800
+      step: 10
+      device_class: "voltage"
+      unit_of_measurement: "mV"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Desinfection pH Pterm"
+      unique_id: "desinfection_ph_pterm"
+      icon: mdi:chemical-weapon
+      command_topic: "/settings/disinfection/ph/pterm"
+      state_topic: "/settings/disinfection/ph/pterm"
+      min: 0
+      max: 10
+      step: 0.1
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Desinfection ORP Pterm"
+      unique_id: "desinfection_orp_pterm"
+      icon: mdi:chemical-weapon
+      command_topic: "/settings/disinfection/orp/pterm"
+      state_topic: "/settings/disinfection/orp/pterm"
+      min: 0
+      max: 10
+      step: 0.1
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # HEATING
+    - name: "Heating Start Hour"
+      unique_id: "heating_start_hour"
+      icon: mdi:hvac
+      command_topic: "/settings/heating/start_hour"
+      state_topic: "/settings/heating/start_hour"
+      min: 0
+      max: 23
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Heating Min Temperature"
+      unique_id: "heating_min_temperature"
+      icon: mdi:hvac
+      command_topic: "/settings/heating/min_temp"
+      state_topic: "/settings/heating/min_temp"
+      min: 5
+      max: 25
+      device_class: "temperature"
+      unit_of_measurement: "°C"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # BACKWASH
+    - name: "Backwash Period"
+      unique_id: "backwash_period"
+      icon: mdi:wiper-wash
+      command_topic: "/settings/filtration/backwash/period"
+      state_topic: "/settings/filtration/backwash/period"
+      min: 0
+      max: 90
+      unit_of_measurement: "d"
+      device_class: "duration"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Backwash Duration"
+      unique_id: "backwash_duration"
+      icon: mdi:wiper-wash
+      command_topic: "/settings/filtration/backwash/backwash_duration"
+      state_topic: "/settings/filtration/backwash/backwash_duration"
+      min: 10
+      max: 300
+      step: 10
+      unit_of_measurement: "s"
+      device_class: "duration"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Backwash Rinse Duration"
+      unique_id: "backwash_rinse_duration"
+      icon: mdi:wiper-wash
+      command_topic: "/settings/filtration/backwash/rinse_duration"
+      state_topic: "/settings/filtration/backwash/rinse_duration"
+      min: 10
+      max: 300
+      step: 10
+      unit_of_measurement: "s"
+      device_class: "duration"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # COVER
+    - name: "Cover Position Eco"
+      unique_id: "cover_position_eco"
+      icon: mdi:blinds
+      command_topic: "/settings/cover/position/eco"
+      state_topic: "/settings/cover/position/eco"
+      min: 0
+      max: 100
+      unit_of_measurement: "%"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+  select:
+    # FILTRATION
+    - name: "Mode"
+      unique_id: "mode"
+      icon: mdi:state-machine
+      command_topic: "/settings/mode"
+      state_topic: "/settings/mode"
+      options:
+        - "eco"
+        - "overflow"
+        - "standby"
+        - "comfort"
+        - "wash"
+        - "sweep"
+        - "wintering"
+        - "halt"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Filtration Speed Eco"
+      unique_id: "filtration_speed_eco"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/speed/eco"
+      state_topic: "/settings/filtration/speed/eco"
+      options:
+        - "1"
+        - "2"
+        - "3"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Filtration Speed Standby"
+      unique_id: "filtration_speed_standby"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/speed/standby"
+      state_topic: "/settings/filtration/speed/standby"
+      options:
+        - "0"
+        - "1"
+        - "2"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Filtration Speed Overflow"
+      unique_id: "filtration_speed_overflow"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/speed/overflow"
+      state_topic: "/settings/filtration/speed/overflow"
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "4"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # SWIM/NCC
+    - name: "Swim Mode"
+      unique_id: "swim_mode"
+      icon: mdi:swim
+      command_topic: "/settings/swim/mode"
+      state_topic: "/status/swim/state"
+      options:
+        - "halt"
+        - "timed"
+        - "continuous"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+  sensor:
+    # FILTRATION
+    - name: "Filtration State"
+      unique_id: "filtration_state"
+      icon: mdi:state-machine
+      state_topic: "/status/filtration/state"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Filtration Next Event"
+      unique_id: "filtration_next_event"
+      icon: mdi:state-machine
+      state_topic: "/status/filtration/next"
+      value_template: "{{ (now() + as_timedelta(value)).isoformat() }}"
+      device_class: "timestamp"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Filtration Remaining Duration"
+      unique_id: "filtration_remaining_duration"
+      icon: mdi:state-machine
+      state_topic: "/status/filtration/remaining"
+      value_template: "{{ as_timedelta(value).total_seconds() }}"
+      device_class: "duration"
+      unit_of_measurement: "s"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # TANK
+    - name: "Tank State"
+      unique_id: "tank_state"
+      icon: mdi:pool
+      state_topic: "/status/tank/state"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Tank level"
+      unique_id: "tank_level"
+      icon: mdi:pool
+      state_topic: "/status/tank/height"
+      state_class: "measurement"
+      unit_of_measurement: "%"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # DESINFECTION
+    - name: "Desinfection State"
+      unique_id: "desinfection_state"
+      icon: mdi:chemical-weapon
+      state_topic: "/status/disinfection/state"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Desinfection pH"
+      unique_id: "desinfection_ph"
+      icon: mdi:chemical-weapon
+      state_topic: "/status/disinfection/ph/value"
+      value_template: "{{ value | float | round(2) }}"
+      state_class: "measurement"
+      device_class: "ph"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Desinfection ORP"
+      unique_id: "desinfection_orp"
+      icon: mdi:chemical-weapon
+      state_topic: "/status/disinfection/orp/value"
+      value_template: "{{ value | int }}"
+      state_class: "measurement"
+      unit_of_measurement: "mV"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Desinfection pH Feedback"
+      unique_id: "desinfection_ph_feedback"
+      icon: mdi:chemical-weapon
+      state_topic: "/status/disinfection/ph/feedback"
+      state_class: "measurement"
+      unit_of_measurement: "%"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Desinfection Cl Feedback"
+      unique_id: "desinfection_cl_feedback"
+      icon: mdi:chemical-weapon
+      state_topic: "/status/disinfection/cl/feedback"
+      state_class: "measurement"
+      unit_of_measurement: "%"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # SWIM/NCC
+    - name: "Swim State"
+      unique_id: "swim_state"
+      icon: mdi:swim
+      state_topic: "/status/swim/state"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # HEATING
+    - name: "Heating State"
+      unique_id: "heating_state"
+      icon: mdi:hvac
+      state_topic: "/status/heating/state"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Heating Total Runtime"
+      unique_id: "heating_total_runtime"
+      icon: mdi:hvac
+      state_topic: "/status/heating/total_seconds"
+      value_template: "{{ as_timedelta(value).total_seconds() }}"
+      device_class: "duration"
+      unit_of_measurement: "s"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # TEMPERATURE
+    - name: "Pool Temperature"
+      unique_id: "temperature_pool"
+      icon: mdi:thermometer
+      state_topic: "/status/temperature/pool"
+      state_class: "measurement"
+      device_class: "temperature"
+      unit_of_measurement: "°C"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Air Temperature"
+      unique_id: "temperature_air"
+      icon: mdi:thermometer
+      state_topic: "/status/temperature/air"
+      state_class: "measurement"
+      device_class: "temperature"
+      unit_of_measurement: "°C"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Room Temperature"
+      unique_id: "temperature_local"
+      icon: mdi:thermometer
+      state_topic: "/status/temperature/local"
+      state_class: "measurement"
+      device_class: "temperature"
+      unit_of_measurement: "°C"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "NCC Temperature"
+      unique_id: "temperature_ncc"
+      icon: mdi:thermometer
+      state_topic: "/status/temperature/ncc"
+      device_class: "temperature"
+      state_class: "measurement"
+      unit_of_measurement: "°C"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # BACKWASH
+    - name: "Backwash Last"
+      unique_id: "backwash_last"
+      icon: mdi:wiper-wash
+      state_topic: "/status/filtration/backwash/last"
+      value_template: "{{ strptime(value, '%c') | as_local }}"
+      device_class: "timestamp"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+  switch:
+    # FILTRATION
+    - name: "Filtration Overflow in comfort"
+      unique_id: "filtration_overflow_in_comfort"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/overflow_in_comfort"
+      state_topic: "/settings/filtration/overflow_in_comfort"
+      payload_on: "1"
+      payload_off: "0"
+      state_on: "1"
+      state_off: "0"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # DESINFECTION
+    - name: "Desinfection pH Enable"
+      unique_id: "desinfection_ph_enable"
+      icon: mdi:chemical-weapon
+      command_topic: "/settings/disinfection/ph/enable"
+      state_topic: "/settings/disinfection/ph/enable"
+      payload_on: "1"
+      payload_off: "0"
+      state_on: "1"
+      state_off: "0"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Desinfection ORP Enable"
+      unique_id: "desinfection_orp_enable"
+      icon: mdi:chemical-weapon
+      command_topic: "/settings/disinfection/orp/enable"
+      state_topic: "/settings/disinfection/orp/enable"
+      payload_on: "1"
+      payload_off: "0"
+      state_on: "1"
+      state_off: "0"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    # TANK
+    - name: "Tank Force Empty"
+      unique_id: "tank_force_empty"
+      icon: mdi:pool
+      command_topic: "/settings/tank/force_empty"
+      state_topic: "/settings/tank/force_empty"
+      payload_on: "1"
+      payload_off: "0"
+      state_on: "1"
+      state_off: "0"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
