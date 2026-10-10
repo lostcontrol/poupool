@@ -20,57 +20,60 @@ import logging
 import paho.mqtt.client as mqtt
 
 from .actor import PoupoolActor
+from .dispatcher import Dispatcher
 
 logger = logging.getLogger(__name__)
 
 
 class Mqtt(PoupoolActor):
-    def __init__(self, dispatcher):
+    def __init__(self, dispatcher: Dispatcher) -> None:
         super().__init__()
-        self.__run = True
-        self.__dispatcher = dispatcher
-        self.__client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+        self.__run: bool = True
+        self.__dispatcher: Dispatcher = dispatcher
+        self.__client: mqtt.Client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
         self.__client.on_connect = self.__on_connect
         self.__client.on_message = self.__on_message
         self.__client.on_disconnect = self.__on_disconnect
 
-    def on_stop(self):
+    def on_stop(self) -> None:
         self.do_stop()
         self.__client.disconnect()
 
-    def __on_connect(self, client, userdata, flags, rc):
+    def __on_connect(self, client: mqtt.Client, userdata: object, flags: dict[str, int], rc: int) -> None:
         logger.info("MQTT client connected to broker")
         for topic in self.__dispatcher.topics():
             self.__client.subscribe(topic)
 
-    def __on_message(self, client, userdata, message):
+    def __on_message(self, client: mqtt.Client, userdata: object, message: mqtt.MQTTMessage) -> None:
         self.__dispatcher.dispatch(message.topic, message.payload)
 
-    def __on_disconnect(self, client, userdata, rc):
+    def __on_disconnect(self, client: mqtt.Client, userdata: object, rc: int) -> None:
         logger.warning(f"MQTT client disconnected: {rc}")
         if rc != 0 and self.__run:
             self.do_connect()
 
-    def do_connect(self):
+    def do_connect(self) -> None:
         try:
             self.__client.connect("localhost")
         except Exception as e:
             logger.error(f"Unable to connect to MQTT broker: {e}")
             self.do_delay(5, self.do_connect.__name__)
 
-    def do_start(self):
+    def do_start(self) -> None:
         self.do_connect()
         self._proxy.do_loop()
 
-    def do_loop(self):
+    def do_loop(self) -> None:
         self.__client.loop(timeout=0.05)
         if self.__run:
             self.do_delay(0, self.do_loop.__name__)
 
-    def do_stop(self):
+    def do_stop(self) -> None:
         self.__run = False
 
-    def publish(self, topic, payload, qos=0, retain=False):
+    def publish(
+        self, topic: str, payload: str | bytes | int | float | None, qos: int = 0, retain: bool = False
+    ) -> bool:
         result, _ = self.__client.publish(topic, payload, qos, retain)
         if result != 0:
             logger.error(f"Unable to publish topic '{topic}':'{payload!s}'")

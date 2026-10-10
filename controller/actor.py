@@ -17,8 +17,11 @@
 
 import functools
 import logging
-from datetime import datetime
+from collections.abc import Callable
+from datetime import datetime, timedelta
 from threading import Timer
+from types import TracebackType
+from typing import Self
 
 import pykka
 
@@ -32,16 +35,17 @@ class StopRepeatException(Exception):
     pass
 
 
-def do_repeat():
-    def wrap(func):
+def do_repeat() -> Callable[[Callable[..., None]], Callable[..., None]]:
+    def wrap(func: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(func)
-        def wrapped_func(self, *args, **kwargs):
+        def wrapped_func(self: PoupoolActor, *args: object, **kwargs: object) -> None:
             try:
                 func(self, *args, **kwargs)
             except StopRepeatException:
                 pass
             else:
-                method = func.__name__.replace("on_enter_", "do_repeat_")
+                func_name = getattr(func, "__name__", "")
+                method = func_name.replace("on_enter_", "do_repeat_")
                 function = getattr(self._proxy, method)
                 function.defer()
 
@@ -51,54 +55,62 @@ def do_repeat():
 
 
 class PoupoolModel(Machine):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         kwargs.setdefault("before_state_change", []).extend(["do_cancel", self.__update_state_time])
         super().__init__(auto_transitions=False, ignore_invalid_triggers=True, **kwargs)
-        self.__state_time = None
+        self.__state_time: datetime | None = None
 
-    def __update_state_time(self):
+    def __update_state_time(self) -> None:
         self.__state_time = datetime.now()
 
-    def get_time_in_state(self):
+    def get_time_in_state(self) -> timedelta:
+        if self.__state_time is None:
+            return timedelta(0)
         return datetime.now() - self.__state_time
 
 
 class PoupoolActor(pykka.ThreadingActor):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self._proxy = self.actor_ref.proxy()
-        self.__timer = None
+        self._proxy: pykka.ActorProxy[Self] = self.actor_ref.proxy()
+        self.__delay_timer: Timer | None = None
+        self.state: str = ""
 
-    def on_failure(self, exception_type, exception_value, traceback):
+    def on_failure(
+        self,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         # The actor is going to die
         logger.fatal(exception_type, exception_value, traceback)
 
-    def on_stop(self):
+    def on_stop(self) -> None:
         self.do_cancel()
 
-    def get_actor(self, name):
+    def get_actor(self, name: str) -> pykka.ActorProxy[pykka.ThreadingActor]:
         fsm = pykka.ActorRegistry.get_by_class_name(name)
         if fsm:
             return fsm[0].proxy()
         logger.critical(f"Actor {name} not found!!!")
-        return None
+        raise RuntimeError(f"Actor {name} not found!!!")
 
-    def __do_cancel(self):
-        if self.__timer:
-            self.__timer.cancel()
-            self.__timer = None
+    def __do_cancel(self) -> None:
+        if self.__delay_timer:
+            self.__delay_timer.cancel()
+            self.__delay_timer = None
 
-    def do_cancel(self):
+    def do_cancel(self) -> None:
         self.__do_cancel()
 
-    def do_delay(self, delay, method, *args, **kwargs):
+    def do_delay(self, delay: float, method: str, *args, **kwargs) -> None:
         assert isinstance(method, str)
         assert delay >= 0
         # Stop an already running timer
         self.__do_cancel()
         func = getattr(self._proxy, method)
         if delay > 0:
-            self.__timer = Timer(delay, func.defer, *args, **kwargs)
-            self.__timer.start()
+            self.__delay_timer = Timer(delay, func.defer, args=args, kwargs=kwargs)
+            self.__delay_timer.start()
         else:
             func.defer(*args, **kwargs)

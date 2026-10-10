@@ -105,15 +105,7 @@ class TestSwimPumpDevice:
         assert normalized_value.call_count == 3
 
     def test_dac_throws_once(self, gpio, dac, swim_pump_device):
-        def side_effect(value):
-            side_effect.counter += 1
-            if side_effect.counter == 1:
-                raise OSError
-            return DEFAULT
-
-        side_effect.counter = 0
-        normalized_value = PropertyMock()
-        normalized_value.side_effect = side_effect
+        normalized_value = PropertyMock(side_effect=[OSError, DEFAULT])
         type(dac).normalized_value = normalized_value
         swim_pump_device.speed(50)
         gpio.output.assert_has_calls([call(PIN, True), call(PIN, False)])

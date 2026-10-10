@@ -19,8 +19,13 @@ import logging
 from datetime import datetime, timedelta
 from typing import Final
 
+import pykka
+
 from .actor import PoupoolActor, PoupoolModel, do_repeat
 from .config import config
+from .device import DeviceRegistry, SwitchDevice
+from .encoder import Encoder
+from .sensor import TemperatureReader
 from .util import Duration
 
 logger = logging.getLogger(__name__)
@@ -33,37 +38,38 @@ class Heater(PoupoolActor):
 
     states: Final = ["halt", "waiting", "heating"]
 
-    def __init__(self, temperature, heater):
+    def __init__(self, temperature: pykka.ActorProxy[TemperatureReader], heater: SwitchDevice | None) -> None:
         super().__init__()
-        self.__temperature = temperature
-        self.__heater = heater
-        self.__setpoint = 5.0
+        self.__temperature: pykka.ActorProxy[TemperatureReader] = temperature
+        self.__heater: SwitchDevice | None = heater
+        self.__setpoint: float = 5.0
         # Initialize the state machine
-        self.__machine = PoupoolModel(model=self, states=Heating.states, initial="halt")
+        self.__machine = PoupoolModel(model=self, states=Heater.states, initial="halt")
 
         self.__machine.add_transition("wait", ["halt", "heating"], "waiting", conditions="has_heater")
         self.__machine.add_transition("heat", "waiting", "heating")
         self.__machine.add_transition("halt", ["waiting", "heating"], "halt")
 
-    def __read_temperature(self):
+    def __read_temperature(self) -> float | None:
         return self.__temperature.get_temperature("temperature_local").get()
 
-    def has_heater(self):
+    def has_heater(self) -> bool:
         return self.__heater is not None
 
-    def setpoint(self, value):
+    def setpoint(self, value: float) -> None:
         self.__setpoint = value
         logger.info(f"Setpoint set to {self.__setpoint:.1f}")
 
-    def on_enter_halt(self):
+    def on_enter_halt(self) -> None:
         logger.info("Entering halt state")
-        self.__heater.off()
+        if self.__heater is not None:
+            self.__heater.off()
 
     @do_repeat()
-    def on_enter_waiting(self):
+    def on_enter_waiting(self) -> None:
         logger.info("Entering waiting state")
 
-    def do_repeat_waiting(self):
+    def do_repeat_waiting(self) -> None:
         temp = self.__read_temperature()
         if temp is None or temp < self.__setpoint - Heater.HYSTERESIS_DOWN:
             self._proxy.heat.defer()
@@ -71,12 +77,14 @@ class Heater(PoupoolActor):
             self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_waiting.__name__)
 
     @do_repeat()
-    def on_enter_heating(self):
+    def on_enter_heating(self) -> None:
         logger.info("Entering heating state")
-        self.__heater.on()
+        if self.__heater is not None:
+            self.__heater.on()
 
-    def on_exit_heating(self):
-        self.__heater.off()
+    def on_exit_heating(self) -> None:
+        if self.__heater is not None:
+            self.__heater.off()
 
     def do_repeat_heating(self):
         temp = self.__read_temperature()
@@ -96,20 +104,25 @@ class Heating(PoupoolActor):
     states: Final = ["halt", "waiting", "heating", "forcing", "recovering"]
 
     class DurationEncoderCallback:
-        def __init__(self, encoder):
-            self.__encoder = encoder
+        def __init__(self, encoder: Encoder) -> None:
+            self.__encoder: Encoder = encoder
 
-        def __call__(self, value):
+        def __call__(self, value: timedelta) -> None:
             self.__encoder.heating_total__seconds(round(value.total_seconds()), retain=True)
 
-    def __init__(self, temperature, encoder, devices):
+    def __init__(
+        self,
+        temperature: pykka.ActorProxy[TemperatureReader],
+        encoder: Encoder,
+        devices: DeviceRegistry,
+    ) -> None:
         super().__init__()
-        self.__enable = True
-        self.__temperature = temperature
-        self.__encoder = encoder
-        self.__total_duration = Duration("heating")
+        self.__enable: bool = True
+        self.__temperature: pykka.ActorProxy[TemperatureReader] = temperature
+        self.__encoder: Encoder = encoder
+        self.__total_duration: Duration = Duration("heating")
         self.__total_duration.set_callback(Heating.DurationEncoderCallback(encoder))
-        self.__devices = devices
+        self.__devices: DeviceRegistry = devices
         self.__next_start = datetime.now()
         self.__next_start_hour = 0
         self.__setpoint = 26.0

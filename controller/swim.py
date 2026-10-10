@@ -45,7 +45,7 @@ class Swim(PoupoolActor):
         self.__temperature = temperature
         self.__encoder = encoder
         self.__devices = devices
-        self.__timer = Timer("swim")
+        self.__timer: Timer = Timer("swim")
         self.__speed = 50
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Swim.states, initial="halt")
@@ -59,7 +59,7 @@ class Swim(PoupoolActor):
         self.__machine.add_transition("continuous", "timed", "continuous", conditions="filtration_allow_swim")
         self.__machine.add_transition("halt", ["timed", "continuous", "wintering"], "halt")
 
-    def timer(self, value):
+    def timer(self, value: float) -> None:
         self.__timer.delay = timedelta(minutes=value)
         logger.info(f"Timer for swim set to: {self.__timer.delay}")
 

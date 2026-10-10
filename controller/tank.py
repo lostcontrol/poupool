@@ -22,6 +22,8 @@ from typing import Final
 # from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor, PoupoolModel, StopRepeatException, do_repeat
 from .config import config
+from .device import DeviceRegistry
+from .encoder import Encoder
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +44,12 @@ class Tank(PoupoolActor):
         "high": int(config["tank", "overflow_high"]),
     }
 
-    def __init__(self, encoder, devices):
+    def __init__(self, encoder: Encoder, devices: DeviceRegistry) -> None:
         super().__init__()
-        self.__encoder = encoder
-        self.__devices = devices
-        self.__force_empty = False
-        self.levels = self.levels_eco
+        self.__encoder: Encoder = encoder
+        self.__devices: DeviceRegistry = devices
+        self.__force_empty: bool = False
+        self.levels: dict[str, int] = self.levels_eco
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Tank.states, initial="halt")
 
@@ -57,33 +59,33 @@ class Tank(PoupoolActor):
         self.__machine.add_transition("halt", ["fill", "low", "normal", "high"], "halt")
         self.__machine.add_transition("fill", "halt", "fill", unless="is_force_empty")
 
-    def __get_tank_height(self):
+    def __get_tank_height(self) -> float:
         height = self.__devices.get_sensor("tank").value
         logger.debug(f"Tank level: {height:.1f}")
         self.__encoder.tank_height(round(height))
         return height
 
-    def force_empty(self, value):
+    def force_empty(self, value: bool) -> None:
         previous = self.__force_empty
         self.__force_empty = value
         logger.info("Force empty tank is %sabled" % ("en" if value else "dis"))
-        if not previous and self.__force_empty and not self.is_halt():
+        if not previous and self.__force_empty and not self.is_halt():  # ty: ignore[unresolved-attribute]
             # In case the user enable the settings and we are running already, we stop everything.
             # The user can continue from the halt state.
             logger.warning("The tank is not in the halt state, stopping everything")
             self.get_actor("Filtration").halt.defer()
-        elif previous and not self.__force_empty and self.is_halt():
+        elif previous and not self.__force_empty and self.is_halt():  # ty: ignore[unresolved-attribute]
             # Deactivation of the function, we start the tank FSM.
             self._proxy.fill.defer()
 
-    def is_force_empty(self):
+    def is_force_empty(self) -> bool:
         return self.__force_empty
 
-    def set_mode(self, mode):
+    def set_mode(self, mode: str) -> None:
         logger.info(f"Tank level set to {mode}")
         self.levels = self.levels_eco if mode == "eco" else self.levels_overflow
 
-    def on_enter_halt(self):
+    def on_enter_halt(self) -> None:
         logger.info("Entering halt state")
         self.__encoder.tank_state("halt")
         self.__devices.get_valve("main").off()

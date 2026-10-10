@@ -20,6 +20,8 @@ from typing import Final
 
 # from transitions.extensions import GraphMachine as Machine
 from .actor import PoupoolActor, PoupoolModel
+from .device import DeviceRegistry
+from .encoder import Encoder
 
 logger = logging.getLogger(__name__)
 
@@ -29,22 +31,22 @@ class Light(PoupoolActor):
 
     states: Final = ["halt", "on"]
 
-    def __init__(self, encoder, devices):
+    def __init__(self, encoder: Encoder, devices: DeviceRegistry) -> None:
         super().__init__()
-        self.__encoder = encoder
-        self.__devices = devices
+        self.__encoder: Encoder = encoder
+        self.__devices: DeviceRegistry = devices
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Light.states, initial="halt")
 
         self.__machine.add_transition("on", "halt", "on")
         self.__machine.add_transition("halt", "on", "halt")
 
-    def on_enter_halt(self):
+    def on_enter_halt(self) -> None:
         logger.info("Entering halt state")
         self.__encoder.light_state("halt")
         self.__devices.get_valve("light").off()
 
-    def on_enter_on(self):
+    def on_enter_on(self) -> None:
         logger.info("Entering on state")
         self.__encoder.light_state("on")
         self.__devices.get_valve("light").on()

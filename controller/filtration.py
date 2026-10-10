@@ -22,6 +22,7 @@ from typing import Final
 
 import pykka
 from astral import geocoder, sun
+from astral.location import LocationInfo
 
 from .actor import PoupoolActor, PoupoolModel, do_repeat
 from .config import config
@@ -142,7 +143,9 @@ class StirMode:
         self.__current = Timer("stir")
         self.__period = timedelta(seconds=3600)
         self.__duration = timedelta(seconds=120)
-        self.__city = geocoder.lookup(StirMode.LOCATION, geocoder.database())
+        city = geocoder.lookup(StirMode.LOCATION, geocoder.database())
+        assert isinstance(city, LocationInfo)
+        self.__observer = city.observer
 
     def stir_period(self, value):
         period = timedelta(seconds=value)
@@ -182,7 +185,7 @@ class StirMode:
         # No need to stir at night, this mode is meant to lower the solar cover
         # temperature.
         if self.__period > timedelta() and self.__current.elapsed():
-            elevation = sun.elevation(self.__city)
+            elevation = sun.elevation(self.__observer)
             if self.__stir_state:
                 self.__pause(None)
             elif elevation >= StirMode.SOLAR_ELEVATION and self.__duration > timedelta():
@@ -231,8 +234,8 @@ class Filtration(PoupoolActor):
         self.__speed_standby = 1
         self.__speed_overflow = 4
         self.__overflow_in_comfort = False
-        self.__backwash_backwash_duration = 120
-        self.__backwash_rinse_duration = 60
+        self.__backwash_backwash_duration = timedelta(seconds=120)
+        self.__backwash_rinse_duration = timedelta(seconds=60)
         self.__backwash_period = 30
         self.__backwash_last = datetime.fromtimestamp(0)
         # Initialize the state machine
@@ -309,7 +312,7 @@ class Filtration(PoupoolActor):
             self.__machine.get_graph().draw("filtration.svg", prog="dot", args=args)
 
     def __reload_eco(self):
-        if self.is_eco(allow_substates=True):
+        if self.is_eco(allow_substates=True):  # ty: ignore[unresolved-attribute]
             # Jump to the reload state so that we can jump back into the same state
             self._proxy.reload.defer()
             self._proxy.eco.defer()
@@ -358,7 +361,7 @@ class Filtration(PoupoolActor):
     def speed_eco(self, value):
         self.__speed_eco = value
         logger.info(f"Speed for eco mode set to: {self.__speed_eco}")
-        if self.is_eco_normal():
+        if self.is_eco_normal():  # ty: ignore[unresolved-attribute]
             # Jump to the reload state so that we can jump back into standby mode
             self._proxy.reload.defer()
             self._proxy.eco.defer()
@@ -366,7 +369,7 @@ class Filtration(PoupoolActor):
     def speed_standby(self, value):
         self.__speed_standby = value
         logger.info(f"Speed for standby mode set to: {self.__speed_standby}")
-        if self.is_standby_normal():
+        if self.is_standby_normal():  # ty: ignore[unresolved-attribute]
             # Jump to the reload state so that we can jump back into standby mode
             self._proxy.reload.defer()
             self._proxy.standby.defer()
@@ -374,7 +377,7 @@ class Filtration(PoupoolActor):
     def speed_overflow(self, value):
         self.__speed_overflow = value
         logger.info(f"Speed for overflow mode set to: {self.__speed_overflow}")
-        if self.is_overflow_normal():
+        if self.is_overflow_normal():  # ty: ignore[unresolved-attribute]
             # Jump to the reload state so that we can jump back into overflow mode
             self._proxy.reload.defer()
             self._proxy.overflow.defer()
@@ -382,7 +385,7 @@ class Filtration(PoupoolActor):
     def overflow_in_comfort(self, value):
         self.__overflow_in_comfort = value
         logger.info("Overflow in comfort mode is %sable" % ("en" if value else "dis"))
-        if self.is_comfort():
+        if self.is_comfort():  # ty: ignore[unresolved-attribute]
             # Reload settings
             self._proxy.reload.defer()
 

@@ -18,43 +18,48 @@
 import collections
 import logging
 import statistics
+from collections.abc import Iterable
 from datetime import timedelta
 
+import pykka
+
 from .actor import PoupoolActor
+from .device import SensorDevice
+from .encoder import Encoder
 
 logger = logging.getLogger(__name__)
 
 
 class MovingAverage:
-    def __init__(self, maxlen):
-        self.__data = collections.deque(maxlen=maxlen)
+    def __init__(self, maxlen: int) -> None:
+        self.__data: collections.deque[float] = collections.deque(maxlen=maxlen)
 
-    def clear(self):
+    def clear(self) -> None:
         self.__data.clear()
 
-    def push(self, value):
+    def push(self, value: float) -> None:
         self.__data.append(value)
 
-    def all(self):
+    def all(self) -> list[float]:
         return list(self.__data)
 
-    def mean(self):
+    def mean(self) -> float | None:
         return statistics.mean(self.__data) if self.__data else None
 
 
 class BaseReader(PoupoolActor):
-    def __init__(self, sensors, maxlen=10):
+    def __init__(self, sensors: Iterable[SensorDevice], maxlen: int = 10) -> None:
         super().__init__()
-        self.__sensors = sensors
-        self.__values = {}
+        self.__sensors: Iterable[SensorDevice] = sensors
+        self.__values: dict[str, MovingAverage] = {}
         for sensor in self.__sensors:
             self.__values[sensor.name] = MovingAverage(maxlen=maxlen)
 
     @property
-    def values(self):
+    def values(self) -> dict[str, MovingAverage]:
         return self.__values
 
-    def do_read(self):
+    def do_read(self) -> None:
         for sensor in self.__sensors:
             value = sensor.value
             if value is not None:
@@ -65,17 +70,17 @@ class DisinfectionReader(BaseReader):
     DELAY_SECONDS = 60
     DURATION = timedelta(minutes=5)
 
-    def __init__(self, sensors):
+    def __init__(self, sensors: Iterable[SensorDevice]) -> None:
         samples = int(self.DURATION.total_seconds() // self.DELAY_SECONDS)
         super().__init__(sensors, samples)
 
-    def get_ph(self):
+    def get_ph(self) -> float | None:
         return self.values["ph"].mean()
 
-    def get_orp(self):
+    def get_orp(self) -> float | None:
         return self.values["orp"].mean()
 
-    def do_read(self):
+    def do_read(self) -> None:
         super().do_read()
         self.do_delay(self.DELAY_SECONDS, self.do_read.__name__)
 
@@ -83,12 +88,12 @@ class DisinfectionReader(BaseReader):
 class DisinfectionWriter(PoupoolActor):
     DELAY_SECONDS = 60
 
-    def __init__(self, encoder, reader):
+    def __init__(self, encoder: Encoder, reader: pykka.ActorProxy[DisinfectionReader]) -> None:
         super().__init__()
-        self.__encoder = encoder
-        self.__reader = reader
+        self.__encoder: Encoder = encoder
+        self.__reader: pykka.ActorProxy[DisinfectionReader] = reader
 
-    def do_write(self):
+    def do_write(self) -> None:
         orp = self.__reader.get_orp().get()
         if orp:
             self.__encoder.disinfection_orp_value(f"{orp}")
@@ -102,17 +107,17 @@ class TemperatureReader(BaseReader):
     DELAY_SECONDS = 60
     DURATION = timedelta(minutes=30)
 
-    def __init__(self, sensors):
+    def __init__(self, sensors: Iterable[SensorDevice]) -> None:
         samples = int(self.DURATION.total_seconds() // self.DELAY_SECONDS)
         super().__init__(sensors, maxlen=samples)
 
-    def get_temperature(self, name):
+    def get_temperature(self, name: str) -> float | None:
         return self.values[name].mean()
 
-    def get_all_temperatures(self):
+    def get_all_temperatures(self) -> dict[str, float | None]:
         return {k: v.mean() for k, v in self.values.items()}
 
-    def get_temperature_slope(self, name):
+    def get_temperature_slope(self, name: str) -> float:
         """Return the slope in degree/hour"""
         values = self.values[name].all()
         size = len(values)
@@ -123,7 +128,7 @@ class TemperatureReader(BaseReader):
         last = values[size - 1]
         return (last - first) / duration * 3600
 
-    def do_read(self):
+    def do_read(self) -> None:
         super().do_read()
         self.do_delay(self.DELAY_SECONDS, self.do_read.__name__)
 
@@ -131,12 +136,12 @@ class TemperatureReader(BaseReader):
 class TemperatureWriter(PoupoolActor):
     DELAY_SECONDS = 60
 
-    def __init__(self, encoder, reader):
+    def __init__(self, encoder: Encoder, reader: pykka.ActorProxy[TemperatureReader]) -> None:
         super().__init__()
-        self.__encoder = encoder
-        self.__reader = reader
+        self.__encoder: Encoder = encoder
+        self.__reader: pykka.ActorProxy[TemperatureReader] = reader
 
-    def do_write(self):
+    def do_write(self) -> None:
         for name, value in self.__reader.get_all_temperatures().get().items():
             if value is not None:
                 rounded = round(value, 1)

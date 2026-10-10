@@ -207,11 +207,12 @@ class TempSensorDevice(SensorDevice):
                         logger.debug(f"Temp sensor raw data: {data!s}")
                         # CRC valid, read the data
                         match = TempSensorDevice.CRE.search(data)
-                        temperature = int(match.group(1)) / 1000.0 + self.__offset if match else None
-                        # Range check, sometimes bad values pass the CRC check
-                        if -20 < temperature < 80:
-                            return temperature
-                        logger.debug(f"Temp outside range: {temperature:f}")
+                        if match:
+                            temperature = int(match.group(1)) / 1000.0 + self.__offset
+                            # Range check, sometimes bad values pass the CRC check
+                            if -20 < temperature < 80:
+                                return temperature
+                            logger.debug(f"Temp outside range: {temperature:f}")
                     else:
                         logger.debug(f"Bad CRC: {raw!s}")
                 time.sleep(0.1)
@@ -244,11 +245,17 @@ class TankSensorDevice(SensorDevice):
         return constrain(mapping(value, self.__low, self.__high, 0, 100), 0, 100)
 
 
+# Subclass io.BufferedRWPair to declare the 'name' attribute expected by
+# typeshed's _WrappedBuffer protocol when wrapping streams in io.TextIOWrapper.
+class SerialBuffer(io.BufferedRWPair):
+    name: str | None = None
+
+
 class EZOSensorDevice(SensorDevice):
     def __init__(self, name, port):
         super().__init__(name)
         self.__serial = serial.Serial(port, timeout=0.1)
-        self.__sio = io.TextIOWrapper(io.BufferedRWPair(self.__serial, self.__serial))
+        self.__sio = io.TextIOWrapper(SerialBuffer(self.__serial, self.__serial))
         info = self.__send("i")
         logger.info(f"EZO sensor {name} says: {info}")
         # Disable continuous mode
@@ -299,7 +306,7 @@ class ArduinoDevice(StoppableDevice):
         # https://playground.arduino.cc/Main/DisablingAutoResetOnSerialConnection
         subprocess.check_call(["stty", "-F", port, "-hupcl"])
         self.__serial = serial.Serial(port, baudrate=9600, timeout=0.1)
-        self.__sio = io.TextIOWrapper(io.BufferedRWPair(self.__serial, self.__serial))
+        self.__sio = io.TextIOWrapper(SerialBuffer(self.__serial, self.__serial))
 
     def __reconnect(self):
         self.__serial.close()
@@ -354,7 +361,7 @@ class ArduinoDevice(StoppableDevice):
                 read = self.__sio.readline()
                 counter += 1
             logger.debug("Received response")
-            if read.strip() == "***" and response.startswith(value):
+            if read.strip() == "***" and response and response.startswith(value):
                 return response
             logger.error(f"Bad response: {response} {read.strip()}")
         except Exception:

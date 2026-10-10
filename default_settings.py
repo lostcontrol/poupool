@@ -21,14 +21,14 @@ from controller.dispatcher import Dispatcher
 from controller.mqtt import Mqtt
 
 
-class FakeDispatcher:
-    def topics(self):
+class FakeDispatcher(Dispatcher):
+    def topics(self) -> list[str]:
         return []
 
 
-def main():
+def main() -> None:
     dispatcher = Dispatcher()
-    dispatcher.register(None, None, None, None, None, None)
+    dispatcher.register(None, None, None, None, None, None, None, None)
     remaining = list(dispatcher.topics())
     missing = []
 

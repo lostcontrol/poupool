@@ -16,19 +16,20 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import configparser
+from collections.abc import Callable, Sequence
 
 
 class Config:
-    def __init__(self, config_files):
-        self.__config = configparser.ConfigParser()
+    def __init__(self, config_files: Sequence[str]) -> None:
+        self.__config: configparser.ConfigParser = configparser.ConfigParser()
         self.__config.read(config_files)
 
-    def __getitem__(self, pair):
+    def __getitem__(self, pair: tuple[str, str]) -> str:
         section, key = pair
         return self.__config.get(section, key)
 
 
-def as_list(value, type_cast=int):
+def as_list(value: str, type_cast: Callable = int) -> list:
     return [type_cast(m) for m in value.split(",")]
 
 
