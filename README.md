@@ -6,8 +6,8 @@
 
 It is based on [Transitions](https://github.com/pytransitions/transitions),
 [Pykka](https://www.pykka.org) and [Paho MQTT](https://github.com/eclipse/paho.mqtt.python).
-The user interface is built using an excellent home automation server like
-[openHAB](http://www.openhab.org) or [Home Assistant](https://www.home-assistant.io/). Though, any MQTT client could be used to interact with the
+The user interface is built using [Home Assistant](https://www.home-assistant.io/)
+(with Lovelace dashboards) or any MQTT client to interact with the
 system.
 
 ![The swimming pool](docs/images/pool-01.jpg)
@@ -36,12 +36,8 @@ Several other features are available like a **wintering state** stirring the poo
 possible having the water freeze, a stirring feature when the cover is closed to dissipate the
 heat forming just under the cover, the control of a swimming pump and more.
 
-Here is a screenshot of the main menu in openHAB 2.5M1:
-
-![openHAB main menu](docs/images/openhab-01.png)
-
-Of course, you can use the iOS or Android openHAB clients or Home Assistant companion apps, write your own HABPanel or Lovelace dashboards, or
-even use the REST API provided by these systems.
+You can use the Home Assistant companion apps on iOS or Android, use the provided
+Lovelace dashboard (`home-assistant/dashboard.yaml`), or interact directly via the MQTT API.
 
 ## 📦 Dependencies
 
@@ -60,7 +56,7 @@ Best is to setup a virtual environment by running `uv sync`.
 * **adafruit-circuitpython-mcp4725**
 
 ### 📱 User interface:
-* **openHAB 2.5** or **Home Assistant**
+* **Home Assistant**
 
 ### 🛠️ Development tools:
 * **ruff**

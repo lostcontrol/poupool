@@ -1,0 +1,630 @@
+views:
+  - title: Poupool
+    path: home
+    icon: mdi:pool
+    type: sections
+    max_columns: 2
+    dense_section_placement: false
+    badges:
+      - entity: sensor.poupool_pool_temperature
+      - entity: sensor.poupool_air_temperature
+      - entity: select.poupool_mode
+      - entity: sensor.poupool_filtration_state
+      - entity: sensor.poupool_tank_level
+      - entity: sensor.poupool_desinfection_ph
+      - entity: sensor.poupool_desinfection_orp
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Mode & Filtration
+            heading_style: title
+            icon: mdi:pool
+          - type: tile
+            entity: select.poupool_mode
+            name: Mode actif
+            icon: mdi:pool
+            color: blue
+            state_content: state
+            grid_options:
+              columns: 12
+              rows: 1
+          - type: button
+            entity: select.poupool_mode
+            name: Eco
+            icon: mdi:leaf
+            show_name: true
+            show_icon: true
+            grid_options:
+              columns: 3
+              rows: 2
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.poupool_mode
+              data:
+                option: eco
+            hold_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.poupool_mode
+              data:
+                option: eco
+          - type: button
+            entity: select.poupool_mode
+            name: Overflow
+            icon: mdi:waves
+            show_name: true
+            show_icon: true
+            grid_options:
+              columns: 3
+              rows: 2
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.poupool_mode
+              data:
+                option: overflow
+            hold_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.poupool_mode
+              data:
+                option: overflow
+          - type: button
+            entity: select.poupool_mode
+            name: Standby
+            icon: mdi:pause-circle
+            show_name: true
+            show_icon: true
+            grid_options:
+              columns: 3
+              rows: 2
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.poupool_mode
+              data:
+                option: standby
+            hold_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.poupool_mode
+              data:
+                option: standby
+          - type: button
+            entity: select.poupool_mode
+            name: Comfort
+            icon: mdi:sofa
+            show_name: true
+            show_icon: true
+            grid_options:
+              columns: 3
+              rows: 2
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.poupool_mode
+              data:
+                option: comfort
+            hold_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.poupool_mode
+              data:
+                option: comfort
+          - type: tile
+            entity: sensor.poupool_filtration_state
+            name: État de filtration
+            icon: mdi:filter
+            color: accent
+            state_content: state
+            grid_options:
+              columns: 12
+              rows: 1
+          - type: entities
+            entities:
+              - entity: select.poupool_filtration_speed_overflow
+                name: Vitesse débordement
+                icon: mdi:pump
+            grid_options:
+              columns: 12
+              rows: auto
+          - type: sensor
+            entity: sensor.poupool_pool_temperature
+            name: Température Eau
+            icon: mdi:pool-thermometer
+            unit: °C
+            graph: line
+            detail: 2
+            hours_to_show: 24
+            grid_options:
+              columns: 12
+              rows: 2
+          - type: gauge
+            entity: sensor.poupool_tank_level
+            name: Niveau bac tampon
+            needle: true
+            min: 0
+            max: 100
+            segments:
+              - from: 0
+                color: var(--error-color)
+              - from: 10
+                color: var(--warning-color)
+              - from: 20
+                color: var(--success-color)
+              - from: 90
+                color: var(--warning-color)
+            grid_options:
+              columns: 12
+              rows: 3
+          - type: sensor
+            entity: sensor.poupool_desinfection_orp
+            name: ORP
+            icon: mdi:water-check
+            unit: mV
+            graph: line
+            detail: 2
+            hours_to_show: 4
+            grid_options:
+              columns: 6
+              rows: 2
+          - type: sensor
+            entity: sensor.poupool_desinfection_ph
+            name: pH
+            icon: mdi:ph
+            graph: line
+            detail: 2
+            hours_to_show: 4
+            grid_options:
+              columns: 6
+              rows: 2
+      - type: grid
+        cards:
+          - type: heading
+            heading: Nage contre-courant
+            heading_style: title
+            icon: mdi:swim
+          - type: tile
+            entity: sensor.poupool_swim_state
+            name: État
+            icon: mdi:swim
+            color: accent
+            state_content: state
+            vertical: true
+            grid_options:
+              columns: 3
+              rows: 2
+          - type: button
+            entity: select.poupool_swim_mode
+            name: STOP
+            icon: mdi:stop-circle-outline
+            show_name: true
+            show_icon: true
+            show_state: false
+            grid_options:
+              columns: 3
+              rows: 2
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.poupool_swim_mode
+              data:
+                option: halt
+          - type: button
+            entity: select.poupool_swim_mode
+            name: 'ON'
+            icon: mdi:play-circle-outline
+            show_name: true
+            show_icon: true
+            show_state: false
+            grid_options:
+              columns: 3
+              rows: 2
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.poupool_swim_mode
+              data:
+                option: continuous
+          - type: button
+            entity: select.poupool_swim_mode
+            name: TIMER
+            icon: mdi:timer-outline
+            show_name: true
+            show_icon: true
+            show_state: false
+            grid_options:
+              columns: 3
+              rows: 2
+            tap_action:
+              action: perform-action
+              perform_action: select.select_option
+              target:
+                entity_id: select.poupool_swim_mode
+              data:
+                option: timed
+          - type: entities
+            entities:
+              - entity: number.poupool_swim_speed
+                name: Vitesse NCC
+                icon: mdi:speedometer
+            grid_options:
+              columns: 12
+              rows: 1
+      - type: grid
+        cards:
+          - type: heading
+            heading: Éclairage & Équipements
+            heading_style: title
+            icon: mdi:lightbulb-group
+          - type: tile
+            entity: light.poupool_light
+            name: Éclairage piscine
+            icon: mdi:pool-light
+            features:
+              - type: toggle
+            grid_options:
+              columns: 6
+              rows: 2
+          - type: tile
+            entity: light.433_gateway
+            name: Passerelle 433 MHz
+            icon: mdi:radio-tower
+            features:
+              - type: toggle
+            grid_options:
+              columns: 6
+              rows: 2
+      - type: grid
+        cards:
+          - type: heading
+            heading: Chauffage & Énergie
+            heading_style: title
+            icon: mdi:heat-pump
+          - type: thermostat
+            entity: climate.poupool_heating
+            name: Chauffage piscine
+            show_current_as_primary: true
+            features:
+              - type: climate-hvac-modes
+            grid_options:
+              columns: 12
+              rows: 4
+          - type: sensor
+            entity: sensor.smart_meter_63a_puissance_reelle
+            name: Puissance consommée
+            icon: mdi:flash
+            unit: W
+            graph: line
+            detail: 2
+            hours_to_show: 4
+            grid_options:
+              columns: 6
+              rows: 2
+          - type: sensor
+            entity: sensor.solarnet_puissance_photovoltaique
+            name: Production photovoltaïque
+            icon: mdi:solar-power
+            unit: W
+            graph: line
+            detail: 2
+            hours_to_show: 4
+            grid_options:
+              columns: 6
+              rows: 2
+      - type: grid
+        cards:
+          - type: heading
+            heading: Historique rapide
+            heading_style: title
+            icon: mdi:chart-timeline-variant
+          - type: history-graph
+            entities:
+              - entity: sensor.poupool_pool_temperature
+                name: Température piscine
+            hours_to_show: 48
+            logarithmic_scale: false
+            grid_options:
+              columns: 12
+              rows: 3
+          - type: history-graph
+            entities:
+              - entity: sensor.poupool_tank_level
+                name: Niveau bac tampon
+            hours_to_show: 24
+            logarithmic_scale: false
+            grid_options:
+              columns: 12
+              rows: 3
+
+  - title: Informations
+    path: information
+    icon: mdi:chart-timeline-variant
+    type: sections
+    max_columns: 2
+    dense_section_placement: false
+    badges:
+      - entity: sensor.poupool_pool_temperature
+      - entity: sensor.poupool_air_temperature
+      - entity: sensor.poupool_tank_level
+      - entity: sensor.poupool_desinfection_ph
+      - entity: sensor.poupool_desinfection_orp
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Filtration & Températures
+            heading_style: title
+            icon: mdi:thermometer-lines
+          - type: history-graph
+            entities:
+              - entity: sensor.poupool_filtration_state
+                name: État de filtration
+            show_names: false
+            title: État
+            hours_to_show: 6
+            logarithmic_scale: false
+            grid_options:
+              columns: 12
+              rows: 3
+          - type: statistics-graph
+            chart_type: line
+            period: 5minute
+            entities:
+              - sensor.poupool_air_temperature
+              - sensor.poupool_pool_temperature
+              - sensor.poupool_ncc_temperature
+              - sensor.poupool_room_temperature
+            stat_types:
+              - mean
+              - min
+              - max
+            title: Températures
+            hide_legend: false
+            days_to_show: 1
+            grid_options:
+              columns: 12
+              rows: 4
+          - type: tile
+            entity: sensor.poupool_ncc_temperature
+            name: Température trappe NCC
+            icon: mdi:thermometer
+            features_position: bottom
+            vertical: false
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: tile
+            entity: sensor.poupool_room_temperature
+            name: Température local technique
+            icon: mdi:home-thermometer
+            features_position: bottom
+            vertical: false
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: statistics-graph
+            chart_type: line
+            period: 5minute
+            entities:
+              - sensor.poupool_tank_level
+            stat_types:
+              - min
+              - max
+              - mean
+            title: Niveau tampon (48h)
+            days_to_show: 2
+            min_y_axis: 0
+            max_y_axis: 100
+            grid_options:
+              columns: 12
+              rows: 3
+          - type: statistics-graph
+            chart_type: line
+            period: day
+            entities:
+              - sensor.poupool_tank_level
+            stat_types:
+              - mean
+              - min
+              - max
+            title: Niveau tampon (30 jours)
+            days_to_show: 30
+            min_y_axis: 0
+            max_y_axis: 100
+            grid_options:
+              columns: 12
+              rows: 3
+      - type: grid
+        cards:
+          - type: heading
+            heading: Désinfection & Traitement
+            heading_style: title
+            icon: mdi:water-check
+          - type: statistics-graph
+            chart_type: line
+            period: hour
+            entities:
+              - sensor.poupool_desinfection_orp
+            stat_types:
+              - mean
+            hide_legend: false
+            days_to_show: 1
+            logarithmic_scale: false
+            title: ORP / Redox (24h)
+            min_y_axis: 600
+            max_y_axis: 800
+            grid_options:
+              columns: 12
+              rows: 3
+          - type: statistics-graph
+            chart_type: line
+            period: hour
+            entities:
+              - sensor.poupool_desinfection_ph
+            stat_types:
+              - mean
+            hide_legend: false
+            days_to_show: 1
+            logarithmic_scale: false
+            title: pH (24h)
+            min_y_axis: 6.8
+            max_y_axis: 7.8
+            grid_options:
+              columns: 12
+              rows: 3
+          - type: statistics-graph
+            chart_type: line
+            period: hour
+            entities:
+              - sensor.poupool_desinfection_cl_feedback
+              - sensor.poupool_desinfection_ph_feedback
+            stat_types:
+              - mean
+            hide_legend: false
+            days_to_show: 1
+            logarithmic_scale: false
+            title: Feedback injection Chlore & pH (24h)
+            min_y_axis: 0
+            max_y_axis: 100
+            grid_options:
+              columns: 12
+              rows: 3
+
+  - title: Paramètres
+    path: settings
+    icon: mdi:tune
+    type: sections
+    max_columns: 2
+    dense_section_placement: false
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Filtration & Traitement
+            heading_style: title
+            icon: mdi:tune-vertical
+          - type: entities
+            title: Paramètres de filtration
+            state_color: true
+            entities:
+              - entity: select.poupool_mode
+                name: Mode principal
+              - entity: switch.poupool_filtration_overflow_in_comfort
+                name: Débordement en confort
+              - entity: number.poupool_filtration_duration
+                name: Durée journalière
+              - entity: number.poupool_filtration_period
+                name: Nombre de périodes
+              - entity: number.poupool_filtration_boost_duration
+                name: Durée de boost
+              - entity: number.poupool_filtration_reset_hour
+                name: Heure de réinitialisation
+              - entity: number.poupool_filtration_stir_period
+                name: Intervalle de brassage
+              - entity: number.poupool_filtration_stir_duration
+                name: Durée de brassage
+              - entity: number.poupool_filtration_tank_percentage
+                name: Pourcentage bac tampon
+              - entity: select.poupool_filtration_speed_eco
+                name: Vitesse pompe (Éco)
+                secondary_info: none
+              - entity: select.poupool_filtration_speed_overflow
+                name: Vitesse pompe (Débordement)
+              - entity: select.poupool_filtration_speed_standby
+                name: Vitesse pompe (Veille)
+            grid_options:
+              columns: 12
+              rows: auto
+          - type: entities
+            title: Traitement de l'eau
+            state_color: true
+            show_header_toggle: false
+            entities:
+              - entity: switch.poupool_desinfection_ph_enable
+                name: Régulation pH activée
+                icon: mdi:ph
+              - entity: number.poupool_desinfection_ph_setpoint
+                name: Consigne pH
+                icon: mdi:ph
+              - entity: number.poupool_desinfection_ph_pterm
+                name: Gain P pH
+                icon: mdi:ph
+              - entity: switch.poupool_desinfection_orp_enable
+                name: Régulation ORP activée
+                icon: mdi:water-check
+              - entity: number.poupool_desinfection_orp_setpoint
+                name: Consigne ORP
+                icon: mdi:water-check
+              - entity: number.poupool_desinfection_orp_pterm
+                name: Gain P ORP
+                icon: mdi:water-check
+            grid_options:
+              columns: 12
+              rows: auto
+      - type: grid
+        cards:
+          - type: heading
+            heading: Équipements & Chauffage
+            heading_style: title
+            icon: mdi:tools
+          - type: entities
+            title: Chauffage
+            state_color: true
+            entities:
+              - entity: climate.poupool_heating
+                name: Thermostat
+              - entity: number.poupool_heating_start_hour
+                name: Heure de démarrage
+              - entity: number.poupool_heating_min_temperature
+                name: Température minimale
+            grid_options:
+              columns: 12
+              rows: auto
+          - type: entities
+            title: Contre-lavage (Backwash)
+            state_color: true
+            entities:
+              - entity: number.poupool_backwash_period
+                name: Intervalle (jours)
+              - entity: number.poupool_backwash_duration
+                name: Durée de lavage
+              - entity: number.poupool_backwash_rinse_duration
+                name: Durée de rinçage
+              - entity: sensor.poupool_backwash_last
+                name: Dernier lavage
+            grid_options:
+              columns: 12
+              rows: auto
+          - type: entities
+            title: Nage contre-courant
+            state_color: true
+            entities:
+              - entity: number.poupool_swim_timer
+                name: Durée minuterie (min)
+            grid_options:
+              columns: 12
+              rows: auto
+          - type: entities
+            title: Bac tampon & Volet
+            state_color: true
+            entities:
+              - entity: switch.poupool_tank_force_empty
+                name: Forçage vidange bac tampon
+              - entity: number.poupool_cover_position_eco
+                name: Position volet en mode éco
+            grid_options:
+              columns: 12
+              rows: auto
