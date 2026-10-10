@@ -5,7 +5,7 @@
 **Poupool** is a swimming pool control software.
 
 It is based on [Transitions](https://github.com/pytransitions/transitions),
-[Pykka](https://www.pykka.org) and [Paho MQTT](https://github.com/eclipse/paho.mqtt.python).
+[Pykka](https://github.com/jodal/pykka) and [Paho MQTT](https://github.com/eclipse-paho/paho.mqtt.python).
 The user interface is built using [Home Assistant](https://www.home-assistant.io/)
 (with Lovelace dashboards) or any MQTT client to interact with the
 system.
@@ -45,19 +45,21 @@ These are the external dependencies that can be installed via `uv`. You will als
 Best is to setup a virtual environment by running `uv sync`.
 
 ### 🏗️ Frameworks:
-* **Pykka**
-* **transitions**
-* **paho-mqtt**
-* **astral**
+* **[Pykka](https://github.com/jodal/pykka)** - Python implementation of the actor model
+* **[transitions](https://github.com/pytransitions/transitions)** - Lightweight, object-oriented finite state machine implementation
+* **[paho-mqtt](https://github.com/eclipse-paho/paho.mqtt.python)** - MQTT client library
+* **[astral](https://github.com/sffjunkie/astral)** - Calculations for the position of the sun and twilight
 
 ### 🍓 Raspberry Pi:
-* **RPi.GPIO**
-* **adafruit-circuitpython-ads1x15**
-* **adafruit-circuitpython-mcp4725**
+* **[RPi.GPIO](https://sourceforge.net/projects/raspberry-gpio-python/)** - Control Raspberry Pi GPIO channels
+* **[adafruit-circuitpython-ads1x15](https://github.com/adafruit/Adafruit_CircuitPython_ADS1x15)** - CircuitPython driver for ADS1x15 ADCs
+* **[adafruit-circuitpython-mcp4725](https://github.com/adafruit/Adafruit_CircuitPython_MCP4725)** - CircuitPython driver for MCP4725 I2C DAC
 
 ### 📱 User interface:
-* **Home Assistant**
+* **[Home Assistant](https://www.home-assistant.io/)** - Open-source home automation platform
 
 ### 🛠️ Development tools:
-* **ruff**
-* **pytest**
+* **[uv](https://github.com/astral-sh/uv)** - Fast Python package and project manager
+* **[ruff](https://github.com/astral-sh/ruff)** - Fast Python linter and code formatter
+* **[ty](https://github.com/astral-sh/ty)** - Fast Python type checker
+* **[pytest](https://github.com/pytest-dev/pytest)** - Testing framework
