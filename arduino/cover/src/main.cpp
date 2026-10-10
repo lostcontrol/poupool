@@ -15,13 +15,13 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-// Dependencies (InputDebounce, EEPROMex) are declared in platformio.ini
+// Dependencies (InputDebounce) are declared in platformio.ini
 
 #include <Arduino.h>
 #include <string.h>
 #include <avr/wdt.h>
 #include <InputDebounce.h>
-#include <EEPROMex.h>
+#include <EEPROM.h>
 
 static void water_isr();
 static void cover_isr();
@@ -63,7 +63,7 @@ class Cover {
     };
 
     Cover() {
-      EEPROM.readBlock(0, m_position);
+      load_position();
     }
 
     void reset() {
@@ -129,7 +129,7 @@ class Cover {
           // Save the positions to EEPROM. Disable interrupts to ensure the values get not
           // updated by ISR during the process
           InterruptGuard _{};
-          EEPROM.updateBlock(0, m_position);
+          save_position();
         }
       }
     }
@@ -203,7 +203,7 @@ class Cover {
             m_set_limits = SetLimit::NONE;
             // Save settings to EEPROM. Update will not touch the EEPROM if the data is the same so
             // it's safe to put it here.
-            EEPROM.updateBlock(0, m_position);
+            save_position();
           }
           break;
       }
@@ -266,6 +266,25 @@ class Cover {
     }
 
   private:
+    // EEPROM.get/put cannot be used directly on the volatile m_position. Go through a
+    // non-volatile local copy. The caller must ensure the ISR cannot modify m_position
+    // meanwhile (interrupts disabled or not yet attached).
+    void load_position() {
+      Position p;
+      EEPROM.get(0, p);
+      m_position.position = p.position;
+      m_position.close = p.close;
+      m_position.open = p.open;
+    }
+
+    void save_position() const {
+      Position p;
+      p.position = m_position.position;
+      p.close = m_position.close;
+      p.open = m_position.open;
+      EEPROM.put(0, p);
+    }
+
     volatile Position m_position;
     volatile Direction m_direction = Direction::STOP;
     volatile Direction m_running_direction = Direction::STOP;
@@ -446,10 +465,6 @@ HeartBeat heartbeat{5000};
 
 void setup()
 {
-  // EEPROM safety during debugging
-  EEPROM.setMemPool(0, EEPROMSizeUno);
-  EEPROM.setMaxAllowedWrites(50);
-
   Serial.begin(9600);
 
   water.setup();

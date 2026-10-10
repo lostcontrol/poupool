@@ -4,7 +4,7 @@ Arduino firmware (ATmega328P, `uno` board) driving the pool cover. Built with [P
 
 ## Prerequisites
 
-PlatformIO is a development dependency of the project: run `uv sync` at the repository root, then use `uv run pio ...` (or activate `.venv`). Alternatively install it standalone, see the [installation guide](https://docs.platformio.org/en/latest/core/installation/). Libraries (`InputDebounce`, `EEPROMex`) and the toolchain are downloaded automatically on the first build.
+PlatformIO is a development dependency of the project: run `uv sync` at the repository root, then use `uv run pio ...` (or activate `.venv`). Alternatively install it standalone, see the [installation guide](https://docs.platformio.org/en/latest/core/installation/). The library (`InputDebounce`) and the toolchain are downloaded automatically on the first build.
 
 ## Build
 
