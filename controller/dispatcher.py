@@ -295,6 +295,20 @@ class Dispatcher:
                 to_float,
                 False,
             ),
+            "/status/disinfection/ph/canister_empty": (
+                disinfection,
+                lambda x: x.lower() in ("0", "1", "off", "on"),
+                lambda _: "ph_canister_empty",
+                to_bool,
+                False,
+            ),
+            "/status/disinfection/cl/canister_empty": (
+                disinfection,
+                lambda x: x.lower() in ("0", "1", "off", "on"),
+                lambda _: "cl_canister_empty",
+                to_bool,
+                False,
+            ),
             "/status/water/counter": (
                 arduino,
                 greater_equal(0),

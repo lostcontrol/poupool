@@ -75,6 +75,8 @@ def main() -> None:
     publish("/settings/disinfection/orp/enable", "1")
     publish("/settings/disinfection/orp/setpoint", "600")
     publish("/settings/disinfection/orp/pterm", "1.0")
+    publish("/status/disinfection/ph/canister_empty", "0")
+    publish("/status/disinfection/cl/canister_empty", "0")
 
     print("\n**** Missing default parameters ***")
     [print(t) for t in remaining]
