@@ -5,7 +5,7 @@ description = "Poupool is a swimming pool control software"
 requires-python = ">=3.11"
 dependencies = [
     "paho-mqtt==2.1.0",
-    "pykka==4.4.2",
+    "pykka==4.5.0",
     "pyserial==3.5",
     "transitions==0.9.3",
     "astral==3.2",
@@ -17,12 +17,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pre-commit==4.6.2",
-    "ruff==0.17.0",
-    "ty==0.0.86",
+    "pre-commit==4.7.0",
+    "ruff==0.17.2",
+    "ty==0.0.91",
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
-    "pytest-mock==3.16.0",
+    "pytest-mock==3.17.0",
     "freezegun==1.5.5",
     "platformio==6.2.0",
 ]
