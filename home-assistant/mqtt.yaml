@@ -1,4 +1,28 @@
 mqtt:
+  binary_sensor:
+    # DESINFECTION
+    - name: "Desinfection pH Canister Empty"
+      unique_id: "desinfection_ph_canister_empty"
+      icon: mdi:bottle-tonic-alert
+      state_topic: "/status/disinfection/ph/canister_empty"
+      payload_on: "1"
+      payload_off: "0"
+      device_class: "problem"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
+    - name: "Desinfection Cl Canister Empty"
+      unique_id: "desinfection_cl_canister_empty"
+      icon: mdi:bottle-tonic-alert
+      state_topic: "/status/disinfection/cl/canister_empty"
+      payload_on: "1"
+      payload_off: "0"
+      device_class: "problem"
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
   climate:
     - name: "Heating"
       unique_id: "heating"
