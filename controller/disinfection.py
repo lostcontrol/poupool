@@ -215,6 +215,11 @@ class CanisterMonitor:
         # 2. Consistent multi-cycle upward trend in peak or mean
         if peaks[-1] < 0.20 and means[-1] < 0.15:
             return False
+        # Trend deltas scale adaptively based on the cycle window size:
+        # - Shorter windows (<= 3 cycles) detect rapid empty canister climb earlier (~12-18h)
+        #   with smaller total delta (min_delta_p = 0.07, min_delta_m = 0.05).
+        # - Longer windows (4-6 cycles) require a larger cumulative delta (0.10 - 0.12)
+        #   to avoid drift over multiple days.
         min_delta_p = 0.07 if self.__cycles_count <= 3 else (0.10 if self.__cycles_count <= 4 else 0.12)
         min_delta_m = 0.05 if self.__cycles_count <= 3 else (0.08 if self.__cycles_count <= 4 else 0.10)
         return self.__has_upward_trend(peaks, min_delta=min_delta_p) or self.__has_upward_trend(
@@ -222,6 +227,12 @@ class CanisterMonitor:
         )
 
     def __has_upward_trend(self, values: list[float], min_delta: float, tolerance: float = 0.01) -> bool:
+        """Check if values follow a consistent upward trend.
+
+        For short windows (n <= 4), every step must be strictly increasing (n - 1)
+        to prevent false positives from brief fluctuations. For longer windows (n > 4),
+        at most one step is allowed to plateau (n - 2).
+        """
         n = len(values)
         if values[-1] - values[0] < min_delta:
             return False
