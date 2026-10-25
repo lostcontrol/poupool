@@ -326,14 +326,6 @@ class Disinfection(PoupoolActor):
             self.__cl_canister.restore(value)
             logger.info(f"Cl canister empty flag set to {value}")
 
-    @property
-    def ph_canister(self) -> CanisterMonitor:
-        return self.__ph_canister
-
-    @property
-    def cl_canister(self) -> CanisterMonitor:
-        return self.__cl_canister
-
     def is_disabled(self):
         return self.__is_disabled
 

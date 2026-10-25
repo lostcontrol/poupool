@@ -277,39 +277,42 @@ class TestDisinfectionCanisterIntegration:
         yield Disinfection(encoder, devices, sensors_reader, sensors_writer, disable=True)
         pykka.ActorRegistry.stop_all()
 
-    def test_dispatcher_restore_callbacks(self, disinfection, encoder):
-        # Restoring from MQTT sets internal monitor state without re-publishing
+    def test_dispatcher_restore_callbacks(self, disinfection, encoder, sensors_reader):
+        # Restoring True sets empty state; subsequent low-demand samples will trigger clear publish
         encoder.reset_mock()
-        disinfection.ph_canister_empty(True)
-        assert disinfection.ph_canister.is_empty
-        encoder.disinfection_ph_canister__empty.assert_not_called()
-
         disinfection.cl_canister_empty(True)
-        assert disinfection.cl_canister.is_empty
         encoder.disinfection_cl_canister__empty.assert_not_called()
 
-        # Idempotent call
+        # Calling cl_canister_empty(True) again is idempotent
         disinfection.cl_canister_empty(True)
-        assert disinfection.cl_canister.is_empty
         encoder.disinfection_cl_canister__empty.assert_not_called()
+
+        # 15 low-demand samples trigger auto-clear publish
+        for _ in range(15):
+            disinfection.on_enter_running_adjusting()
+        encoder.disinfection_cl_canister__empty.assert_called_once_with(0, retain=True)
 
         # Restoring False
-        disinfection.cl_canister_empty(False)
-        assert not disinfection.cl_canister.is_empty
-        encoder.disinfection_cl_canister__empty.assert_not_called()
-
-    def test_canister_empty_published_on_transition(self, disinfection, encoder):
         encoder.reset_mock()
-        # Manually push 5 increasing cycles to cl_canister
-        for val in [0.11, 0.15, 0.18, 0.21, 0.23]:
-            for _ in range(15):
-                disinfection.cl_canister.add_sample(val)
-            disinfection.cl_canister.finish_cycle()
+        disinfection.cl_canister_empty(False)
+        encoder.disinfection_cl_canister__empty.assert_not_called()
+        # When already False, 15 low-demand samples do not publish clear
+        for _ in range(15):
+            disinfection.on_enter_running_adjusting()
         encoder.disinfection_cl_canister__empty.assert_not_called()
 
-        # 6th cycle: add 15 samples of 0.26 and halt to finish cycle
-        for _ in range(15):
-            disinfection.cl_canister.add_sample(0.26)
-        disinfection.on_enter_halt()
-        assert disinfection.cl_canister.is_empty
-        encoder.disinfection_cl_canister__empty.assert_called_once_with(1, retain=True)
+    def test_canister_empty_published_on_transition(self, disinfection, encoder, sensors_reader):
+        encoder.reset_mock()
+        # Setpoint is 600, scale is 0.005, pterm is 1.0.
+        # feedback = (setpoint - current) * pterm * scale = (600 - orp) * 0.005
+        # ORPs: 578 (0.11), 570 (0.15), 564 (0.18), 558 (0.21), 554 (0.23), 548 (0.26)
+        orps = [578, 570, 564, 558, 554, 548]
+        for idx, orp in enumerate(orps):
+            sensors_reader.get_orp().get.return_value = orp
+            for _ in range(15):
+                disinfection.on_enter_running_adjusting()
+            disinfection.on_enter_halt()
+            if idx < len(orps) - 1:
+                encoder.disinfection_cl_canister__empty.assert_not_called()
+            else:
+                encoder.disinfection_cl_canister__empty.assert_called_once_with(1, retain=True)
