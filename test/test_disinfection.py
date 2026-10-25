@@ -93,3 +93,223 @@ class TestPWM:
         self.run_many_iterations(pwm, iterations)
         assert pump.on.call_count == 0
         assert pump.off.call_count == 0
+
+
+class TestCanisterMonitor:
+    def test_insufficient_samples_discarded(self):
+        from controller.disinfection import CanisterMonitor
+
+        monitor = CanisterMonitor("Cl", min_samples=15)
+        for _ in range(10):
+            assert not monitor.add_sample(0.50)
+        assert not monitor.finish_cycle()
+        assert len(monitor.history) == 0
+        assert not monitor.is_empty
+
+    def test_normal_cycles_no_alert(self):
+        from controller.disinfection import CanisterMonitor
+
+        monitor = CanisterMonitor("Cl", cycles=6, min_samples=15)
+        # Normal fluctuating duty cycles between 1% and 4%
+        normal_values = [0.01, 0.02, 0.01, 0.03, 0.02, 0.01, 0.04, 0.02, 0.01]
+        for val in normal_values:
+            for _ in range(20):
+                monitor.add_sample(val)
+            assert not monitor.finish_cycle()
+            assert not monitor.is_empty
+
+    def test_upward_trend_detection(self):
+        from controller.disinfection import CanisterMonitor
+
+        monitor = CanisterMonitor("Cl", cycles=6, min_samples=15)
+        # 6 cycles with increasing feedback matching empty canister progression
+        trend_values = [0.11, 0.15, 0.18, 0.21, 0.23, 0.26]
+        for idx, val in enumerate(trend_values):
+            for _ in range(20):
+                monitor.add_sample(val)
+            is_last = idx == len(trend_values) - 1
+            changed = monitor.finish_cycle()
+            if is_last:
+                assert changed
+                assert monitor.is_empty
+                assert monitor.alert_stats is not None
+                assert monitor.alert_stats.peak == pytest.approx(0.26)
+            else:
+                assert not changed
+                assert not monitor.is_empty
+
+    def test_saturation_fallback(self):
+        from controller.disinfection import CanisterMonitor
+
+        monitor = CanisterMonitor("Cl", cycles=6, min_samples=15)
+        # 6 cycles with high duty cycle saturation
+        high_values = [0.40, 0.50, 0.45, 0.60, 0.55, 0.50]
+        for idx, val in enumerate(high_values):
+            for _ in range(20):
+                monitor.add_sample(val)
+            is_last = idx == len(high_values) - 1
+            changed = monitor.finish_cycle()
+            if is_last:
+                assert changed
+                assert monitor.is_empty
+            else:
+                assert not changed
+                assert not monitor.is_empty
+
+    def test_summer_spike_recovering_at_night(self):
+        from controller.disinfection import CanisterMonitor
+
+        monitor = CanisterMonitor("Cl", cycles=6, min_samples=15)
+        # Alternating afternoon spike and overnight low recovery
+        day_night_values = [0.45, 0.02, 0.50, 0.02, 0.40, 0.02, 0.55, 0.02]
+        for val in day_night_values:
+            for _ in range(20):
+                monitor.add_sample(val)
+            assert not monitor.finish_cycle()
+            assert not monitor.is_empty
+
+    def test_auto_clear_on_low_demand(self):
+        from controller.disinfection import CanisterMonitor
+
+        monitor = CanisterMonitor("Cl", cycles=6, min_samples=15)
+        # Trigger empty state
+        for val in [0.11, 0.15, 0.18, 0.21, 0.23, 0.26]:
+            for _ in range(20):
+                monitor.add_sample(val)
+            monitor.finish_cycle()
+        assert monitor.is_empty
+
+        # Canister refilled: low demand for 15 samples clears flag mid-cycle
+        for _ in range(14):
+            assert not monitor.add_sample(0.02)
+            assert monitor.is_empty
+        assert monitor.add_sample(0.02)
+        assert not monitor.is_empty
+        assert len(monitor.history) == 0
+
+    def test_auto_clear_on_relative_drop(self):
+        from controller.disinfection import CanisterMonitor
+
+        monitor = CanisterMonitor("Cl", cycles=6, min_samples=15)
+        # Trigger empty state at high saturation
+        for val in [0.70, 0.75, 0.80, 0.85, 0.90, 0.95]:
+            for _ in range(20):
+                monitor.add_sample(val)
+            monitor.finish_cycle()
+        assert monitor.is_empty
+
+        # Next cycle drops significantly (peak 0.40, mean 0.20)
+        # First 14 samples: moderate values
+        for _ in range(14):
+            assert not monitor.add_sample(0.20)
+        # Finish cycle with 20 samples total
+        for _ in range(6):
+            assert not monitor.add_sample(0.20)
+        assert monitor.finish_cycle()
+        assert not monitor.is_empty
+
+    def test_max_samples_auto_split(self):
+        from controller.disinfection import CanisterMonitor
+
+        monitor = CanisterMonitor("Cl", min_samples=15, max_samples=30)
+        for _ in range(29):
+            assert not monitor.add_sample(0.20)
+        assert len(monitor.history) == 0
+        # 30th sample triggers cycle split
+        monitor.add_sample(0.20)
+        assert len(monitor.history) == 1
+        assert len(monitor.current_samples) == 0
+
+    def test_restore_and_clear(self):
+        from controller.disinfection import CanisterMonitor
+
+        monitor = CanisterMonitor("Cl", min_samples=15)
+        monitor.restore(True)
+        assert monitor.is_empty
+
+        # Auto-clear after 15 low samples
+        for _ in range(15):
+            monitor.add_sample(0.01)
+        assert not monitor.is_empty
+
+        # Restore False resets state
+        monitor.restore(True)
+        assert monitor.is_empty
+        monitor.restore(False)
+        assert not monitor.is_empty
+
+
+class TestDisinfectionCanisterIntegration:
+    @pytest.fixture
+    def encoder(self, mocker):
+        return mocker.Mock()
+
+    @pytest.fixture
+    def devices(self, mocker):
+        from controller.device import DeviceRegistry, SwitchDevice
+
+        registry = mocker.Mock(DeviceRegistry)
+        pump_mock = mocker.Mock(SwitchDevice)
+        registry.get_pump.return_value = pump_mock
+        return registry
+
+    @pytest.fixture
+    def sensors_reader(self, mocker):
+        reader = mocker.Mock()
+        ph_mock = mocker.Mock()
+        ph_mock.get.return_value = 7.2
+        orp_mock = mocker.Mock()
+        orp_mock.get.return_value = 650
+        reader.get_ph.return_value = ph_mock
+        reader.get_orp.return_value = orp_mock
+        return reader
+
+    @pytest.fixture
+    def sensors_writer(self, mocker):
+        return mocker.Mock()
+
+    @pytest.fixture
+    def disinfection(self, encoder, devices, sensors_reader, sensors_writer):
+        import pykka
+
+        from controller.disinfection import Disinfection
+
+        yield Disinfection(encoder, devices, sensors_reader, sensors_writer, disable=True)
+        pykka.ActorRegistry.stop_all()
+
+    def test_dispatcher_restore_callbacks(self, disinfection, encoder):
+        # Restoring from MQTT sets internal monitor state without re-publishing
+        encoder.reset_mock()
+        disinfection.ph_canister_empty(True)
+        assert disinfection.ph_canister.is_empty
+        encoder.disinfection_ph_canister__empty.assert_not_called()
+
+        disinfection.cl_canister_empty(True)
+        assert disinfection.cl_canister.is_empty
+        encoder.disinfection_cl_canister__empty.assert_not_called()
+
+        # Idempotent call
+        disinfection.cl_canister_empty(True)
+        assert disinfection.cl_canister.is_empty
+        encoder.disinfection_cl_canister__empty.assert_not_called()
+
+        # Restoring False
+        disinfection.cl_canister_empty(False)
+        assert not disinfection.cl_canister.is_empty
+        encoder.disinfection_cl_canister__empty.assert_not_called()
+
+    def test_canister_empty_published_on_transition(self, disinfection, encoder):
+        encoder.reset_mock()
+        # Manually push 5 increasing cycles to cl_canister
+        for val in [0.11, 0.15, 0.18, 0.21, 0.23]:
+            for _ in range(15):
+                disinfection.cl_canister.add_sample(val)
+            disinfection.cl_canister.finish_cycle()
+        encoder.disinfection_cl_canister__empty.assert_not_called()
+
+        # 6th cycle: add 15 samples of 0.26 and halt to finish cycle
+        for _ in range(15):
+            disinfection.cl_canister.add_sample(0.26)
+        disinfection.on_enter_halt()
+        assert disinfection.cl_canister.is_empty
+        encoder.disinfection_cl_canister__empty.assert_called_once_with(1, retain=True)
