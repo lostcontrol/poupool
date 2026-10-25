@@ -115,7 +115,7 @@ class CanisterMonitor:
     def __init__(
         self,
         name: str,
-        cycles: int = 6,
+        cycles: int = 3,
         min_samples: int = MIN_CYCLE_SAMPLES,
         max_samples: int = MAX_CYCLE_SAMPLES,
     ) -> None:
@@ -215,16 +215,20 @@ class CanisterMonitor:
         # 2. Consistent multi-cycle upward trend in peak or mean
         if peaks[-1] < 0.20 and means[-1] < 0.15:
             return False
-        return self.__has_upward_trend(peaks, min_delta=0.12) or self.__has_upward_trend(means, min_delta=0.10)
+        min_delta_p = 0.07 if self.__cycles_count <= 3 else (0.10 if self.__cycles_count <= 4 else 0.12)
+        min_delta_m = 0.05 if self.__cycles_count <= 3 else (0.08 if self.__cycles_count <= 4 else 0.10)
+        return self.__has_upward_trend(peaks, min_delta=min_delta_p) or self.__has_upward_trend(
+            means, min_delta=min_delta_m
+        )
 
-    @staticmethod
-    def __has_upward_trend(values: list[float], min_delta: float, tolerance: float = 0.01) -> bool:
+    def __has_upward_trend(self, values: list[float], min_delta: float, tolerance: float = 0.01) -> bool:
         n = len(values)
         if values[-1] - values[0] < min_delta:
             return False
+        min_incr = n - 1 if n <= 4 else n - 2
         increasing = sum(1 for i in range(1, n) if values[i] > values[i - 1])
         no_drops = all(values[i] >= values[i - 1] - tolerance for i in range(1, n))
-        return increasing >= n - 2 and no_drops
+        return increasing >= min_incr and no_drops
 
     @staticmethod
     def __is_low_demand(stats: CycleStats) -> bool:

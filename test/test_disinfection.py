@@ -305,8 +305,8 @@ class TestDisinfectionCanisterIntegration:
         encoder.reset_mock()
         # Setpoint is 600, scale is 0.005, pterm is 1.0.
         # feedback = (setpoint - current) * pterm * scale = (600 - orp) * 0.005
-        # ORPs: 578 (0.11), 570 (0.15), 564 (0.18), 558 (0.21), 554 (0.23), 548 (0.26)
-        orps = [578, 570, 564, 558, 554, 548]
+        # ORPs: 578 (0.11), 570 (0.15), 564 (0.18)
+        orps = [578, 570, 564]
         for idx, orp in enumerate(orps):
             sensors_reader.get_orp().get.return_value = orp
             for _ in range(15):
