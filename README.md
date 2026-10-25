@@ -1,6 +1,7 @@
 # 🏊 Poupool - The swimming pool controller
 
 [![Poupool](https://github.com/lostcontrol/poupool/actions/workflows/poupool.yml/badge.svg)](https://github.com/lostcontrol/poupool/actions/workflows/poupool.yml)
+[![Documentation](https://img.shields.io/badge/docs-User%20Manual-blue.svg)](https://lostcontrol.github.io/poupool/)
 
 **Poupool** is a swimming pool control software.
 
@@ -21,7 +22,7 @@ Originally, I wanted to experiment with `asyncio` but finally chose to go with a
 approach (actor model and finite state machines).
 
 Poupool currently controls **filtration** (including backwash), **heating** (heat pump), **pH and
-chlorination**, **cover**, **lights** and all the pumps and valves of the system. It is used for an overflow
+chlorination** (including automated empty chemical canister detection), **cover**, **lights** and all the pumps and valves of the system. It is used for an overflow
 swimming pool so that adds some complexity to the control process (e.g. monitoring of the retention
 tank water level).
 
@@ -38,6 +39,10 @@ heat forming just under the cover, the control of a swimming pump and more.
 
 You can use the Home Assistant companion apps on iOS or Android, use the provided
 Lovelace dashboard (`home-assistant/dashboard.yaml`), or interact directly via the MQTT API.
+
+## 📖 Documentation
+
+For detailed architectural explanations, state machine diagrams, heating logic, chemical disinfection, and buffer tank management, visit the online **[Poupool User Manual](https://lostcontrol.github.io/poupool/)** (source in [`docs/`](docs/README.md)).
 
 ## 📦 Dependencies
 

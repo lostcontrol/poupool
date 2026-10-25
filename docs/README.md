@@ -2,7 +2,7 @@
 
 ## Introduction
 Poupool is an advanced, fully automated overflow swimming pool control software.
-Unlike standard skimmer pools where the water level sits below the edge and surface debris is drawn into wall-mounted openings, an overflow pool keeps the water level perfectly flush with the surrounding deck. The water continuously spills over the edge into a perimeter gutter and flows into a dedicated buffer tank. This provides superior surface skimming, better water circulation, and a stunning "infinity edge" aesthetic. Poupool is explicitly designed to handle the complex valve and pump orchestration required to manage this buffer tank, alongside filtration, chemical disinfection (pH and ORP monitoring), heating (via a heat pump), the pool cover, underwater lights, multiple temperature sensors, and a variable-speed counter-current swimming pump.
+Unlike standard skimmer pools where the water level sits below the edge and surface debris is drawn into wall-mounted openings, an overflow pool keeps the water level perfectly flush with the surrounding deck. The water continuously spills over the edge into a perimeter gutter and flows into a dedicated buffer tank. This provides superior surface skimming, better water circulation, and a stunning "infinity edge" aesthetic. Poupool is explicitly designed to handle the complex valve and pump orchestration required to manage this buffer tank, alongside filtration, chemical disinfection (pH and ORP monitoring with empty canister detection), heating (via a heat pump), the pool cover, underwater lights, multiple temperature sensors, and a variable-speed counter-current swimming pump.
 
 All the hardware is COTS (commercial off-the-shelf) based on a Raspberry Pi 3 as the central brain, connected to an Arduino for real-time hardware interaction, relay boards, and standard electronic components easily available online.
 
@@ -123,19 +123,28 @@ Poupool manages the pool temperature using a connected heat pump, orchestrated b
 ---
 
 ## Disinfection Details
-Disinfection is fully automated via proportional PWM controllers.
+Disinfection is fully automated via proportional PWM controllers and incorporates intelligent empty chemical canister detection.
 
 ```mermaid
 stateDiagram-v2
     [*] --> waiting
     waiting --> running_adjusting
-    running_adjusting --> running_treating : Calculate Dose
+    running_adjusting --> running_treating : Calculate Dose & Sample Duty Cycle
     running_treating --> running_adjusting : Inject and Wait
 ```
 
+### Proportional Dosing (P-Controllers)
 - **pH Control:** The controller calculates the difference between your desired pH (e.g., 7.2) and the current sensor reading. Since Poupool assumes "pH minus" is used, the system calculates a proportional dose and activates the acid pump via PWM for a maximum cycle of `PH_PWM_PERIOD`.
-- **ORP Control:** Similarly, if the ORP drops below the setpoint (e.g., 650 mV), the controller computes the necessary dose of liquid chlorine and activates the chlorine pump.
-- **Safety:** Both pumps feature a hardcoded `SECURITY_DURATION` limit. If the pump runs continuously for hours without reaching the setpoint (e.g., an empty chemical barrel or a broken sensor), the system shuts down the pump to prevent accidental massive chemical dumping.
+- **ORP Control:** Similarly, if the ORP drops below the setpoint (e.g., 650 mV), the controller computes the necessary dose of liquid chlorine and activates the chlorine pump for a cycle of `CL_PWM_PERIOD`.
+- **Safety Cutoff:** Both pumps enforce a daily `security_duration` limit (default 7200s, configurable in `config.ini`). If either pump exceeds this cumulative run time in a single day, dosing shuts down to prevent accidental massive chemical dumping caused by probe faults.
+
+### Empty Chemical Canister Detection
+Corrosive chemicals like sulfuric acid (pH-) and liquid chlorine make physical float sensors inside canisters prone to failure. Instead, Poupool uses a software sensor that detects empty canisters by monitoring dosing pump duty cycle trends across filtration cycles.
+
+- **Multi-Cycle Evaluation:** Dosing effort is monitored over a configurable rolling window of filtration cycles (`canister_cycles = 3` in `config.ini`, roughly 12–18 hours of filtration).
+- **Trigger Logic:** An alert is raised when the system detects persistent, unfulfilled chemical demand—either through sustained high duty cycles or a steady multi-cycle upward trend without the water parameters recovering.
+- **Automatic Recovery:** When an empty canister is replaced, dosing quickly normalizes water chemistry. As soon as the duty cycle drops back to low demand, the alert resets automatically without manual acknowledgement.
+- **Home Assistant & MQTT:** Status is published to retained MQTT topics (`/status/disinfection/ph/canister_empty` and `/status/disinfection/cl/canister_empty`) and mapped to binary problem sensors in Home Assistant for mobile notifications. State is restored across Poupool reboots.
 
 ---
 
