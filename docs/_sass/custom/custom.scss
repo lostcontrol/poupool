@@ -1,0 +1,90 @@
+// Pool photo banner on the overview page
+.hero-photo {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #dce8ee;
+  box-shadow: 0 4px 16px rgba(18, 43, 56, 0.08);
+  margin: 1rem 0 1.5rem;
+}
+
+// Framed SVG schematic cards
+.figure-card {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid #dce8ee;
+  border-radius: 8px;
+  background-color: #fbfdfe;
+  text-align: center;
+
+  img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+  }
+
+  figcaption {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: #4b616f;
+  }
+}
+
+// Clean Mermaid rendering (Kramdown outputs <pre><code class="language-mermaid">)
+pre:has(> code.language-mermaid),
+div.language-mermaid {
+  background: #fbfdfe;
+  border: 1px solid #dce8ee;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1.25rem 0;
+  overflow-x: auto;
+
+  > button {
+    display: none;
+  }
+
+  pre.highlight {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  svg {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+code.language-mermaid {
+  display: block;
+  text-align: center;
+  background: transparent;
+  border: 0;
+  padding: 0;
+
+  svg {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+// Comfortable tables
+.main-content table {
+  border-radius: 6px;
+  overflow: hidden;
+
+  th {
+    background-color: #f3f8fa;
+    color: #122b38;
+    font-weight: 600;
+  }
+}
