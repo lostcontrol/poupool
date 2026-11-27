@@ -176,6 +176,13 @@ class Dispatcher:
                 to_bool,
                 False,
             ),
+            "/settings/filtration/auto_standby": (
+                filtration,
+                lambda x: x.lower() in ("0", "1", "off", "on"),
+                lambda _: "auto_standby",
+                to_bool,
+                False,
+            ),
             "/settings/cover/position/eco": (
                 filtration,
                 between(0, 100),
