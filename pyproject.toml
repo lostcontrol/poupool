@@ -4,27 +4,28 @@ version = "0.1.0"
 description = "Poupool is a swimming pool control software"
 requires-python = ">=3.11"
 dependencies = [
-    "paho-mqtt==2.1.0",
-    "pykka==4.5.0",
-    "pyserial==3.5",
-    "transitions==0.9.3",
-    "astral==3.2",
-    "rpi-gpio==0.7.1",
-    "adafruit-circuitpython-ads1x15==3.0.5",
-    "adafruit-circuitpython-mcp4725==1.4.21",
-    "lcdbackpack==1.0.0b1",
+    "paho-mqtt>=2.2.0",
+    "pykka>=4.5.0",
+    "pyserial>=3.5",
+    "transitions>=0.9.3",
+    "astral>=3.2",
+    "rpi-gpio>=0.7.1",
+    "gpiod>=2.6.0",
+    "adafruit-circuitpython-ads1x15>=3.0.5",
+    "adafruit-circuitpython-mcp4725>=1.4.21",
+    "lcdbackpack>=1.0.0b1",
 ]
 
 [dependency-groups]
 dev = [
-    "pre-commit==4.7.0",
-    "ruff==0.17.2",
-    "ty==0.0.91",
-    "pytest==9.1.1",
-    "pytest-cov==7.1.0",
-    "pytest-mock==3.17.0",
-    "freezegun==1.5.5",
-    "platformio==6.2.0",
+    "pre-commit>=4.7.0",
+    "ruff>=0.17.6",
+    "ty>=0.0.112",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "pytest-mock>=3.17.0",
+    "freezegun>=1.5.5",
+    "platformio>=6.2.0",
 ]
 
 [tool.ruff]

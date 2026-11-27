@@ -433,7 +433,7 @@ class Filtration(PoupoolActor):
             self.__machine.get_graph().draw("filtration.svg", prog="dot", args=args)
 
     def __reload_eco(self):
-        if self.is_eco(allow_substates=True):  # ty: ignore[unresolved-attribute]
+        if self.is_eco(allow_substates=True):  # ty: ignore[missing-attribute]
             # Jump to the reload state so that we can jump back into the same state
             self._proxy.reload.defer()
             self._proxy.eco.defer()
@@ -482,7 +482,7 @@ class Filtration(PoupoolActor):
     def speed_eco(self, value):
         self.__speed_eco = value
         logger.info(f"Speed for eco mode set to: {self.__speed_eco}")
-        if self.is_eco_normal():  # ty: ignore[unresolved-attribute]
+        if self.is_eco_normal():  # ty: ignore[missing-attribute]
             # Jump to the reload state so that we can jump back into standby mode
             self._proxy.reload.defer()
             self._proxy.eco.defer()
@@ -490,7 +490,7 @@ class Filtration(PoupoolActor):
     def speed_standby(self, value):
         self.__speed_standby = value
         logger.info(f"Speed for standby mode set to: {self.__speed_standby}")
-        if self.is_standby_normal():  # ty: ignore[unresolved-attribute]
+        if self.is_standby_normal():  # ty: ignore[missing-attribute]
             # Jump to the reload state so that we can jump back into standby mode
             self._proxy.reload.defer()
             self._proxy.standby.defer()
@@ -498,7 +498,7 @@ class Filtration(PoupoolActor):
     def speed_overflow(self, value):
         self.__speed_overflow = value
         logger.info(f"Speed for overflow mode set to: {self.__speed_overflow}")
-        if self.is_overflow_normal():  # ty: ignore[unresolved-attribute]
+        if self.is_overflow_normal():  # ty: ignore[missing-attribute]
             # Jump to the reload state so that we can jump back into overflow mode
             self._proxy.reload.defer()
             self._proxy.overflow.defer()
@@ -506,20 +506,20 @@ class Filtration(PoupoolActor):
     def overflow_in_comfort(self, value):
         self.__overflow_in_comfort = value
         logger.info("Overflow in comfort mode is %sable" % ("en" if value else "dis"))
-        if self.is_comfort():  # ty: ignore[unresolved-attribute]
+        if self.is_comfort():  # ty: ignore[missing-attribute]
             # Reload settings
             self._proxy.reload.defer()
 
     def auto_overflow(self, value: bool) -> None:
         self.__auto_overflow = value
         logger.info("Auto-overflow in standby mode is %sabled" % ("en" if value else "dis"))
-        if value and self.is_standby_normal():  # ty: ignore[unresolved-attribute]
+        if value and self.is_standby_normal():  # ty: ignore[missing-attribute]
             self.__overflow_monitor.reset(datetime.now())
 
     def auto_standby(self, value: bool) -> None:
         self.__auto_standby = value
         logger.info("Auto-standby in overflow mode is %sabled" % ("en" if value else "dis"))
-        if value and self.is_overflow_normal():  # ty: ignore[unresolved-attribute]
+        if value and self.is_overflow_normal():  # ty: ignore[missing-attribute]
             self.__standby_monitor.reset()
 
     def backwash_backwash_duration(self, value):

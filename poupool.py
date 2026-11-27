@@ -440,4 +440,4 @@ if __name__ == "__main__":
         if not args.fake_devices:
             import RPi.GPIO as GPIO
 
-            GPIO.cleanup()  # ty: ignore[unresolved-attribute]
+            GPIO.cleanup()  # ty: ignore[missing-attribute]
