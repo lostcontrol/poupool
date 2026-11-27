@@ -57,6 +57,7 @@ Best is to setup a virtual environment by running `uv sync`.
 
 ### 🍓 Raspberry Pi:
 * **[RPi.GPIO](https://sourceforge.net/projects/raspberry-gpio-python/)** - Control Raspberry Pi GPIO channels
+* **[gpiod](https://pypi.org/project/gpiod/)** - Python bindings for libgpiod (required by Adafruit Blinka on Raspberry Pi)
 * **[adafruit-circuitpython-ads1x15](https://github.com/adafruit/Adafruit_CircuitPython_ADS1x15)** - CircuitPython driver for ADS1x15 ADCs
 * **[adafruit-circuitpython-mcp4725](https://github.com/adafruit/Adafruit_CircuitPython_MCP4725)** - CircuitPython driver for MCP4725 I2C DAC
 
