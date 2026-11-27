@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 220" role="img" aria-labelledby="ph-title">
+  <title id="ph-title">pH scale and swimming pool target range (7.0 to 7.4)</title>
+  <style>
+    .lbl { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; }
+    .sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #4b616f; }
+  </style>
+
+  <rect width="760" height="220" rx="8" fill="#ffffff"/>
+
+  <!-- Target window highlight -->
+  <rect x="372" y="50" width="60" height="56" rx="6" fill="#e8f7ee" stroke="#16a34a" stroke-width="1.8"/>
+  <text x="402" y="38" text-anchor="middle" class="lbl" font-size="12" font-weight="700" fill="#15803d">Pool target: 7.0 – 7.4</text>
+
+  <!-- pH color blocks (0 to 14) -->
+  <g transform="translate(38, 60)">
+    <rect x="0"   y="0" width="46" height="36" rx="4" fill="#dc2626"/>
+    <rect x="49"  y="0" width="46" height="36" fill="#ea580c"/>
+    <rect x="98"  y="0" width="46" height="36" fill="#f59e0b"/>
+    <rect x="147" y="0" width="46" height="36" fill="#eab308"/>
+    <rect x="196" y="0" width="46" height="36" fill="#a3e635"/>
+    <rect x="245" y="0" width="46" height="36" fill="#4ade80"/>
+    <rect x="294" y="0" width="46" height="36" fill="#22c55e"/>
+    <rect x="343" y="0" width="46" height="36" fill="#16a34a" stroke="#122b38" stroke-width="1.5"/>
+    <rect x="392" y="0" width="46" height="36" fill="#14b8a6"/>
+    <rect x="441" y="0" width="46" height="36" fill="#06b6d4"/>
+    <rect x="490" y="0" width="46" height="36" fill="#0ea5e9"/>
+    <rect x="539" y="0" width="46" height="36" fill="#2563eb"/>
+    <rect x="588" y="0" width="46" height="36" fill="#4f46e5"/>
+    <rect x="637" y="0" width="46" height="36" rx="4" fill="#6d28d9"/>
+
+    <!-- Numbers -->
+    <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle">
+      <text x="23"  y="23">0</text>
+      <text x="72"  y="23">1</text>
+      <text x="121" y="23">2</text>
+      <text x="170" y="23">3</text>
+      <text x="219" y="23">4</text>
+      <text x="268" y="23">5</text>
+      <text x="317" y="23">6</text>
+      <text x="366" y="23">7</text>
+      <text x="415" y="23">8</text>
+      <text x="464" y="23">9</text>
+      <text x="513" y="23">10</text>
+      <text x="562" y="23">11</text>
+      <text x="611" y="23">12</text>
+      <text x="660" y="23">13–14</text>
+    </g>
+  </g>
+
+  <!-- Labels below bar -->
+  <text x="180" y="122" text-anchor="middle" class="lbl" font-size="13" font-weight="700" fill="#b91c1c">Acidic (&lt; 7.0)</text>
+  <text x="180" y="140" text-anchor="middle" class="sub" font-size="11.5">Corrosive to heat pump &amp; seals; stings eyes</text>
+
+  <text x="402" y="122" text-anchor="middle" class="lbl" font-size="13" font-weight="700" fill="#15803d">Neutral / Ideal</text>
+  <text x="402" y="140" text-anchor="middle" class="sub" font-size="11.5">Comfortable &amp; effective sanitation</text>
+
+  <text x="605" y="122" text-anchor="middle" class="lbl" font-size="13" font-weight="700" fill="#1d4ed8">Alkaline (&gt; 7.4)</text>
+  <text x="605" y="140" text-anchor="middle" class="sub" font-size="11.5">Cloudy water, scale, weak chlorine</text>
+
+  <!-- pH-minus dosing arrow -->
+  <defs>
+    <marker id="arrow-ph" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#0b6e8c"/>
+    </marker>
+  </defs>
+  <path d="M 555 182 L 420 182" fill="none" stroke="#0b6e8c" stroke-width="2.4" marker-end="url(#arrow-ph)"/>
+  <text x="488" y="174" text-anchor="middle" class="lbl" font-size="12" font-weight="600" fill="#0b6e8c">pH-minus dosing lowers pH back to setpoint</text>
+</svg>

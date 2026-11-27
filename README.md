@@ -42,7 +42,7 @@ Lovelace dashboard (`home-assistant/dashboard.yaml`), or interact directly via t
 
 ## 📖 Documentation
 
-For detailed architectural explanations, state machine diagrams, heating logic, chemical disinfection, and buffer tank management, visit the online **[Poupool User Manual](https://lostcontrol.github.io/poupool/)** (source in [`docs/`](docs/README.md)).
+For detailed architectural explanations, state machine diagrams, heating logic, chemical disinfection, and buffer tank management, visit the online **[Poupool User Manual](https://lostcontrol.github.io/poupool/)** (source in [`docs/`](docs/)).
 
 ## 📦 Dependencies
 
