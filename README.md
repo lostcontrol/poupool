@@ -29,7 +29,7 @@ tank water level).
 The main interaction with the system is done through modes. Here are some of the main ones:
 
 * 🌿 **eco** : cover close, filtration, pH, chlorination and heating are automatic
-* ⏸️ **standby** : cover open, no overflow
+* ⏸️ **standby** : cover open, no overflow (automatically switches to overflow if the buffer tank fills rapidly)
 * 🌊 **overflow** : cover open, overflow, chlorination is forced
 * 🛋️ **comfort** :  cover open, no overflow, heating is forced
 
