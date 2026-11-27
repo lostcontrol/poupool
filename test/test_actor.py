@@ -16,11 +16,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import time
+from datetime import timedelta
 
 import pykka
 import pytest
+from freezegun import freeze_time
 
-from controller.actor import PoupoolActor
+from controller.actor import PoupoolActor, PoupoolModel
 
 
 class MyPoupoolActor(PoupoolActor):
@@ -96,3 +98,39 @@ class TestPoupoolActor:
         time.sleep(2)
         assert poupool_actor.long.get() == 1
         assert poupool_actor.cancelled.get() == 1
+
+    def test_do_delay_zero(self, poupool_actor):
+        poupool_actor.do_delay(0, "do_single").get()
+        assert poupool_actor.single.get() == 1
+
+    def test_get_actor_found_and_not_found(self, poupool_actor):
+        found = poupool_actor.get_actor("MyPoupoolActor").get()
+        assert found.single.get() == 0
+
+        with pytest.raises(RuntimeError, match="Actor UnknownActor not found"):
+            poupool_actor.get_actor("UnknownActor").get()
+
+    def test_on_failure_logs_fatal(self, mocker, poupool_actor):
+        mock_logger = mocker.patch("controller.actor.logger")
+        err = RuntimeError("boom")
+        poupool_actor.on_failure(RuntimeError, err, None).get()
+        mock_logger.fatal.assert_called_once_with(RuntimeError, err, None)
+
+
+class TestPoupoolModel:
+    def test_get_time_in_state(self):
+        class Dummy:
+            def do_cancel(self):
+                pass
+
+        dummy = Dummy()
+        model = PoupoolModel(model=dummy, states=["idle", "active"], initial="idle")
+        model.add_transition("start", "idle", "active")
+
+        assert model.get_time_in_state() == timedelta(0)
+
+        with freeze_time("2026-06-01 12:00:00") as frozen_time:
+            assert model.dispatch("start")
+            assert model.get_time_in_state() == timedelta(0)
+            frozen_time.tick(delta=timedelta(seconds=45))
+            assert model.get_time_in_state() == timedelta(seconds=45)
