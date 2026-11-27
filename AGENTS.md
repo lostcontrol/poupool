@@ -35,6 +35,7 @@ Tests, `ruff` and `ty` must be clean before a task is considered done.
 
 - Keep `try..except` blocks short: wrap only the call that can fail, and extract the rest into methods.
 - Avoid deeply nested `try..except` and `if..else`; use early returns and small helper methods.
+- Order methods top-down so code reads like a book: place helper methods below the methods that call them.
 
 ## Architecture
 
