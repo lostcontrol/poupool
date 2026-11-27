@@ -15,9 +15,15 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from datetime import timedelta
 from unittest import mock
 
+import pykka
 import pytest
+from freezegun import freeze_time
+
+from controller.device import DeviceRegistry, SwitchDevice
+from controller.disinfection import PWM, CanisterMonitor, Disinfection
 
 
 @pytest.fixture
@@ -93,6 +99,37 @@ class TestPWM:
         self.run_many_iterations(pwm, iterations)
         assert pump.on.call_count == 0
         assert pump.off.call_count == 0
+
+    def test_min_runtime_clamps_and_security_reset(self, pump):
+        with freeze_time("2026-06-01 12:00:00") as frozen_time:
+            pwm = PWM("test", pump, period=100, min_runtime=5)
+            # Lower clamp: duty_on = 1 -> clamped to min_runtime (5)
+            pwm.value = 0.01
+            with mock.patch("time.time", return_value=0):
+                pwm.do_run()
+            for t in range(1, 95):
+                with mock.patch("time.time", return_value=t):
+                    pwm.do_run()
+            pump.on.assert_not_called()
+            with mock.patch("time.time", return_value=95):
+                pwm.do_run()
+            pump.on.assert_called_once_with()
+
+            # Upper clamp: duty_on = 98 > period - min_runtime -> clamped to period (stays on)
+            pump.reset_mock()
+            pwm.value = 0.98
+            for t in range(96, 210):
+                with mock.patch("time.time", return_value=t):
+                    pwm.do_run()
+            pump.off.assert_not_called()
+
+            # Daily security reset after > 1 day
+            frozen_time.tick(delta=timedelta(days=1, seconds=1))
+            with mock.patch("time.time", return_value=211):
+                pwm.do_run()
+
+            pwm.do_cancel()
+            pump.off.assert_called_once_with()
 
 
 class TestCanisterMonitor:
@@ -238,6 +275,39 @@ class TestCanisterMonitor:
         monitor.restore(False)
         assert not monitor.is_empty
 
+    def test_alert_stats_updated_while_empty(self):
+        monitor = CanisterMonitor("Cl", cycles=3, min_samples=15)
+        monitor.restore(True)
+        assert monitor.alert_stats is None
+
+        # High cycle while already empty initializes and updates alert_stats without clearing
+        for _ in range(15):
+            monitor.add_sample(0.30)
+        assert not monitor.finish_cycle()
+        assert monitor.alert_stats is not None
+        assert monitor.alert_stats.peak == pytest.approx(0.30)
+
+        for _ in range(15):
+            monitor.add_sample(0.40)
+        assert not monitor.finish_cycle()
+        assert monitor.alert_stats.peak == pytest.approx(0.40)
+
+    def test_moderate_final_cycle_does_not_trigger(self):
+        monitor = CanisterMonitor("Cl", cycles=3, min_samples=15)
+        for val in [0.09, 0.12, 0.14]:
+            for _ in range(15):
+                monitor.add_sample(val)
+            assert not monitor.finish_cycle()
+        assert not monitor.is_empty
+
+    def test_low_demand_clear_in_finish_cycle(self):
+        monitor = CanisterMonitor("Cl", cycles=3, min_samples=15)
+        for _ in range(15):
+            monitor.add_sample(0.02)
+        monitor.restore(True)
+        assert monitor.finish_cycle()
+        assert not monitor.is_empty
+
 
 class TestDisinfectionCanisterIntegration:
     @pytest.fixture
@@ -316,3 +386,118 @@ class TestDisinfectionCanisterIntegration:
                 encoder.disinfection_cl_canister__empty.assert_not_called()
             else:
                 encoder.disinfection_cl_canister__empty.assert_called_once_with(1, retain=True)
+
+
+class TestDisinfectionActor:
+    @pytest.fixture
+    def encoder(self, mocker):
+        return mocker.Mock()
+
+    @pytest.fixture
+    def devices(self, mocker):
+        registry = DeviceRegistry()
+        for name in ("ph", "cl"):
+            pump = mocker.Mock(SwitchDevice)
+            pump.name = name
+            registry.add_pump(pump)
+        return registry
+
+    @pytest.fixture
+    def sensors_reader(self, mocker):
+        reader = mocker.Mock()
+        reader.get_ph.return_value.get.return_value = 7.2
+        reader.get_orp.return_value.get.return_value = 600
+        return reader
+
+    @pytest.fixture
+    def sensors_writer(self, mocker):
+        return mocker.Mock()
+
+    def test_disabled_stays_in_halt(self, mocker, encoder, devices, sensors_reader, sensors_writer):
+        mocker.patch.object(Disinfection, "do_delay")
+        mocker.patch.object(PWM, "do_delay")
+        actor = Disinfection.start(encoder, devices, sensors_reader, sensors_writer, disable=True).proxy()
+        try:
+            assert actor.is_disabled().get()
+            actor.run().get()
+            assert actor.is_halt().get()
+        finally:
+            pykka.ActorRegistry.stop_all()
+
+    def test_fsm_lifecycle_setters_and_ph_canister(self, mocker, encoder, devices, sensors_reader, sensors_writer):
+        do_delay_mock = mocker.patch.object(Disinfection, "do_delay")
+        mocker.patch.object(PWM, "do_delay")
+        actor = Disinfection.start(encoder, devices, sensors_reader, sensors_writer, disable=False).proxy()
+        try:
+            assert not actor.is_disabled().get()
+
+            # halt -> waiting
+            actor.run().get()
+            assert actor.is_waiting().get()
+            encoder.disinfection_state.assert_called_with("waiting")
+            do_delay_mock.assert_called_with(Disinfection.START_DELAY, "run")
+
+            # waiting -> running_adjusting -> running_treating
+            do_delay_mock.reset_mock()
+            actor.run().get()
+            assert actor.is_running_treating().get()
+            sensors_writer.do_write.defer.assert_called_once_with()
+            encoder.disinfection_state.assert_any_call("adjusting")
+            encoder.disinfection_state.assert_called_with("treating")
+            do_delay_mock.assert_called_with(Disinfection.WAITING_DELAY, "adjust")
+
+            # Configure pH & ORP controllers and disable ORP / pH individually
+            actor.ph_setpoint(7.4).get()
+            actor.ph_pterm(2.0).get()
+            actor.orp_setpoint(650).get()
+            actor.orp_pterm(1.5).get()
+
+            encoder.reset_mock()
+            actor.ph_enable(False).get()
+            actor.orp_enable(False).get()
+            actor.adjust().get()
+            assert actor.is_running_treating().get()
+            encoder.disinfection_ph_feedback.assert_called_with(0)
+            encoder.disinfection_cl_feedback.assert_called_with(0)
+
+            # Re-enable pH and trigger pH canister empty via Disinfection.CANISTER_CYCLES cycles
+            actor.ph_enable(True).get()
+            actor.ph_setpoint(7.0).get()
+            actor.ph_pterm(1.0).get()
+            encoder.reset_mock()
+
+            # Cycle through running_adjusting + halt for CANISTER_CYCLES cycles
+            actor.halt().get()
+            ph_values = [7.0 + 0.10 + 0.03 * i for i in range(Disinfection.CANISTER_CYCLES)]
+            for idx, ph_val in enumerate(ph_values):
+                sensors_reader.get_ph.return_value.get.return_value = ph_val
+                actor.run().get()
+                actor.run().get()
+                assert actor.is_running_treating().get()
+                for _ in range(14):
+                    actor.adjust().get()
+                    assert actor.is_running_treating().get()
+                actor.halt().get()
+                assert actor.is_halt().get()
+                if idx == len(ph_values) - 1:
+                    encoder.disinfection_ph_canister__empty.assert_called_once_with(1, retain=True)
+
+            # Auto-clear pH canister empty via 15 low-demand samples in running_adjusting
+            encoder.reset_mock()
+            actor.ph_canister_empty(True).get()  # idempotent
+            sensors_reader.get_ph.return_value.get.return_value = 7.0
+            actor.run().get()
+            actor.run().get()
+            assert actor.is_running_treating().get()
+            for _ in range(14):
+                actor.adjust().get()
+                assert actor.is_running_treating().get()
+            encoder.disinfection_ph_canister__empty.assert_called_once_with(0, retain=True)
+
+            # Restore True -> False
+            actor.ph_canister_empty(True).get()
+            actor.ph_canister_empty(False).get()
+            actor.halt().get()
+            assert actor.is_halt().get()
+        finally:
+            pykka.ActorRegistry.stop_all()
