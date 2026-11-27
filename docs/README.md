@@ -76,6 +76,7 @@ The Overflow mode is similar to Stand-by, but the water actively overflows into 
 - **Filtration:** Runs at an intermediate or high speed to maintain the overflow edge.
 - **Disinfection:** Automatically enabled as long as the pump is running at a moderate speed (high enough to flow, low enough for accurate sensor readings).
 - **Features:** A "Boost" mode is also available here to quickly clear debris from the surface.
+- **Auto-Standby:** When the buffer tank level stays calm for an extended period (indicating nobody is swimming or disturbing the water) and the counter-current swim pump is off, Poupool automatically switches back to **Stand-by** mode to save energy. This can be toggled via the `auto_standby` setting.
 
 #### Comfort
 Comfort mode is designed for when you are actively swimming.
@@ -158,6 +159,7 @@ The buffer tank stores the water displaced by swimmers and provides the necessar
 - **Automatic Refill:** If the water drops below the `too_low` threshold, Poupool opens the main municipal water valve to refill the tank, implementing a hysteresis gap to prevent the valve from fluttering.
 - **Empty Protection:** If the level stays critically low for too long, Poupool will emergency stop the entire filtration system to prevent the main pump from running dry.
 - **Stand-by Overflow Protection:** While in **Stand-by** mode, rapid tank rises or near-capacity levels trigger an automatic switch to **Overflow** mode to prevent wasting displaced pool water (see [Stand-by](#stand-by)).
+- **Overflow Auto-Standby:** While in **Overflow** mode, a prolonged period of calm tank levels indicates the pool is unused and triggers an automatic return to **Stand-by** mode (see [Overflow](#overflow)).
 
 ---
 
