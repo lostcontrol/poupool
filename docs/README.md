@@ -67,6 +67,7 @@ The Stand-by mode is used when the pool cover is open, but the pool is not activ
 - **Filtration:** Runs at your configured stand-by speed.
 - **Disinfection:** Only enabled if the filtration speed is greater than 0.
 - **Features:** You can manually trigger a "Boost" which increases the pump speed significantly for 5 minutes. Heating will operate if necessary.
+- **Auto-Overflow Protection:** If swimmers displace water into the buffer tank (causing the tank level to rise rapidly or approach capacity), Poupool automatically switches to **Overflow** mode after a short settling period so excess water is pumped back to the pool rather than wasted to the drain. This protection can be toggled via the `auto_overflow` setting.
 
 #### Overflow
 The Overflow mode is similar to Stand-by, but the water actively overflows into the surrounding gutters and into the buffer tank. This provides the classic "infinity" look and is excellent for skimming the surface.
@@ -156,6 +157,7 @@ The buffer tank stores the water displaced by swimmers and provides the necessar
 - **Dynamic Thresholds:** The required water level changes dynamically. In `Eco` mode, the tank is kept relatively empty to catch rainwater and reduce evaporation. In `Overflow` mode, the target level is raised higher to provide the necessary head pressure for the overflow edge.
 - **Automatic Refill:** If the water drops below the `too_low` threshold, Poupool opens the main municipal water valve to refill the tank, implementing a hysteresis gap to prevent the valve from fluttering.
 - **Empty Protection:** If the level stays critically low for too long, Poupool will emergency stop the entire filtration system to prevent the main pump from running dry.
+- **Stand-by Overflow Protection:** While in **Stand-by** mode, rapid tank rises or near-capacity levels trigger an automatic switch to **Overflow** mode to prevent wasting displaced pool water (see [Stand-by](#stand-by)).
 
 ---
 
