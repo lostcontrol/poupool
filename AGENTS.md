@@ -1,12 +1,12 @@
 # AGENTS.md
 
-Guidelines for AI agents and developers working on **Poupool**. For feature and logic details, read the code and [`docs/README.md`](docs/README.md) rather than relying on this file.
+Guidelines for AI agents and developers working on **Poupool**. For feature and logic details, read the code and [`docs/`](docs/) rather than relying on this file.
 
 ## Golden Rules
 
 1. **Update documentation in the same change** as any feature, config, MQTT topic or hardware change:
    - [`README.md`](README.md): feature overview, dependencies, tooling.
-   - [`docs/README.md`](docs/README.md): user manual, published at https://lostcontrol.github.io/poupool/. Keep it functional and user-oriented; no internal algorithm constants (those belong in code docstrings).
+   - [`docs/`](docs/): user manual, published at https://lostcontrol.github.io/poupool/. Keep it functional and user-oriented; no internal algorithm constants (those belong in code docstrings).
    - [`arduino/cover/README.md`](arduino/cover/README.md): firmware changes.
    - [`home-assistant/mqtt.yaml`](home-assistant/mqtt.yaml) / [`dashboard.yaml`](home-assistant/dashboard.yaml): entity, topic or card changes.
 2. **Never commit (or push) unless explicitly asked.** Present changes first.

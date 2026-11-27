@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 390" role="img" aria-labelledby="tank-title">
+  <title id="tank-title">Buffer tank level thresholds in Eco mode versus Overflow mode</title>
+  <style>
+    .title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; font-size: 14px; font-weight: 700; }
+    .lbl { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; font-size: 11.5px; font-weight: 600; }
+    .sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #4b616f; font-size: 10.5px; }
+    .pct { font-family: 'DejaVu Sans Mono', Consolas, monospace; fill: #122b38; font-size: 11px; font-weight: 700; }
+  </style>
+
+  <rect width="820" height="390" rx="8" fill="#ffffff"/>
+
+  <!-- Left panel: ECO MODE -->
+  <!-- Tank height 250px represents 0% (y=320) to 100% (y=70): 2.5px per % -->
+  <text x="195" y="34" text-anchor="middle" class="title">Eco Mode Thresholds</text>
+  <text x="195" y="51" text-anchor="middle" class="sub">Higher reserve allows rainwater capture &amp; backwash</text>
+
+  <!-- Tank bands (x=115, w=160) -->
+  <!-- 90-100% (high): y=70..95 -->
+  <rect x="115" y="70" width="160" height="25" fill="#d1fae5"/>
+  <!-- 30-90% (normal): y=95..245 -->
+  <rect x="115" y="95" width="160" height="150" fill="#e6f4f8"/>
+  <!-- 10-30% (low/refill): y=245..295 -->
+  <rect x="115" y="245" width="160" height="50" fill="#fef3c7"/>
+  <!-- 0-10% (too_low): y=295..320 -->
+  <rect x="115" y="295" width="160" height="25" fill="#fee2e2"/>
+
+  <!-- Tank outline -->
+  <rect x="115" y="70" width="160" height="250" fill="none" stroke="#122b38" stroke-width="2" rx="4"/>
+
+  <!-- Threshold lines -->
+  <line x1="115" y1="95" x2="275" y2="95" stroke="#16a34a" stroke-width="2" stroke-dasharray="5 3"/>
+  <line x1="115" y1="245" x2="275" y2="245" stroke="#d97706" stroke-width="2" stroke-dasharray="5 3"/>
+  <line x1="115" y1="295" x2="275" y2="295" stroke="#dc2626" stroke-width="2"/>
+
+  <!-- Percentage scale left of Eco tank -->
+  <text x="106" y="75" text-anchor="end" class="pct">100%</text>
+  <text x="106" y="99" text-anchor="end" class="pct">90%</text>
+  <text x="106" y="249" text-anchor="end" class="pct">30%</text>
+  <text x="106" y="299" text-anchor="end" class="pct">10%</text>
+  <text x="106" y="324" text-anchor="end" class="pct">0%</text>
+
+  <!-- Band text inside Eco tank -->
+  <text x="195" y="87" text-anchor="middle" class="lbl" fill="#15803d">HIGH (≥ 90% ±5%)</text>
+  <text x="195" y="166" text-anchor="middle" class="lbl">NORMAL</text>
+  <text x="195" y="182" text-anchor="middle" class="sub">30% – 90%</text>
+  <text x="195" y="268" text-anchor="middle" class="lbl" fill="#b45309">LOW (refill valve ON)</text>
+  <text x="195" y="283" text-anchor="middle" class="sub">&lt; 30% − 5% → ≥ 30% + 5%</text>
+  <text x="195" y="311" text-anchor="middle" class="lbl" fill="#b91c1c">TOO LOW (&lt; 10%)</text>
+
+  <!-- Eco annotations -->
+  <text x="285" y="87" class="sub" fill="#15803d">Backwash eligible</text>
+  <text x="285" y="271" class="sub" fill="#b45309">Opening pool blocked</text>
+  <text x="285" y="311" class="sub" fill="#b91c1c">Emergency halt</text>
+
+  <!-- Right panel: OVERFLOW MODE -->
+  <text x="615" y="34" text-anchor="middle" class="title">Overflow &amp; Open Mode Thresholds</text>
+  <text x="615" y="51" text-anchor="middle" class="sub">Lower operating band because water is out in the pool</text>
+
+  <!-- 90-100% auto-overflow ceiling marker -->
+  <rect x="535" y="70" width="160" height="25" fill="#fef3c7" opacity="0.6"/>
+  <!-- 60-100% (high): y=70..170 -->
+  <rect x="535" y="95" width="160" height="75" fill="#d1fae5"/>
+  <!-- 20-60% (normal): y=170..270 -->
+  <rect x="535" y="170" width="160" height="100" fill="#e6f4f8"/>
+  <!-- 10-20% (low): y=270..295 -->
+  <rect x="535" y="270" width="160" height="25" fill="#fef3c7"/>
+  <!-- 0-10% (too_low): y=295..320 -->
+  <rect x="535" y="295" width="160" height="25" fill="#fee2e2"/>
+
+  <!-- Tank outline -->
+  <rect x="535" y="70" width="160" height="250" fill="none" stroke="#122b38" stroke-width="2" rx="4"/>
+
+  <!-- Threshold lines -->
+  <line x1="535" y1="95" x2="695" y2="95" stroke="#d97706" stroke-width="1.8" stroke-dasharray="3 3"/>
+  <line x1="535" y1="170" x2="695" y2="170" stroke="#16a34a" stroke-width="2" stroke-dasharray="5 3"/>
+  <line x1="535" y1="270" x2="695" y2="270" stroke="#d97706" stroke-width="2" stroke-dasharray="5 3"/>
+  <line x1="535" y1="295" x2="695" y2="295" stroke="#dc2626" stroke-width="2"/>
+
+  <!-- Percentage scale left of Overflow tank -->
+  <text x="526" y="75" text-anchor="end" class="pct">100%</text>
+  <text x="526" y="99" text-anchor="end" class="pct">90%</text>
+  <text x="526" y="174" text-anchor="end" class="pct">60%</text>
+  <text x="526" y="274" text-anchor="end" class="pct">20%</text>
+  <text x="526" y="299" text-anchor="end" class="pct">10%</text>
+  <text x="526" y="324" text-anchor="end" class="pct">0%</text>
+
+  <!-- Band text inside Overflow tank -->
+  <text x="615" y="87" text-anchor="middle" class="sub" fill="#b45309">Auto-overflow ≥ 90%</text>
+  <text x="615" y="136" text-anchor="middle" class="lbl" fill="#15803d">HIGH (≥ 60% ±5%)</text>
+  <text x="615" y="216" text-anchor="middle" class="lbl">NORMAL</text>
+  <text x="615" y="232" text-anchor="middle" class="sub">20% – 60%</text>
+  <text x="615" y="287" text-anchor="middle" class="lbl" fill="#b45309">LOW (&lt; 20% ±5%)</text>
+  <text x="615" y="311" text-anchor="middle" class="lbl" fill="#b91c1c">TOO LOW (&lt; 10%)</text>
+
+  <!-- Overflow annotations -->
+  <text x="705" y="87" class="sub" fill="#b45309">Triggers overflow</text>
+  <text x="705" y="99" class="sub" fill="#b45309">from stand-by</text>
+  <text x="705" y="286" class="sub" fill="#b45309">Refill valve ON</text>
+  <text x="705" y="311" class="sub" fill="#b91c1c">Dry-run stop</text>
+
+  <!-- Footer note -->
+  <rect x="40" y="340" width="740" height="34" rx="6" fill="#f3f8fa" stroke="#dce8ee"/>
+  <text x="410" y="361" text-anchor="middle" class="sub">Default values from config.ini ([tank] section). Every state boundary uses ±5% hysteresis to stop the refill valve from chattering.</text>
+</svg>

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 270" role="img" aria-labelledby="lcd-title">
+  <title id="lcd-title">4x20 local LCD layout showing filtration state, temperatures, pH/ORP, and countdown timer</title>
+  <style>
+    .lbl { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; font-size: 12.5px; font-weight: 600; }
+    .sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #4b616f; font-size: 11.5px; }
+    .lcd { font-family: 'DejaVu Sans Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; fill: #0d2b14; font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+  </style>
+
+  <rect width="760" height="270" rx="8" fill="#ffffff"/>
+
+  <!-- PCB / Bezel -->
+  <rect x="46" y="34" width="380" height="196" rx="12" fill="#1d2d35" stroke="#0f1b21" stroke-width="2"/>
+  <circle cx="64" cy="52" r="5" fill="#94a3b8"/>
+  <circle cx="408" cy="52" r="5" fill="#94a3b8"/>
+  <circle cx="64" cy="212" r="5" fill="#94a3b8"/>
+  <circle cx="408" cy="212" r="5" fill="#94a3b8"/>
+
+  <!-- Screen inner frame -->
+  <rect x="74" y="60" width="324" height="144" rx="5" fill="#0b1710"/>
+  <!-- Backlit LCD glass -->
+  <rect x="84" y="70" width="304" height="124" rx="3" fill="#a3d977"/>
+
+  <!-- 4 lines x 20 chars -->
+  <text x="98" y="99" class="lcd" xml:space="preserve">Mode      ECO_NORMAL</text>
+  <text x="98" y="128" class="lcd" xml:space="preserve">Water 26.4 Air  22.1</text>
+  <text x="98" y="157" class="lcd" xml:space="preserve">pH     7.2 ORP   685</text>
+  <text x="98" y="186" class="lcd" xml:space="preserve">Next event  01:42:10</text>
+
+  <!-- Callout lines -->
+  <g stroke="#0b6e8c" stroke-width="1.6" fill="none">
+    <path d="M 394 92 L 456 64"/>
+    <path d="M 394 121 L 456 116"/>
+    <path d="M 394 150 L 456 168"/>
+    <path d="M 394 179 L 456 218"/>
+  </g>
+  <g fill="#0b6e8c">
+    <circle cx="394" cy="92" r="3.5"/>
+    <circle cx="394" cy="121" r="3.5"/>
+    <circle cx="394" cy="150" r="3.5"/>
+    <circle cx="394" cy="179" r="3.5"/>
+  </g>
+
+  <!-- Callout text -->
+  <text x="466" y="61" class="lbl">Line 1: Active filtration state</text>
+  <text x="466" y="78" class="sub">Matches /status/filtration/state (uppercase)</text>
+
+  <text x="466" y="113" class="lbl">Line 2: Pool &amp; air temperatures</text>
+  <text x="466" y="130" class="sub">30-minute moving averages in °C</text>
+
+  <text x="466" y="165" class="lbl">Line 3: Water chemistry</text>
+  <text x="466" y="182" class="sub">pH and ORP (mV), or dashes until first reading</text>
+
+  <text x="466" y="215" class="lbl">Line 4: Next scheduled transition</text>
+  <text x="466" y="232" class="sub">Remaining time in current Eco phase</text>
+</svg>

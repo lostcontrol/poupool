@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 310" role="img" aria-labelledby="eco-title">
+  <title id="eco-title">Example 24-hour Eco mode schedule with filtration periods, tank passes, daytime solar stirring, and daily heating</title>
+  <style>
+    .title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; font-size: 13px; font-weight: 700; }
+    .lbl { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; font-size: 11px; font-weight: 600; }
+    .sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #4b616f; font-size: 10.5px; }
+    .axis { stroke: #94a3b8; stroke-width: 1.2; }
+  </style>
+
+  <rect width="820" height="310" rx="8" fill="#ffffff"/>
+
+  <text x="410" y="26" text-anchor="middle" class="title">Typical 24-hour Eco Day (Example: 10h daily filtration, 3 periods, reset at 00:00)</text>
+
+  <!-- Hour axis background grid (x from 80 to 780 => 700px for 24h, ~29.17px/hour) -->
+  <!-- Hours: 00=80, 03=167.5, 06=255, 09=342.5, 12=430, 15=517.5, 18=605, 21=692.5, 24=780 -->
+  <g stroke="#e6eef2" stroke-width="1">
+    <line x1="80" y1="45" x2="80" y2="232"/>
+    <line x1="167.5" y1="45" x2="167.5" y2="232"/>
+    <line x1="255" y1="45" x2="255" y2="232"/>
+    <line x1="342.5" y1="45" x2="342.5" y2="232"/>
+    <line x1="430" y1="45" x2="430" y2="232"/>
+    <line x1="517.5" y1="45" x2="517.5" y2="232"/>
+    <line x1="605" y1="45" x2="605" y2="232"/>
+    <line x1="692.5" y1="45" x2="692.5" y2="232"/>
+    <line x1="780" y1="45" x2="780" y2="232"/>
+  </g>
+
+  <!-- Row labels -->
+  <text x="72" y="72" text-anchor="end" class="lbl">Filtration</text>
+  <text x="72" y="86" text-anchor="end" class="sub">Eco cycle</text>
+
+  <text x="72" y="132" text-anchor="end" class="lbl">Heat Pump</text>
+  <text x="72" y="146" text-anchor="end" class="sub">Daily run</text>
+
+  <text x="72" y="192" text-anchor="end" class="lbl">Stir Mode</text>
+  <text x="72" y="206" text-anchor="end" class="sub">Sun ≥ 20°</text>
+
+  <!-- Row 1: Filtration timeline -->
+  <!-- Period 1: wait 00:00-04:40 (80..216), normal 04:40-07:40 (216..303), tank 07:40-08:00 (303..313) -->
+  <rect x="80" y="54" width="136" height="38" rx="3" fill="#eef5f8" stroke="#94a3b8"/>
+  <text x="148" y="77" text-anchor="middle" class="sub">eco_waiting</text>
+
+  <rect x="216" y="54" width="87" height="38" rx="3" fill="#0b6e8c"/>
+  <text x="259" y="77" text-anchor="middle" class="lbl" fill="#ffffff" style="fill:#fff">eco_normal</text>
+
+  <rect x="303" y="54" width="16" height="38" rx="2" fill="#2aa5be"/>
+
+  <!-- Period 2: wait 08:20-12:00 (319..430), normal 12:00-15:00 (430..517), tank 15:00-15:20 (517..533) -->
+  <!-- Wait interrupted around 10:00-11:30 by heating -->
+  <rect x="319" y="54" width="53" height="38" rx="3" fill="#eef5f8" stroke="#94a3b8"/>
+  <text x="345" y="77" text-anchor="middle" class="sub">wait</text>
+
+  <rect x="372" y="54" width="58" height="38" rx="3" fill="#f59e0b"/>
+  <text x="401" y="77" text-anchor="middle" class="lbl" style="fill:#fff">heating</text>
+
+  <rect x="430" y="54" width="87" height="38" rx="3" fill="#0b6e8c"/>
+  <text x="473" y="77" text-anchor="middle" class="lbl" style="fill:#fff">eco_normal</text>
+
+  <rect x="517" y="54" width="16" height="38" rx="2" fill="#2aa5be"/>
+
+  <!-- Period 3: wait 15:20-20:20 (533..678), normal 20:20-23:40 (678..764), tank 23:40-24:00 (764..780) -->
+  <rect x="533" y="54" width="145" height="38" rx="3" fill="#eef5f8" stroke="#94a3b8"/>
+  <text x="605" y="77" text-anchor="middle" class="sub">eco_waiting</text>
+
+  <rect x="678" y="54" width="86" height="38" rx="3" fill="#0b6e8c"/>
+  <text x="721" y="77" text-anchor="middle" class="lbl" style="fill:#fff">eco_normal</text>
+
+  <rect x="764" y="54" width="16" height="38" rx="2" fill="#2aa5be"/>
+
+  <!-- Row 2: Heating -->
+  <rect x="80" y="114" width="292" height="36" rx="3" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="226" y="136" text-anchor="middle" class="sub">waiting for start_hour &amp; min_temp</text>
+
+  <rect x="372" y="114" width="58" height="36" rx="3" fill="#d97706"/>
+  <text x="401" y="136" text-anchor="middle" class="lbl" style="fill:#fff">heating</text>
+
+  <rect x="430" y="114" width="22" height="36" rx="3" fill="#fde68a" stroke="#d97706"/>
+  <text x="441" y="136" text-anchor="middle" class="sub" font-size="9">rec</text>
+
+  <rect x="452" y="114" width="328" height="36" rx="3" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="616" y="136" text-anchor="middle" class="sub">scheduled for next day</text>
+
+  <!-- Row 3: Solar Stir Mode -->
+  <!-- Sun elevation curve from ~08:30 (328) to ~17:30 (590) -->
+  <path d="M 80 208 L 328 208 Q 459 162, 590 208 L 780 208" fill="none" stroke="#eab308" stroke-width="2" stroke-dasharray="4 3"/>
+  <rect x="358" y="178" width="9" height="30" rx="2" fill="#0b6e8c"/>
+  <rect x="415" y="178" width="9" height="30" rx="2" fill="#0b6e8c"/>
+  <rect x="472" y="178" width="9" height="30" rx="2" fill="#0b6e8c"/>
+  <rect x="529" y="178" width="9" height="30" rx="2" fill="#0b6e8c"/>
+  <text x="459" y="169" text-anchor="middle" class="sub">Short boost pulses clear warm water under the cover</text>
+
+  <!-- Time Axis -->
+  <line x1="80" y1="232" x2="780" y2="232" class="axis"/>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="10.5" fill="#4b616f" text-anchor="middle">
+    <text x="80" y="248">00:00</text>
+    <text x="167.5" y="248">03:00</text>
+    <text x="255" y="248">06:00</text>
+    <text x="342.5" y="248">09:00</text>
+    <text x="430" y="248">12:00</text>
+    <text x="517.5" y="248">15:00</text>
+    <text x="605" y="248">18:00</text>
+    <text x="692.5" y="248">21:00</text>
+    <text x="780" y="248">24:00</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(80, 268)">
+    <rect x="0" y="4" width="14" height="14" rx="2" fill="#0b6e8c"/>
+    <text x="20" y="15" class="sub">eco_normal (pool filtration)</text>
+
+    <rect x="185" y="4" width="14" height="14" rx="2" fill="#2aa5be"/>
+    <text x="205" y="15" class="sub">eco_tank (buffer tank pass)</text>
+
+    <rect x="375" y="4" width="14" height="14" rx="2" fill="#eef5f8" stroke="#94a3b8"/>
+    <text x="395" y="15" class="sub">eco_waiting (idle)</text>
+
+    <rect x="520" y="4" width="14" height="14" rx="2" fill="#f59e0b"/>
+    <text x="540" y="15" class="sub">heating (pump speed 2)</text>
+  </g>
+</svg>

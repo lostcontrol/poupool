@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" role="img" aria-labelledby="hyd-title">
+  <title id="hyd-title">Overflow pool hydraulic circuit managed by Poupool</title>
+  <style>
+    .title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; font-size: 13px; font-weight: 700; }
+    .lbl { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; font-size: 11.5px; font-weight: 600; }
+    .sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #4b616f; font-size: 10.5px; }
+    .tag { font-family: 'DejaVu Sans Mono', Consolas, monospace; fill: #0b6e8c; font-size: 10.5px; font-weight: 700; }
+    .pipe { fill: none; stroke: #0b6e8c; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .pipe-alt { fill: none; stroke: #2aa5be; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .pipe-waste { fill: none; stroke: #d97706; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .pipe-chem { fill: none; stroke: #7c3aed; stroke-width: 2; stroke-dasharray: 4 3; }
+    .box { fill: #f3f8fa; stroke: #0b6e8c; stroke-width: 1.6; rx: 6; }
+    .valve { fill: #ffffff; stroke: #122b38; stroke-width: 1.6; rx: 4; }
+  </style>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#0b6e8c"/>
+    </marker>
+    <marker id="arr-alt" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#2aa5be"/>
+    </marker>
+    <marker id="arr-waste" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#d97706"/>
+    </marker>
+  </defs>
+
+  <rect width="880" height="500" rx="8" fill="#ffffff"/>
+
+  <!-- Pool Basin -->
+  <rect x="30" y="38" width="330" height="142" rx="6" fill="#e6f4f8" stroke="#0b6e8c" stroke-width="2"/>
+  <path d="M 30 62 Q 112 56, 195 62 T 360 62" fill="none" stroke="#2aa5be" stroke-width="2"/>
+  <text x="195" y="102" text-anchor="middle" class="title">Swimming Pool Basin</text>
+  <text x="195" y="121" text-anchor="middle" class="sub">Water level flush with deck in Overflow mode</text>
+  <text x="195" y="139" text-anchor="middle" class="sub">Motorized roller cover (Arduino)</text>
+
+  <!-- Perimeter Gutter -->
+  <rect x="360" y="54" width="46" height="42" rx="4" fill="#d3edf5" stroke="#0b6e8c" stroke-width="1.6"/>
+  <text x="383" y="45" text-anchor="middle" class="sub">Gutter</text>
+  <path d="M 346 62 L 368 62" class="pipe-alt" marker-end="url(#arr-alt)"/>
+
+  <!-- Buffer Tank -->
+  <rect x="490" y="38" width="170" height="142" rx="6" fill="#f3f8fa" stroke="#0b6e8c" stroke-width="2"/>
+  <rect x="492" y="104" width="166" height="74" rx="4" fill="#ccebf4"/>
+  <text x="575" y="60" text-anchor="middle" class="title">Buffer Tank</text>
+  <text x="575" y="78" text-anchor="middle" class="sub">ADS1015 level sensor</text>
+  <text x="575" y="144" text-anchor="middle" class="lbl">Retention Volume</text>
+
+  <!-- Gutter to Tank pipe -->
+  <path d="M 406 76 L 486 76" class="pipe-alt" marker-end="url(#arr-alt)"/>
+  <text x="446" y="92" text-anchor="middle" class="sub">Overflow</text>
+
+  <!-- Municipal Water Refill -->
+  <rect x="735" y="46" width="115" height="42" class="valve"/>
+  <text x="792" y="64" text-anchor="middle" class="tag">valve: main</text>
+  <text x="792" y="79" text-anchor="middle" class="sub">Municipal refill</text>
+  <path d="M 735 67 L 664 67" class="pipe-alt" marker-end="url(#arr-alt)"/>
+  <text x="792" y="36" text-anchor="middle" class="sub">Water meter (Arduino)</text>
+
+  <!-- Suction Lines from Pool (Gravity) and Buffer Tank -->
+  <!-- Gravity line -->
+  <path d="M 225 180 L 225 268 L 358 268" class="pipe" marker-end="url(#arr)"/>
+  <rect x="168" y="206" width="114" height="38" class="valve"/>
+  <text x="225" y="223" text-anchor="middle" class="tag">valve: gravity</text>
+  <text x="225" y="237" text-anchor="middle" class="sub">Bottom / direct suction</text>
+
+  <!-- Tank suction line -->
+  <path d="M 550 180 L 550 268 L 478 268" class="pipe" marker-end="url(#arr)"/>
+  <rect x="493" y="206" width="114" height="38" class="valve"/>
+  <text x="550" y="223" text-anchor="middle" class="tag">valve: tank</text>
+  <text x="550" y="237" text-anchor="middle" class="sub">Tank suction</text>
+
+  <!-- Filtration & Boost Pumps -->
+  <rect x="362" y="244" width="112" height="58" class="box"/>
+  <text x="418" y="264" text-anchor="middle" class="lbl">Filtration Pumps</text>
+  <text x="418" y="280" text-anchor="middle" class="tag">variable (0-3)</text>
+  <text x="418" y="294" text-anchor="middle" class="tag">+ boost</text>
+
+  <!-- Pump to Sand Filter -->
+  <path d="M 418 302 L 418 338" class="pipe" marker-end="url(#arr)"/>
+
+  <!-- Sand Filter -->
+  <rect x="348" y="342" width="140" height="62" class="box"/>
+  <text x="418" y="366" text-anchor="middle" class="title">Sand Filter</text>
+  <text x="418" y="384" text-anchor="middle" class="tag">valve: backwash</text>
+  <text x="418" y="398" text-anchor="middle" class="sub">Reverses flow during wash</text>
+
+  <!-- Backwash / Drain branch -->
+  <path d="M 488 373 L 610 373" class="pipe-waste" marker-end="url(#arr-waste)"/>
+  <rect x="614" y="352" width="114" height="42" class="valve"/>
+  <text x="671" y="369" text-anchor="middle" class="tag">valve: drain</text>
+  <text x="671" y="384" text-anchor="middle" class="sub">To waste / sewer</text>
+  <path d="M 728 373 L 795 373" class="pipe-waste" marker-end="url(#arr-waste)"/>
+  <text x="822" y="377" class="lbl">Sewer</text>
+
+  <!-- Return line from Sand Filter -> Heat Pump -> Probes & Dosing -> Pool -->
+  <path d="M 348 373 L 280 373" class="pipe" marker-end="url(#arr)"/>
+
+  <!-- Heat Pump -->
+  <rect x="162" y="346" width="114" height="54" class="box"/>
+  <text x="219" y="366" text-anchor="middle" class="lbl">Heat Pump</text>
+  <text x="219" y="382" text-anchor="middle" class="tag">valve: heating</text>
+  <text x="219" y="394" text-anchor="middle" class="sub">Flow-interlocked</text>
+
+  <path d="M 162 373 L 86 373 L 86 286" class="pipe" marker-end="url(#arr)"/>
+
+  <!-- EZO Probes & Dosing Chamber -->
+  <rect x="26" y="216" width="120" height="66" class="box"/>
+  <text x="86" y="236" text-anchor="middle" class="lbl">Probes &amp; Dosing</text>
+  <text x="86" y="252" text-anchor="middle" class="sub">EZO pH &amp; ORP</text>
+  <text x="86" y="268" text-anchor="middle" class="tag">pump: ph / cl</text>
+
+  <!-- Return Jets to Pool -->
+  <path d="M 86 216 L 86 184" class="pipe" marker-end="url(#arr)"/>
+  <text x="115" y="198" class="sub">Return jets</text>
+
+  <!-- Counter-Current Swim Loop (Separate) -->
+  <rect x="690" y="154" width="160" height="120" rx="6" fill="#f8fbfd" stroke="#7ea8b8" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="770" y="176" text-anchor="middle" class="lbl">Counter-Current Loop</text>
+  <text x="770" y="194" text-anchor="middle" class="tag">pump: swim</text>
+  <text x="770" y="212" text-anchor="middle" class="sub">Relay + MCP4725 DAC</text>
+  <text x="770" y="228" text-anchor="middle" class="sub">Speed 1-100%</text>
+  <text x="770" y="246" text-anchor="middle" class="sub">Pit temp: temperature_ncc</text>
+  <text x="770" y="262" text-anchor="middle" class="sub">(Independent of filter)</text>
+
+  <!-- Legend -->
+  <g transform="translate(30, 444)">
+    <rect x="0" y="0" width="820" height="40" rx="6" fill="#f3f8fa" stroke="#dce8ee"/>
+    <line x1="20" y1="20" x2="54" y2="20" class="pipe"/>
+    <text x="64" y="24" class="sub">Main filtration &amp; return circuit</text>
+    <line x1="255" y1="20" x2="289" y2="20" class="pipe-alt"/>
+    <text x="299" y="24" class="sub">Overflow gutter &amp; municipal refill</text>
+    <line x1="515" y1="20" x2="549" y2="20" class="pipe-waste"/>
+    <text x="559" y="24" class="sub">Backwash &amp; rinse waste line</text>
+  </g>
+</svg>

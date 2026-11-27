@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 420" role="img" aria-labelledby="dis-title">
+  <title id="dis-title">Proportional PWM chemical dosing and empty canister detection across filtration cycles</title>
+  <style>
+    .title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; font-size: 13px; font-weight: 700; }
+    .lbl { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; font-size: 11px; font-weight: 600; }
+    .sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #4b616f; font-size: 10.5px; }
+    .axis { stroke: #94a3b8; stroke-width: 1.2; }
+  </style>
+
+  <rect width="820" height="420" rx="8" fill="#ffffff"/>
+
+  <!-- TOP PANEL: PROPORTIONAL PWM DOSING -->
+  <rect x="24" y="18" width="772" height="178" rx="6" fill="#fbfdfe" stroke="#dce8ee"/>
+  <text x="410" y="40" text-anchor="middle" class="title">1. Proportional PWM Dosing: Pump On-Time Shrinks as Reading Approaches Setpoint</text>
+
+  <!-- 3 PWM cycles -->
+  <g transform="translate(60, 62)">
+    <!-- Cycle 1: Large error -->
+    <rect x="0" y="0" width="210" height="72" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="105" y="18" text-anchor="middle" class="lbl">Cycle 1 (Large Error)</text>
+    <text x="105" y="33" text-anchor="middle" class="sub">pH 7.55 vs 7.00 setpoint</text>
+    <rect x="12" y="42" width="142" height="20" rx="2" fill="#0b6e8c"/>
+    <rect x="154" y="42" width="44" height="20" rx="2" fill="#e2e8f0"/>
+    <text x="83" y="56" text-anchor="middle" class="lbl" style="fill:#fff">ON (76%)</text>
+    <text x="176" y="56" text-anchor="middle" class="sub">OFF</text>
+
+    <!-- Cycle 2: Medium error -->
+    <rect x="245" y="0" width="210" height="72" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="350" y="18" text-anchor="middle" class="lbl">Cycle 2 (Closing In)</text>
+    <text x="350" y="33" text-anchor="middle" class="sub">pH 7.22 vs 7.00 setpoint</text>
+    <rect x="257" y="42" width="76" height="20" rx="2" fill="#0b6e8c"/>
+    <rect x="333" y="42" width="110" height="20" rx="2" fill="#e2e8f0"/>
+    <text x="295" y="56" text-anchor="middle" class="lbl" style="fill:#fff">ON (40%)</text>
+    <text x="388" y="56" text-anchor="middle" class="sub">OFF</text>
+
+    <!-- Cycle 3: Small error -->
+    <rect x="490" y="0" width="210" height="72" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="595" y="18" text-anchor="middle" class="lbl">Cycle 3 (Near Target)</text>
+    <text x="595" y="33" text-anchor="middle" class="sub">pH 7.04 vs 7.00 setpoint</text>
+    <rect x="502" y="42" width="18" height="20" rx="2" fill="#2aa5be"/>
+    <rect x="520" y="42" width="168" height="20" rx="2" fill="#e2e8f0"/>
+    <text x="604" y="56" text-anchor="middle" class="sub">OFF (small top-up pulse)</text>
+
+    <text x="350" y="96" text-anchor="middle" class="sub">Each bar represents one PWM period (ph_pwm_period / cl_pwm_period, default 120s).</text>
+    <text x="350" y="112" text-anchor="middle" class="sub">Daily runtime is capped by security_duration to protect the pool if a probe fails.</text>
+  </g>
+
+  <!-- BOTTOM PANEL: EMPTY CANISTER DETECTION -->
+  <rect x="24" y="212" width="772" height="190" rx="6" fill="#fbfdfe" stroke="#dce8ee"/>
+  <text x="410" y="234" text-anchor="middle" class="title">2. Empty Canister Detection: Duty Cycle Trend Over Consecutive Filtration Cycles</text>
+
+  <!-- Y axis and X axis -->
+  <line x1="80" y1="255" x2="80" y2="365" class="axis"/>
+  <line x1="80" y1="365" x2="760" y2="365" class="axis"/>
+  <text x="72" y="264" text-anchor="end" class="sub">100%</text>
+  <text x="72" y="314" text-anchor="end" class="sub">50%</text>
+  <text x="72" y="365" text-anchor="end" class="sub">0%</text>
+
+  <!-- Bars across 6 filtration cycles -->
+  <!-- Cycle 1: Normal -->
+  <rect x="115" y="346" width="52" height="19" rx="3" fill="#16a34a"/>
+  <text x="141" y="380" text-anchor="middle" class="sub">Cycle 1</text>
+  <text x="141" y="340" text-anchor="middle" class="sub">Normal</text>
+
+  <!-- Cycle 2: Canister runs dry -> rising demand -->
+  <rect x="215" y="328" width="52" height="37" rx="3" fill="#f59e0b"/>
+  <text x="241" y="380" text-anchor="middle" class="sub">Cycle 2</text>
+  <text x="241" y="322" text-anchor="middle" class="sub">Rising</text>
+
+  <!-- Cycle 3: Higher demand -->
+  <rect x="315" y="302" width="52" height="63" rx="3" fill="#ea580c"/>
+  <text x="341" y="380" text-anchor="middle" class="sub">Cycle 3</text>
+  <text x="341" y="296" text-anchor="middle" class="sub">Climbing</text>
+
+  <!-- Cycle 4: Alert raised -->
+  <rect x="415" y="272" width="52" height="93" rx="3" fill="#dc2626"/>
+  <text x="441" y="380" text-anchor="middle" class="sub">Cycle 4</text>
+  <text x="441" y="265" text-anchor="middle" class="lbl" fill="#b91c1c">Alert ON</text>
+
+  <!-- Vertical dashed marker for canister replacement -->
+  <line x1="518" y1="252" x2="518" y2="365" stroke="#0b6e8c" stroke-width="1.8" stroke-dasharray="5 3"/>
+  <text x="525" y="266" class="lbl" fill="#0b6e8c">New canister</text>
+  <text x="525" y="280" class="lbl" fill="#0b6e8c">installed</text>
+
+  <!-- Cycle 5: Recovery -->
+  <rect x="570" y="348" width="52" height="17" rx="3" fill="#16a34a"/>
+  <text x="596" y="380" text-anchor="middle" class="sub">Cycle 5</text>
+  <text x="596" y="342" text-anchor="middle" class="lbl" fill="#15803d">Auto-reset</text>
+
+  <!-- Cycle 6: Back to normal -->
+  <rect x="670" y="351" width="52" height="14" rx="3" fill="#16a34a"/>
+  <text x="696" y="380" text-anchor="middle" class="sub">Cycle 6</text>
+  <text x="696" y="345" text-anchor="middle" class="sub">Normal</text>
+</svg>

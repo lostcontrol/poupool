@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 360" role="img" aria-labelledby="heat-title">
+  <title id="heat-title">Heat pump hysteresis bands, ambient air temperature cutoff, and filtration cool-down delay</title>
+  <style>
+    .title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; font-size: 13px; font-weight: 700; }
+    .lbl { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #122b38; font-size: 11px; font-weight: 600; }
+    .sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; fill: #4b616f; font-size: 10.5px; }
+    .axis { stroke: #94a3b8; stroke-width: 1.2; }
+  </style>
+
+  <rect width="820" height="360" rx="8" fill="#ffffff"/>
+
+  <text x="410" y="25" text-anchor="middle" class="title">Daily Heating Control: Hysteresis Band, Air Cutoff &amp; Filtration Cool-Down</text>
+
+  <!-- Temperature Chart Area (x: 90..770, y: 48..205) -->
+  <!-- Setpoint 26.0 = y=105; +0.5 hysteresis (26.5) = y=82; Air min_temp (15°C) represented in lower zone y=165 -->
+  <rect x="90" y="82" width="680" height="23" fill="#fef3c7" opacity="0.65"/>
+  <line x1="90" y1="82" x2="770" y2="82" stroke="#d97706" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <line x1="90" y1="105" x2="770" y2="105" stroke="#0b6e8c" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <line x1="90" y1="168" x2="770" y2="168" stroke="#64748b" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <text x="82" y="86" text-anchor="end" class="sub">26.5°C</text>
+  <text x="82" y="109" text-anchor="end" class="lbl" fill="#0b6e8c">26.0°C</text>
+  <text x="82" y="172" text-anchor="end" class="sub">min_temp</text>
+
+  <text x="766" y="75" text-anchor="end" class="sub" fill="#b45309">Stop heating (setpoint + hysteresis_up)</text>
+  <text x="766" y="121" text-anchor="end" class="sub" fill="#0b6e8c">Start threshold (setpoint - hysteresis_down)</text>
+
+  <!-- Axes -->
+  <line x1="90" y1="48" x2="90" y2="205" class="axis"/>
+  <line x1="90" y1="205" x2="770" y2="205" class="axis"/>
+
+  <!-- Start hour marker at x=190 -->
+  <line x1="190" y1="48" x2="190" y2="298" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="190" y="42" text-anchor="middle" class="sub">start_hour reached</text>
+
+  <!-- Air temp rises past min_temp at x=255 -->
+  <path d="M 95 190 Q 175 186, 255 168 T 460 138 T 760 156" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="6 3"/>
+  <text x="132" y="182" class="sub">Air temp</text>
+
+  <!-- Pool temp curve: starts below setpoint (y=138), flat until x=255, rises while heating to y=82 at x=545, then drifts -->
+  <path d="M 95 138 L 255 140 C 330 138, 460 105, 545 82 C 620 84, 690 95, 760 102" fill="none" stroke="#dc2626" stroke-width="2.8"/>
+  <text x="380" y="128" class="lbl" fill="#b91c1c">Pool water temperature</text>
+
+  <!-- Event markers -->
+  <circle cx="255" cy="140" r="4.5" fill="#d97706"/>
+  <circle cx="545" cy="82" r="4.5" fill="#16a34a"/>
+
+  <!-- State strips below -->
+  <text x="82" y="239" text-anchor="end" class="lbl">Heat Pump</text>
+  <rect x="90" y="220" width="165" height="28" rx="3" fill="#eef5f8" stroke="#cbd5e1"/>
+  <text x="172" y="238" text-anchor="middle" class="sub">waiting (air &lt; min_temp)</text>
+
+  <rect x="255" y="220" width="290" height="28" rx="3" fill="#d97706"/>
+  <text x="400" y="238" text-anchor="middle" class="lbl" style="fill:#fff">heating (valve ON)</text>
+
+  <rect x="545" y="220" width="60" height="28" rx="3" fill="#fde68a" stroke="#d97706"/>
+  <text x="575" y="238" text-anchor="middle" class="sub">recovering</text>
+
+  <rect x="605" y="220" width="165" height="28" rx="3" fill="#eef5f8" stroke="#cbd5e1"/>
+  <text x="687" y="238" text-anchor="middle" class="sub">waiting (until next day)</text>
+
+  <text x="82" y="283" text-anchor="end" class="lbl">Filtration</text>
+  <rect x="90" y="264" width="165" height="28" rx="3" fill="#e6f4f8" stroke="#0b6e8c"/>
+  <text x="172" y="282" text-anchor="middle" class="sub">eco (waiting / normal)</text>
+
+  <rect x="255" y="264" width="290" height="28" rx="3" fill="#0b6e8c"/>
+  <text x="400" y="282" text-anchor="middle" class="lbl" style="fill:#fff">heating_running (pump speed 2)</text>
+
+  <rect x="545" y="264" width="42" height="28" rx="3" fill="#2aa5be"/>
+  <text x="566" y="282" text-anchor="middle" class="sub" style="fill:#fff">delay</text>
+
+  <rect x="587" y="264" width="183" height="28" rx="3" fill="#e6f4f8" stroke="#0b6e8c"/>
+  <text x="678" y="282" text-anchor="middle" class="sub">eco (resumed)</text>
+
+  <!-- Callout notes at bottom -->
+  <rect x="90" y="310" width="680" height="34" rx="6" fill="#f3f8fa" stroke="#dce8ee"/>
+  <text x="430" y="331" text-anchor="middle" class="sub">Filtration stays running during heating_delay (delay_to_eco / delay_to_open) to flush residual heat from the compressor.</text>
+</svg>
