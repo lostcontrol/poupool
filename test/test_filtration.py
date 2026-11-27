@@ -23,7 +23,13 @@ import pytest
 from freezegun import freeze_time
 
 from controller.device import DeviceRegistry, PumpDevice, SwitchDevice
-from controller.filtration import Filtration, OverflowStandbyMonitor, StandbyOverflowMonitor
+from controller.filtration import (
+    EcoMode,
+    Filtration,
+    OverflowStandbyMonitor,
+    StandbyOverflowMonitor,
+    StirMode,
+)
 
 
 @pytest.fixture
@@ -33,8 +39,6 @@ def encoder(mocker):
 
 @pytest.fixture
 def eco_mode(encoder):
-    from controller.filtration import EcoMode
-
     with freeze_time("1981-05-30 00:00:01"):
         return EcoMode(encoder)
 
@@ -85,6 +89,93 @@ class TestEcoMode:
         assert eco_mode.filtration.duration == timedelta(hours=5)
         assert eco_mode.filtration.remaining == timedelta(hours=5)
         assert not eco_mode.filtration.elapsed()
+
+    def test_daily_property_set_current_and_elapsed_helpers(self, eco_mode):
+        assert eco_mode.daily == timedelta(hours=10)
+        eco_mode.set_current(timedelta(minutes=10))
+        assert not eco_mode.elapsed_on()
+        assert not eco_mode.elapsed_off()
+
+        t0 = datetime(1981, 5, 30, 1, 0, 0)
+        eco_mode.update(t0)
+        eco_mode.update(t0 + timedelta(minutes=10))
+        assert eco_mode.elapsed_on()
+        assert eco_mode.elapsed_off()
+
+    def test_compute_clamping_edges(self, eco_mode):
+        # on_duration < 1h floored to 1h, tank_duration < 1m floored to 1m
+        eco_mode.tank_percentage = 0.0
+        eco_mode.daily = timedelta(minutes=30)
+        with freeze_time("1981-05-30 00:00:00"):
+            eco_mode.compute()
+        assert eco_mode.tank_duration == timedelta(minutes=1)
+        assert eco_mode.on_duration == timedelta(minutes=59)
+
+        # off_duration < 0 clamped to 0 when remaining_time < daily
+        eco_mode.daily = timedelta(hours=10)
+        with freeze_time("1981-05-30 20:00:00"):
+            eco_mode.compute()
+        assert eco_mode.off_duration == timedelta()
+
+    def test_update_daily_reset_resets_and_persists(self, eco_mode, encoder):
+        eco_mode.daily = timedelta(hours=10)
+        t0 = datetime(1981, 5, 30, 10, 0, 0)
+        assert not eco_mode.update(t0)
+        assert not eco_mode.update(t0 + timedelta(hours=2))
+        assert eco_mode.filtration.duration == timedelta(hours=2)
+
+        assert eco_mode.update(datetime(1981, 5, 31, 0, 0, 0))
+        assert eco_mode.filtration.duration == timedelta()
+        encoder.filtration_duration.assert_called_with("0", retain=True)
+
+
+class TestStirMode:
+    @pytest.fixture
+    def stir_devices(self, mocker):
+        registry = DeviceRegistry()
+        boost = mocker.Mock(SwitchDevice)
+        type(boost).name = PropertyMock(return_value="boost")
+        registry.add_pump(boost)
+        return registry
+
+    def test_stir_period_duration_and_solar_elevation(self, mocker, stir_devices):
+        stir = StirMode(stir_devices)
+        boost = stir_devices.get_pump("boost")
+        elev = mocker.patch("controller.filtration.sun.elevation")
+
+        # Valid and invalid period/duration combinations
+        stir.stir_duration(60)
+        stir.stir_period(300)
+        stir.stir_period(30)  # invalid: 0 < 30 < 60
+        stir.stir_duration(600)  # invalid: 300 < 600
+
+        t0 = datetime(2026, 6, 1, 12, 0, 0)
+        # Below solar elevation -> does not start boost
+        elev.return_value = StirMode.SOLAR_ELEVATION - 1
+        stir.update(t0)
+        boost.on.assert_not_called()
+
+        # Above solar elevation -> starts boost for 60s (Timer.delay resets __last, so seed then advance 60s)
+        elev.return_value = StirMode.SOLAR_ELEVATION + 5
+        stir.update(t0)
+        boost.on.assert_called_once_with()
+
+        stir.update(t0 + timedelta(seconds=60))
+        boost.off.assert_not_called()
+        stir.update(t0 + timedelta(seconds=120))
+        boost.off.assert_called_once_with()
+
+        # clear(None) and clear(now) turn boost off
+        boost.off.reset_mock()
+        stir.clear(None)
+        stir.clear(t0)
+        assert boost.off.call_count == 2
+
+        # period=0 disables stir
+        boost.on.reset_mock()
+        stir.stir_period(0)
+        stir.update(t0 + timedelta(seconds=1000))
+        boost.on.assert_not_called()
 
 
 class TestStandbyOverflowMonitor:
@@ -175,6 +266,12 @@ class TestStandbyOverflowMonitor:
         assert not monitor.update(start, 50.0)
         assert monitor.update(start + timedelta(seconds=10), 55.0)
 
+    def test_update_without_prior_reset_initializes_start(self, monitor):
+        start = datetime(2026, 6, 1, 12, 0, 0)
+        assert not monitor.update(start, 50.0)
+        assert not monitor.update(start + timedelta(seconds=30), 60.0)
+        assert monitor.update(start + timedelta(seconds=60), 90.0)
+
 
 class TestOverflowStandbyMonitor:
     @pytest.fixture
@@ -192,6 +289,11 @@ class TestOverflowStandbyMonitor:
             assert not monitor.update(start + timedelta(seconds=step * 30), 50.0)
 
         assert monitor.update(start + timedelta(minutes=30), 50.0)
+
+    def test_ignores_none_before_first_sample(self, monitor):
+        start = datetime(2026, 6, 1, 12, 0, 0)
+        assert not monitor.update(start, None)
+        assert not monitor.update(start + timedelta(minutes=30), None)
 
     def test_triggers_with_small_noise_below_threshold(self, monitor):
         start = datetime(2026, 6, 1, 12, 0, 0)
@@ -313,10 +415,16 @@ def mocked_actors(mocker):
     arduino = make_actor(halt=True)
     arduino.cover_position.return_value.get.return_value = 0
 
+    heating = make_actor(halt=True)
+    heating.is_heating.return_value.get.return_value = False
+    heating.is_forcing.return_value.get.return_value = False
+    heating.is_recovering.return_value.get.return_value = False
+
     return {
         "Tank": tank,
         "Arduino": arduino,
-        "Heating": make_actor(halt=True),
+        "Heating": heating,
+        "Heater": make_actor(halt=True),
         "Disinfection": make_actor(halt=True),
         "Light": make_actor(halt=True),
         "Swim": make_actor(halt=True),
@@ -328,7 +436,7 @@ def filtration(mocker, encoder, filtration_devices, mocked_actors):
     mocker.patch.object(Filtration, "get_actor", side_effect=lambda name: mocked_actors[name])
     proxy = Filtration.start(None, encoder, filtration_devices).proxy()
     yield proxy
-    proxy.stop()
+    proxy.stop().get()
 
 
 class TestFiltrationAutoOverflow:
@@ -500,3 +608,454 @@ class TestFiltrationAutoStandby:
             frozen_time.tick(delta=timedelta(seconds=30))
             filtration.do_repeat_overflow_normal().get()
             assert filtration.is_standby_normal().get()
+
+
+@pytest.fixture
+def filtration_temperature(mocker):
+    temp = mocker.Mock()
+    temps = {"temperature_air": 10.0}
+    temp.get_temperature.side_effect = lambda key: mocker.Mock(get=mocker.Mock(return_value=temps[key]))
+    temp.temps = temps
+    return temp
+
+
+@pytest.fixture
+def filtration_actor(mocker, encoder, filtration_devices, mocked_actors, filtration_temperature):
+    mocker.patch.object(Filtration, "do_delay")
+    mocker.patch("controller.filtration.time.sleep")
+    mocker.patch.object(Filtration, "get_actor", side_effect=lambda name: mocked_actors[name])
+    with freeze_time("2026-06-01 00:00:01") as frozen_time:
+        proxy = Filtration.start(filtration_temperature, encoder, filtration_devices).proxy()
+        yield proxy, frozen_time
+        proxy.stop().get()
+
+
+class TestFiltrationStates:
+    def test_startup_and_halt_with_timeout(self, filtration_actor, mocked_actors, filtration_devices):
+        filtration, _ = filtration_actor
+        mocked_actors["Tank"].is_halt.return_value.get.return_value = True
+
+        # halt -> eco starts Arduino, Tank, Heating
+        filtration.eco().get()
+        assert filtration.is_eco_compute().get()
+        mocked_actors["Arduino"].run.defer.assert_called_once_with()
+        mocked_actors["Tank"].fill.defer.assert_called_once_with()
+        mocked_actors["Heating"].wait.defer.assert_called_once_with()
+
+        # Simulate all child actors running and Disinfection timing out on halt
+        for name, actor in mocked_actors.items():
+            actor.is_halt.return_value.get.return_value = False
+            actor.halt.defer.reset_mock()
+            if name == "Disinfection":
+                actor.is_halt.return_value.get.side_effect = pykka.Timeout("timeout")
+
+        filtration.halt().get()
+        assert filtration.is_halt().get()
+        for name in ("Disinfection", "Tank", "Arduino", "Heating", "Light", "Swim"):
+            mocked_actors[name].halt.defer.assert_called_once_with()
+        for pump in filtration_devices.get_pumps():
+            pump.off.assert_called()
+        for valve in filtration_devices.get_valves():
+            valve.off.assert_called()
+
+    def test_settings_and_reload_transitions(self, filtration_actor, mocked_actors, filtration_devices, encoder):
+        filtration, _ = filtration_actor
+        tank = mocked_actors["Tank"]
+        disinfection = mocked_actors["Disinfection"]
+
+        # Simple settings + eco reloaders
+        filtration.backwash_backwash_duration(90).get()
+        filtration.backwash_rinse_duration(45).get()
+        filtration.backwash_period(1).get()  # invalid (< 2)
+        filtration.backwash_period(14).get()
+        filtration.backwash_last("Mon Jun  1 00:00:00 2026").get()
+        filtration.stir_duration(60).get()
+        filtration.stir_period(300).get()
+        filtration.boost_duration(120).get()
+        filtration.cover_position_eco(25).get()
+        filtration.restore_duration(1800).get()
+
+        filtration.eco().get()
+        assert filtration.is_eco_compute().get()
+
+        for call_fn in (
+            lambda: filtration.duration(36000).get(),
+            lambda: filtration.period(2).get(),
+            lambda: filtration.tank_percentage(0.2).get(),
+            lambda: filtration.reset_hour(2).get(),
+        ):
+            call_fn()
+            # Flush reload.defer() -> eco.defer()
+            assert filtration.is_eco_compute().get()
+
+        # speed_eco reloads when in eco_normal
+        filtration.eco_normal().get()
+        assert filtration.is_eco_normal().get()
+        filtration.speed_eco(2).get()
+        assert filtration.is_eco_compute().get()
+
+        # Standby settings, reload, speed_standby(0) halts Disinfection, auto_overflow reset & None height
+        filtration.standby().get()
+        filtration.opened().get()
+        filtration.standby().get()
+        assert filtration.is_standby_normal().get()
+        filtration.auto_overflow(True).get()
+        tank.get_height.return_value.get.return_value = None
+        filtration.do_repeat_standby_normal().get()
+        assert filtration.is_standby_normal().get()
+
+        disinfection.is_halt.return_value.get.return_value = False
+        disinfection.halt.defer.reset_mock()
+        filtration.speed_standby(0).get()
+        assert filtration.is_standby_normal().get()
+        assert filtration.is_standby_normal().get()
+        disinfection.halt.defer.assert_called()
+
+        # Overflow settings, speed 2 starts disinfection and turns boost off, None height skips auto-standby
+        disinfection.is_halt.return_value.get.return_value = True
+        filtration.speed_overflow(2).get()
+        filtration.overflow().get()
+        assert filtration.is_overflow_normal().get()
+        assert filtration.is_overflow_normal().get()
+        filtration_devices.get_pump("boost").off.assert_called()
+        disinfection.run.defer.assert_called()
+
+        tank.get_height.return_value.get.return_value = None
+        filtration.do_repeat_overflow_normal().get()
+        assert filtration.is_overflow_normal().get()
+
+        filtration.speed_overflow(4).get()
+        assert filtration.is_overflow_normal().get()
+        assert filtration.is_overflow_normal().get()
+        encoder.filtration_state.assert_any_call("overflow")
+
+    def test_opening_and_closing_cover(self, mocker, filtration_actor, mocked_actors, encoder):
+        filtration, _ = filtration_actor
+        do_delay_mock = mocker.patch.object(Filtration, "do_delay")
+        arduino = mocked_actors["Arduino"]
+
+        filtration.eco().get()
+        assert filtration.is_eco_compute().get()
+
+        # Open cover towards standby
+        arduino.cover_position.return_value.get.return_value = 50
+        filtration.standby().get()
+        assert filtration.is_opening_standby().get()
+        assert filtration.is_opening_standby().get()
+        encoder.filtration_state.assert_called_with("opening_50")
+        do_delay_mock.assert_called_with(5, "do_repeat_opening")
+
+        do_delay_mock.reset_mock()
+        arduino.cover_position.return_value.get.return_value = 100
+        filtration.do_repeat_opening().get()
+        encoder.filtration_state.assert_called_with("opening_100")
+        do_delay_mock.assert_called_with(2, "opened")
+
+        filtration.opened().get()
+        assert filtration.is_standby_boost().get()
+        mocked_actors["Tank"].set_mode.defer.assert_called_with("overflow")
+        arduino.cover_stop.defer.assert_called()
+
+        # Close cover back to eco (cover_position_eco == 0 -> delays 2s "closed")
+        filtration.eco().get()
+        assert filtration.is_closing().get()
+        assert filtration.is_closing().get()
+        encoder.filtration_state.assert_called_with("closing_100")
+        do_delay_mock.assert_called_with(5, "do_repeat_closing")
+
+        do_delay_mock.reset_mock()
+        arduino.cover_position.return_value.get.return_value = 0
+        filtration.do_repeat_closing().get()
+        encoder.filtration_state.assert_called_with("closing_0")
+        do_delay_mock.assert_called_with(2, "closed")
+
+        # Non-zero cover_position_eco transitions directly via closed.defer()
+        filtration.cover_position_eco(20).get()
+        arduino.cover_position.return_value.get.return_value = 20
+        filtration.do_repeat_closing().get()
+        assert filtration.is_eco_compute().get()
+        assert arduino.cover_stop.defer.call_count >= 2
+
+    def test_eco_compute_starts_eco_normal_when_no_off_duration(
+        self, mocker, filtration_temperature, encoder, filtration_devices, mocked_actors
+    ):
+        do_delay_mock = mocker.patch.object(Filtration, "do_delay")
+        mocker.patch.object(Filtration, "get_actor", side_effect=lambda name: mocked_actors[name])
+        with freeze_time("2026-06-01 16:00:00"):
+            proxy = Filtration.start(filtration_temperature, encoder, filtration_devices).proxy()
+            try:
+                proxy.eco().get()
+                assert proxy.is_eco_compute().get()
+                do_delay_mock.assert_any_call(5, "eco_normal")
+            finally:
+                proxy.stop().get()
+
+    def test_eco_substates_and_backwash_wash_rinse(
+        self, mocker, filtration_actor, mocked_actors, filtration_devices, encoder
+    ):
+        filtration, frozen_time = filtration_actor
+        do_delay_mock = mocker.patch.object(Filtration, "do_delay")
+        tank = mocked_actors["Tank"]
+
+        # Set recent backwash so backwash does not trigger yet
+        filtration.backwash_last("Mon Jun  1 00:00:00 2026").get()
+        filtration.eco().get()
+        assert filtration.is_eco_compute().get()
+        do_delay_mock.assert_called_with(5, "eco_waiting")
+
+        # eco_waiting: normal tick, then elapsed_off -> eco_normal
+        filtration.eco_waiting().get()
+        assert filtration.is_eco_waiting().get()
+        assert filtration.is_eco_waiting().get()
+        do_delay_mock.assert_called_with(Filtration.STATE_REFRESH_DELAY, "do_repeat_eco_waiting")
+
+        # Default compute from 00:00:01 with 10h daily / 3 periods gives off_duration = (24-10)/3 = 4h40m
+        frozen_time.tick(delta=timedelta(hours=5))
+        filtration.do_repeat_eco_waiting().get()
+        assert filtration.is_eco_normal().get()
+        assert filtration.is_eco_normal().get()
+
+        # Normal tick in eco_normal delays 10s
+        do_delay_mock.reset_mock()
+        frozen_time.tick(delta=timedelta(minutes=5))
+        filtration.do_repeat_eco_normal().get()
+        assert filtration.is_eco_normal().get()
+        do_delay_mock.assert_called_with(Filtration.STATE_REFRESH_DELAY, "do_repeat_eco_normal")
+
+        # elapsed_on with tank_is_low() == False -> eco_tank
+        frozen_time.tick(delta=timedelta(hours=3, minutes=20))
+        filtration.do_repeat_eco_normal().get()
+        assert filtration.is_eco_tank().get()
+        assert filtration.is_eco_tank().get()
+        filtration_devices.get_valve("tank").on.assert_called()
+
+        # Normal tick in eco_tank delays 10s, then elapsed_on -> eco_waiting (exits tank valve)
+        do_delay_mock.reset_mock()
+        filtration.do_repeat_eco_tank().get()
+        do_delay_mock.assert_called_with(Filtration.STATE_REFRESH_DELAY, "do_repeat_eco_tank")
+
+        frozen_time.tick(delta=timedelta(minutes=30))
+        filtration.do_repeat_eco_tank().get()
+        assert filtration.is_eco_waiting().get()
+        assert filtration.is_eco_waiting().get()
+        filtration_devices.get_valve("tank").off.assert_called()
+
+        # elapsed_on in eco_normal when tank_is_low() == True -> eco_waiting directly
+        filtration.eco_normal().get()
+        assert filtration.is_eco_normal().get()
+        assert filtration.is_eco_normal().get()
+        tank.is_low.return_value.get.return_value = True
+        frozen_time.tick(delta=timedelta(hours=3, minutes=30))
+        filtration.do_repeat_eco_normal().get()
+        assert filtration.is_eco_waiting().get()
+        assert filtration.is_eco_waiting().get()
+        tank.is_low.return_value.get.return_value = False
+
+        # Daily reset in eco_waiting -> reload -> eco_compute
+        frozen_time.tick(delta=timedelta(days=1))
+        filtration.do_repeat_eco_waiting().get()
+        assert filtration.is_eco_compute().get()
+
+        # Daily reset in eco_normal and eco_tank also reload
+        filtration.eco_normal().get()
+        assert filtration.is_eco_normal().get()
+        assert filtration.is_eco_normal().get()
+        frozen_time.tick(delta=timedelta(days=1))
+        filtration.do_repeat_eco_normal().get()
+        assert filtration.is_eco_compute().get()
+
+        filtration.eco_normal().get()
+        filtration.eco_tank().get()
+        assert filtration.is_eco_tank().get()
+        assert filtration.is_eco_tank().get()
+        frozen_time.tick(delta=timedelta(days=1))
+        filtration.do_repeat_eco_tank().get()
+        assert filtration.is_eco_compute().get()
+
+        # Backwash due (>30 days) with tank NOT high logs & stays; with tank high -> wash -> rinse -> eco
+        filtration.backwash_last("Fri May  1 00:00:00 2026").get()
+        filtration.eco_normal().get()
+        assert filtration.is_eco_normal().get()
+        assert filtration.is_eco_normal().get()  # tank.is_high() is False -> stays eco_normal
+
+        tank.is_high.return_value.get.return_value = True
+        do_delay_mock.reset_mock()
+        filtration.do_repeat_eco_normal().get()
+        assert filtration.is_wash_backwash().get()
+        filtration_devices.get_valve("backwash").on.assert_called_once_with()
+        filtration_devices.get_valve("drain").on.assert_called_once_with()
+        do_delay_mock.assert_any_call(120, "rinse")
+
+        do_delay_mock.reset_mock()
+        filtration.rinse().get()
+        assert filtration.is_wash_rinse().get()
+        filtration_devices.get_valve("backwash").off.assert_called_once_with()
+        do_delay_mock.assert_any_call(60, "eco")
+
+        filtration.eco().get()
+        assert filtration.is_eco_compute().get()
+        encoder.filtration_backwash_last.assert_called_once()
+        assert encoder.filtration_backwash_last.call_args.kwargs == {"retain": True}
+
+        # Backwash due from eco_waiting also triggers wash
+        tank.is_high.return_value.get.return_value = False
+        filtration.backwash_last("Fri May  1 00:00:00 2026").get()
+        filtration.eco_waiting().get()
+        assert filtration.is_eco_waiting().get()
+        tank.is_high.return_value.get.return_value = True
+        filtration.do_repeat_eco_waiting().get()
+        assert filtration.is_wash_backwash().get()
+
+    def test_heating_and_heating_delays(self, mocker, filtration_actor, mocked_actors):
+        filtration, _ = filtration_actor
+        do_delay_mock = mocker.patch.object(Filtration, "do_delay")
+        heating = mocked_actors["Heating"]
+
+        filtration.eco().get()
+        filtration.eco_waiting().get()
+        assert filtration.is_eco_waiting().get()
+
+        # heat -> heating_running -> heating_delay_none -> eco
+        filtration.heat().get()
+        assert filtration.is_heating_running().get()
+        assert filtration.is_heating_running().get()
+        do_delay_mock.assert_called_with(Filtration.STATE_REFRESH_DELAY, "do_repeat_heating_running")
+
+        heating.is_heating.return_value.get.return_value = True
+        heating.wait.defer.reset_mock()
+        do_delay_mock.reset_mock()
+        filtration.heating_delay().get()
+        assert filtration.is_heating_delay_none().get()
+        heating.wait.defer.assert_called_once_with()
+        do_delay_mock.assert_called_once_with(Filtration.HEATING_DELAY_TO_ECO, "heating_delayed")
+
+        filtration.heating_delayed().get()
+        assert filtration.is_eco_compute().get()
+
+        # heating_running -> standby -> heating_delay_standby -> opening_standby
+        filtration.eco_normal().get()
+        filtration.heat().get()
+        assert filtration.is_heating_running().get()
+        do_delay_mock.reset_mock()
+        filtration.standby().get()
+        assert filtration.is_heating_delay_standby().get()
+        do_delay_mock.assert_called_once_with(Filtration.HEATING_DELAY_TO_OPEN, "heating_delayed")
+        filtration.heating_delayed().get()
+        assert filtration.is_opening_standby().get()
+
+        # closing -> eco -> heating_running -> overflow -> heating_delay_overflow -> opening_overflow
+        filtration.eco().get()
+        filtration.closed().get()
+        filtration.eco_normal().get()
+        filtration.heat().get()
+        assert filtration.is_heating_running().get()
+        do_delay_mock.reset_mock()
+        filtration.overflow().get()
+        assert filtration.is_heating_delay_overflow().get()
+        do_delay_mock.assert_called_once_with(Filtration.HEATING_DELAY_TO_OPEN, "heating_delayed")
+        filtration.heating_delayed().get()
+        assert filtration.is_opening_overflow().get()
+
+    def test_standby_sweep_comfort_and_overflow(self, filtration_actor, mocked_actors, filtration_devices):
+        filtration, _ = filtration_actor
+        heating = mocked_actors["Heating"]
+        swim = mocked_actors["Swim"]
+        tank_valve = filtration_devices.get_valve("tank")
+
+        filtration.eco().get()
+        filtration.standby().get()
+        filtration.opened().get()
+        filtration.standby().get()
+        assert filtration.is_standby_normal().get()
+
+        # Manual boost in standby
+        filtration.standby().get()
+        assert filtration.is_standby_boost().get()
+        filtration.standby().get()
+        assert filtration.is_standby_normal().get()
+
+        # Sweep -> standby
+        filtration.sweep().get()
+        assert filtration.is_sweep().get()
+        filtration.standby().get()
+        assert filtration.is_standby_normal().get()
+
+        # Comfort -> reload_comfort -> force heating -> blocked standby when speed_standby == 0 -> overflow
+        tank_valve.on.reset_mock()
+        tank_valve.off.reset_mock()
+        filtration.comfort().get()
+        assert filtration.is_comfort().get()
+        assert filtration.is_comfort().get()
+        heating.force.defer.assert_called()
+        tank_valve.off.assert_called()
+
+        filtration.overflow_in_comfort(True).get()
+        assert filtration.is_comfort().get()
+        tank_valve.on.assert_called()
+
+        filtration.speed_standby(0).get()
+        filtration.standby().get()
+        assert filtration.is_comfort().get()
+
+        filtration.overflow().get()
+        assert filtration.is_overflow_normal().get()
+        heating.wait.defer.assert_called()
+
+        # Exit overflow_normal halts Swim
+        swim.is_halt.return_value.get.return_value = False
+        swim.halt.defer.reset_mock()
+        filtration.standby().get()
+        assert filtration.is_standby_normal().get()
+        swim.halt.defer.assert_called()
+
+    def test_wintering_lifecycle(self, mocker, filtration_actor, mocked_actors, filtration_temperature, encoder):
+        filtration, frozen_time = filtration_actor
+        do_delay_mock = mocker.patch.object(Filtration, "do_delay")
+
+        filtration.wintering().get()
+        assert filtration.is_wintering_waiting().get()
+        assert filtration.is_wintering_waiting().get()
+        mocked_actors["Heater"].wait.defer.assert_called_once_with()
+        mocked_actors["Swim"].wintering.defer.assert_called_once_with()
+        mocked_actors["Arduino"].cover_open.defer.assert_called_once_with()
+        encoder.filtration_remaining.assert_called()
+        do_delay_mock.assert_called_with(120, "do_repeat_wintering_waiting")
+
+        # Before WINTERING_PERIOD -> stays waiting
+        frozen_time.tick(delta=timedelta(seconds=Filtration.WINTERING_PERIOD // 2))
+        do_delay_mock.reset_mock()
+        filtration.do_repeat_wintering_waiting().get()
+        assert filtration.is_wintering_waiting().get()
+        do_delay_mock.assert_called_once_with(120, "do_repeat_wintering_waiting")
+
+        # After WINTERING_PERIOD with warm air -> stays waiting
+        frozen_time.tick(delta=timedelta(seconds=Filtration.WINTERING_PERIOD))
+        filtration_temperature.temps["temperature_air"] = Filtration.WINTERING_ONLY_BELOW + 2.0
+        do_delay_mock.reset_mock()
+        filtration.do_repeat_wintering_waiting().get()
+        assert filtration.is_wintering_waiting().get()
+        do_delay_mock.assert_called_once_with(120, "do_repeat_wintering_waiting")
+
+        # Cold air -> wintering_stir
+        filtration_temperature.temps["temperature_air"] = Filtration.WINTERING_ONLY_BELOW
+        do_delay_mock.reset_mock()
+        filtration.do_repeat_wintering_waiting().get()
+        assert filtration.is_wintering_stir().get()
+        do_delay_mock.assert_called_once_with(Filtration.WINTERING_DURATION, "wintering_waiting")
+
+        # Return to waiting and test None temperature also triggers stir
+        filtration.wintering_waiting().get()
+        assert filtration.is_wintering_waiting().get()
+        assert filtration.is_wintering_waiting().get()
+        frozen_time.tick(delta=timedelta(seconds=Filtration.WINTERING_PERIOD + 1))
+        filtration_temperature.temps["temperature_air"] = None
+        filtration.do_repeat_wintering_waiting().get()
+        assert filtration.is_wintering_stir().get()
+
+        # Halt exits wintering and halts Heater and Swim
+        mocked_actors["Heater"].is_halt.return_value.get.return_value = False
+        mocked_actors["Swim"].is_halt.return_value.get.return_value = False
+        filtration.halt().get()
+        assert filtration.is_halt().get()
+        mocked_actors["Heater"].halt.defer.assert_called()
+        mocked_actors["Swim"].halt.defer.assert_called()
