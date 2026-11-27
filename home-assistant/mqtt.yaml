@@ -619,6 +619,20 @@ mqtt:
         identifiers: "Poupool01"
         name: "Poupool"
 
+    - name: "Filtration Auto Standby"
+      unique_id: "filtration_auto_standby"
+      icon: mdi:state-machine
+      command_topic: "/settings/filtration/auto_standby"
+      state_topic: "/settings/filtration/auto_standby"
+      payload_on: "1"
+      payload_off: "0"
+      state_on: "1"
+      state_off: "0"
+      retain: true
+      device:
+        identifiers: "Poupool01"
+        name: "Poupool"
+
     # DESINFECTION
     - name: "Desinfection pH Enable"
       unique_id: "desinfection_ph_enable"

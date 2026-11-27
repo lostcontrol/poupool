@@ -526,6 +526,8 @@ views:
                 name: Débordement en confort
               - entity: switch.poupool_filtration_auto_overflow
                 name: Débordement automatique
+              - entity: switch.poupool_filtration_auto_standby
+                name: Veille automatique
               - entity: number.poupool_filtration_duration
                 name: Durée journalière
               - entity: number.poupool_filtration_period
