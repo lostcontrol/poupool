@@ -49,6 +49,7 @@ class Tank(PoupoolActor):
         self.__encoder: Encoder = encoder
         self.__devices: DeviceRegistry = devices
         self.__force_empty: bool = False
+        self.__height: float | None = None
         self.levels: dict[str, int] = self.levels_eco
         # Initialize the state machine
         self.__machine = PoupoolModel(model=self, states=Tank.states, initial="halt")
@@ -61,9 +62,13 @@ class Tank(PoupoolActor):
 
     def __get_tank_height(self) -> float:
         height = self.__devices.get_sensor("tank").value
+        self.__height = height
         logger.debug(f"Tank level: {height:.1f}")
         self.__encoder.tank_height(round(height))
         return height
+
+    def get_height(self) -> float | None:
+        return self.__height
 
     def force_empty(self, value: bool) -> None:
         previous = self.__force_empty
@@ -87,6 +92,7 @@ class Tank(PoupoolActor):
 
     def on_enter_halt(self) -> None:
         logger.info("Entering halt state")
+        self.__height = None
         self.__encoder.tank_state("halt")
         self.__devices.get_valve("main").off()
 
@@ -162,4 +168,4 @@ class Tank(PoupoolActor):
         if height < self.levels["high"] - self.hysteresis:
             self._proxy.normal.defer()
         else:
-            self.do_delay(self.STATE_REFRESH_DELAY * 2, self.do_repeat_high.__name__)
+            self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_high.__name__)
