@@ -524,6 +524,8 @@ views:
                 name: Mode principal
               - entity: switch.poupool_filtration_overflow_in_comfort
                 name: Débordement en confort
+              - entity: switch.poupool_filtration_auto_overflow
+                name: Débordement automatique
               - entity: number.poupool_filtration_duration
                 name: Durée journalière
               - entity: number.poupool_filtration_period
