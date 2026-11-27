@@ -245,6 +245,54 @@ class StandbyOverflowMonitor:
         return height - min_height >= self.__rise_threshold
 
 
+class OverflowStandbyMonitor:
+    """Detect prolonged tank level stability while in overflow mode.
+
+    Tracks a sliding window of tank level samples to detect wave or
+    displacement activity. Whenever peak-to-peak variation within `window`
+    reaches `variation_threshold`, the stability timer resets. Once the level
+    remains continuously below that threshold for `inactivity_delay`, standby
+    is triggered.
+    """
+
+    def __init__(
+        self,
+        variation_threshold: float,
+        window: timedelta,
+        inactivity_delay: timedelta,
+    ) -> None:
+        self.__variation_threshold = variation_threshold
+        self.__window = window
+        self.__inactivity_delay = inactivity_delay
+        self.__stable_since: datetime | None = None
+        self.__samples: deque[TankSample] = deque()
+
+    def reset(self) -> None:
+        self.__stable_since = None
+        self.__samples.clear()
+
+    def update(self, now: datetime, height: float | None) -> bool:
+        if height is None:
+            return False
+        cutoff = now - self.__window
+        while self.__samples and self.__samples[0].timestamp < cutoff:
+            self.__samples.popleft()
+        if not self.__samples or self.__stable_since is None:
+            self.__stable_since = now
+            self.__samples.clear()
+            self.__samples.append(TankSample(timestamp=now, height=height))
+            return False
+        self.__samples.append(TankSample(timestamp=now, height=height))
+        min_height = min(sample.height for sample in self.__samples)
+        max_height = max(sample.height for sample in self.__samples)
+        if max_height - min_height >= self.__variation_threshold:
+            self.__stable_since = now
+            self.__samples.clear()
+            self.__samples.append(TankSample(timestamp=now, height=height))
+            return False
+        return now - self.__stable_since >= self.__inactivity_delay
+
+
 class Filtration(PoupoolActor):
     STATE_REFRESH_DELAY = 10
     HEATING_DELAY_TO_ECO = int(config["heating", "delay_to_eco"])
@@ -257,6 +305,9 @@ class Filtration(PoupoolActor):
     AUTO_OVERFLOW_WINDOW = int(config["tank", "auto_overflow_window"])
     AUTO_OVERFLOW_MAX_LEVEL = float(config["tank", "auto_overflow_max_level"])
     AUTO_OVERFLOW_SETTLE_DELAY = int(config["tank", "auto_overflow_settle_delay"])
+    AUTO_STANDBY_VARIATION = float(config["tank", "auto_standby_variation"])
+    AUTO_STANDBY_WINDOW = int(config["tank", "auto_standby_window"])
+    AUTO_STANDBY_DELAY = int(config["tank", "auto_standby_delay"])
 
     states: Final = [
         "halt",
@@ -297,6 +348,12 @@ class Filtration(PoupoolActor):
             window=timedelta(seconds=Filtration.AUTO_OVERFLOW_WINDOW),
             max_level=Filtration.AUTO_OVERFLOW_MAX_LEVEL,
             settle_delay=timedelta(seconds=Filtration.AUTO_OVERFLOW_SETTLE_DELAY),
+        )
+        self.__auto_standby = True
+        self.__standby_monitor = OverflowStandbyMonitor(
+            variation_threshold=Filtration.AUTO_STANDBY_VARIATION,
+            window=timedelta(seconds=Filtration.AUTO_STANDBY_WINDOW),
+            inactivity_delay=timedelta(seconds=Filtration.AUTO_STANDBY_DELAY),
         )
         self.__backwash_backwash_duration = timedelta(seconds=120)
         self.__backwash_rinse_duration = timedelta(seconds=60)
@@ -458,6 +515,12 @@ class Filtration(PoupoolActor):
         logger.info("Auto-overflow in standby mode is %sabled" % ("en" if value else "dis"))
         if value and self.is_standby_normal():  # ty: ignore[unresolved-attribute]
             self.__overflow_monitor.reset(datetime.now())
+
+    def auto_standby(self, value: bool) -> None:
+        self.__auto_standby = value
+        logger.info("Auto-standby in overflow mode is %sabled" % ("en" if value else "dis"))
+        if value and self.is_overflow_normal():  # ty: ignore[unresolved-attribute]
+            self.__standby_monitor.reset()
 
     def backwash_backwash_duration(self, value):
         self.__backwash_backwash_duration = timedelta(seconds=value)
@@ -843,6 +906,7 @@ class Filtration(PoupoolActor):
     def on_enter_overflow_normal(self):
         logger.info("Entering overflow_normal state")
         self.__encoder.filtration_state("overflow")
+        self.__standby_monitor.reset()
         speed = self.__speed_overflow
         self.__devices.get_pump("variable").speed(min(speed, 3))
         if speed > 3:
@@ -861,8 +925,36 @@ class Filtration(PoupoolActor):
         self.__actor_halt("Swim")
 
     def do_repeat_overflow_normal(self):
-        self.__eco_mode.update(datetime.now(), 1 if self.__speed_overflow > 2 else 0.5)
+        now = datetime.now()
+        if self.__should_auto_standby(now):
+            self._proxy.standby()  # ignore returned future
+            return
+        self.__eco_mode.update(now, 1 if self.__speed_overflow > 2 else 0.5)
         self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_overflow_normal.__name__)
+
+    def __should_auto_standby(self, now: datetime) -> bool:
+        if not self.__auto_standby:
+            return False
+        if self.__is_swim_active():
+            self.__standby_monitor.reset()
+            return False
+        height = self.get_actor("Tank").get_height().get()
+        if height is None:
+            return False
+        if self.__auto_overflow and height >= Filtration.AUTO_OVERFLOW_MAX_LEVEL:
+            self.__standby_monitor.reset()
+            return False
+        if self.__standby_monitor.update(now, height):
+            logger.info(f"Tank level stable in overflow; switching to standby (height: {height:.1f}%)")
+            return True
+        return False
+
+    def __is_swim_active(self) -> bool:
+        try:
+            return not self.get_actor("Swim").is_halt().get(timeout=1)
+        except pykka.Timeout:
+            logger.warning("Timed out querying Swim state; assuming swim is active")
+            return True
 
     def on_enter_wash(self):
         logger.info("Entering wash state")
