@@ -74,12 +74,12 @@ class Tank(PoupoolActor):
         previous = self.__force_empty
         self.__force_empty = value
         logger.info("Force empty tank is %sabled" % ("en" if value else "dis"))
-        if not previous and self.__force_empty and not self.is_halt():  # ty: ignore[unresolved-attribute]
+        if not previous and self.__force_empty and not self.is_halt():  # ty: ignore[missing-attribute]
             # In case the user enable the settings and we are running already, we stop everything.
             # The user can continue from the halt state.
             logger.warning("The tank is not in the halt state, stopping everything")
             self.get_actor("Filtration").halt.defer()
-        elif previous and not self.__force_empty and self.is_halt():  # ty: ignore[unresolved-attribute]
+        elif previous and not self.__force_empty and self.is_halt():  # ty: ignore[missing-attribute]
             # Deactivation of the function, we start the tank FSM.
             self._proxy.fill.defer()
 
