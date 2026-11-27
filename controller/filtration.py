@@ -17,6 +17,8 @@
 
 import logging
 import time
+from collections import deque
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Final
 
@@ -192,6 +194,57 @@ class StirMode:
                 self.__stir()
 
 
+@dataclass(frozen=True)
+class TankSample:
+    timestamp: datetime
+    height: float
+
+
+class StandbyOverflowMonitor:
+    """Detect rapid tank level rises or critical high levels while in standby mode.
+
+    Maintains a sliding window of tank level samples after an initial settling
+    grace period upon entering standby_normal, triggering overflow when the level
+    reaches `max_level` or rises by at least `rise_threshold` within `window`.
+    """
+
+    def __init__(
+        self,
+        rise_threshold: float,
+        window: timedelta,
+        max_level: float,
+        settle_delay: timedelta,
+    ) -> None:
+        self.__rise_threshold = rise_threshold
+        self.__window = window
+        self.__max_level = max_level
+        self.__settle_delay = settle_delay
+        self.__started_at: datetime | None = None
+        self.__samples: deque[TankSample] = deque()
+
+    def reset(self, now: datetime) -> None:
+        self.__started_at = now
+        self.__samples.clear()
+
+    def update(self, now: datetime, height: float | None) -> bool:
+        if height is None:
+            return False
+        if self.__started_at is None:
+            self.__started_at = now
+        if now - self.__started_at < self.__settle_delay:
+            return False
+        if height >= self.__max_level:
+            return True
+        cutoff = now - self.__window
+        while self.__samples and self.__samples[0].timestamp < cutoff:
+            self.__samples.popleft()
+        self.__samples.append(TankSample(timestamp=now, height=height))
+        if len(self.__samples) < 2:
+            return False
+        min_height = min(sample.height for sample in self.__samples)
+        return height - min_height >= self.__rise_threshold
+
+
 class Filtration(PoupoolActor):
     STATE_REFRESH_DELAY = 10
     HEATING_DELAY_TO_ECO = int(config["heating", "delay_to_eco"])
@@ -200,6 +253,10 @@ class Filtration(PoupoolActor):
     WINTERING_ONLY_BELOW = float(config["wintering", "only_below"])
     WINTERING_DURATION = int(config["wintering", "duration"])
     WINTERING_PUMP_SPEED = int(config["wintering", "pump_speed"])
+    AUTO_OVERFLOW_RISE = float(config["tank", "auto_overflow_rise"])
+    AUTO_OVERFLOW_WINDOW = int(config["tank", "auto_overflow_window"])
+    AUTO_OVERFLOW_MAX_LEVEL = float(config["tank", "auto_overflow_max_level"])
+    AUTO_OVERFLOW_SETTLE_DELAY = int(config["tank", "auto_overflow_settle_delay"])
 
     states: Final = [
         "halt",
@@ -234,6 +291,13 @@ class Filtration(PoupoolActor):
         self.__speed_standby = 1
         self.__speed_overflow = 4
         self.__overflow_in_comfort = False
+        self.__auto_overflow = True
+        self.__overflow_monitor = StandbyOverflowMonitor(
+            rise_threshold=Filtration.AUTO_OVERFLOW_RISE,
+            window=timedelta(seconds=Filtration.AUTO_OVERFLOW_WINDOW),
+            max_level=Filtration.AUTO_OVERFLOW_MAX_LEVEL,
+            settle_delay=timedelta(seconds=Filtration.AUTO_OVERFLOW_SETTLE_DELAY),
+        )
         self.__backwash_backwash_duration = timedelta(seconds=120)
         self.__backwash_rinse_duration = timedelta(seconds=60)
         self.__backwash_period = 30
@@ -389,6 +453,12 @@ class Filtration(PoupoolActor):
             # Reload settings
             self._proxy.reload.defer()
 
+    def auto_overflow(self, value: bool) -> None:
+        self.__auto_overflow = value
+        logger.info("Auto-overflow in standby mode is %sabled" % ("en" if value else "dis"))
+        if value and self.is_standby_normal():  # ty: ignore[unresolved-attribute]
+            self.__overflow_monitor.reset(datetime.now())
+
     def backwash_backwash_duration(self, value):
         self.__backwash_backwash_duration = timedelta(seconds=value)
         logger.info(f"Duration for backwash set to: {self.__backwash_backwash_duration}")
@@ -432,6 +502,17 @@ class Filtration(PoupoolActor):
 
     def pump_stopped_in_standby(self):
         return self.__speed_standby == 0
+
+    def __should_auto_overflow(self, now: datetime) -> bool:
+        if not self.__auto_overflow:
+            return False
+        height = self.get_actor("Tank").get_height().get()
+        if height is None:
+            return False
+        if self.__overflow_monitor.update(now, height):
+            logger.warning(f"Tank level triggering auto-overflow from standby (height: {height:.1f}%)")
+            return True
+        return False
 
     def __start_backwash(self):
         diff = datetime.now() - self.__backwash_last
@@ -685,6 +766,7 @@ class Filtration(PoupoolActor):
     def on_enter_standby_normal(self):
         logger.info("Entering standby_normal state")
         self.__encoder.filtration_state("standby")
+        self.__overflow_monitor.reset(datetime.now())
         # No overflow in standby mode
         self.__devices.get_valve("tank").off()
         self.__devices.get_pump("boost").off()
@@ -696,8 +778,12 @@ class Filtration(PoupoolActor):
             self.__actor_halt("Disinfection")
 
     def do_repeat_standby_normal(self):
+        now = datetime.now()
+        if self.__should_auto_overflow(now):
+            self._proxy.overflow.defer()
+            return
         factor = 1 if self.__speed_standby > 0 else 0
-        self.__eco_mode.update(datetime.now(), factor)
+        self.__eco_mode.update(now, factor)
         self.do_delay(self.STATE_REFRESH_DELAY, self.do_repeat_standby_normal.__name__)
 
     def on_enter_sweep(self):
