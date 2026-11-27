@@ -18,11 +18,12 @@
 from datetime import datetime, timedelta
 from unittest.mock import PropertyMock
 
+import pykka
 import pytest
 from freezegun import freeze_time
 
 from controller.device import DeviceRegistry, PumpDevice, SwitchDevice
-from controller.filtration import Filtration, StandbyOverflowMonitor
+from controller.filtration import Filtration, OverflowStandbyMonitor, StandbyOverflowMonitor
 
 
 @pytest.fixture
@@ -175,6 +176,109 @@ class TestStandbyOverflowMonitor:
         assert monitor.update(start + timedelta(seconds=10), 55.0)
 
 
+class TestOverflowStandbyMonitor:
+    @pytest.fixture
+    def monitor(self):
+        return OverflowStandbyMonitor(
+            variation_threshold=2.0,
+            window=timedelta(seconds=60),
+            inactivity_delay=timedelta(minutes=30),
+        )
+
+    def test_triggers_after_inactivity_delay_with_stable_level(self, monitor):
+        start = datetime(2026, 6, 1, 12, 0, 0)
+
+        for step in range(60):
+            assert not monitor.update(start + timedelta(seconds=step * 30), 50.0)
+
+        assert monitor.update(start + timedelta(minutes=30), 50.0)
+
+    def test_triggers_with_small_noise_below_threshold(self, monitor):
+        start = datetime(2026, 6, 1, 12, 0, 0)
+        levels = [50.0, 50.7, 49.5, 50.3]
+
+        for step in range(60):
+            assert not monitor.update(start + timedelta(seconds=step * 30), levels[step % len(levels)])
+
+        assert monitor.update(start + timedelta(minutes=30), 50.1)
+
+    def test_resets_timer_on_variation_at_or_above_threshold(self, monitor):
+        start = datetime(2026, 6, 1, 12, 0, 0)
+
+        for step in range(41):
+            assert not monitor.update(start + timedelta(seconds=step * 30), 50.0)
+
+        disturbance = start + timedelta(minutes=20, seconds=30)
+        assert not monitor.update(disturbance, 52.0)
+
+        for step in range(1, 60):
+            assert not monitor.update(disturbance + timedelta(seconds=step * 30), 52.0)
+
+        assert monitor.update(disturbance + timedelta(minutes=30), 52.0)
+
+    def test_allows_slow_gradual_drift_such_as_evaporation(self, monitor):
+        start = datetime(2026, 6, 1, 12, 0, 0)
+
+        # -0.1% per minute totals -3.0% over 30 min, but only 0.1% per 60s window
+        for step in range(30):
+            assert not monitor.update(start + timedelta(minutes=step), 60.0 - 0.1 * step)
+
+        assert monitor.update(start + timedelta(minutes=30), 57.0)
+
+    def test_ignores_brief_none_reading_without_resetting(self, monitor):
+        start = datetime(2026, 6, 1, 12, 0, 0)
+
+        assert not monitor.update(start, 50.0)
+        assert not monitor.update(start + timedelta(seconds=30), None)
+        assert not monitor.update(start + timedelta(seconds=60), 50.0)
+
+        for step in range(3, 60):
+            assert not monitor.update(start + timedelta(seconds=step * 30), 50.0)
+
+        assert monitor.update(start + timedelta(minutes=30), 50.0)
+
+    def test_resets_after_long_gap_of_none_readings(self, monitor):
+        start = datetime(2026, 6, 1, 12, 0, 0)
+
+        assert not monitor.update(start, 50.0)
+        assert not monitor.update(start + timedelta(seconds=30), None)
+        assert not monitor.update(start + timedelta(seconds=60), None)
+
+        resumed = start + timedelta(seconds=90)
+        assert not monitor.update(resumed, 50.0)
+
+        for step in range(1, 60):
+            assert not monitor.update(resumed + timedelta(seconds=step * 30), 50.0)
+
+        assert monitor.update(resumed + timedelta(minutes=30), 50.0)
+
+    def test_reset_clears_samples_and_restarts_timer(self, monitor):
+        start = datetime(2026, 6, 1, 12, 0, 0)
+
+        for step in range(51):
+            assert not monitor.update(start + timedelta(seconds=step * 30), 50.0)
+
+        monitor.reset()
+        restarted = start + timedelta(minutes=25, seconds=30)
+        assert not monitor.update(restarted, 50.0)
+
+        for step in range(1, 60):
+            assert not monitor.update(restarted + timedelta(seconds=step * 30), 50.0)
+
+        assert monitor.update(restarted + timedelta(minutes=30), 50.0)
+
+    def test_single_sample_never_triggers_even_with_zero_delay(self):
+        monitor = OverflowStandbyMonitor(
+            variation_threshold=2.0,
+            window=timedelta(seconds=60),
+            inactivity_delay=timedelta(0),
+        )
+        start = datetime(2026, 6, 1, 12, 0, 0)
+
+        assert not monitor.update(start, 50.0)
+        assert monitor.update(start + timedelta(seconds=10), 50.0)
+
+
 @pytest.fixture
 def filtration_devices(mocker):
     registry = DeviceRegistry()
@@ -270,4 +374,129 @@ class TestFiltrationAutoOverflow:
             frozen_time.tick(delta=timedelta(seconds=20))
             tank.get_height.return_value.get.return_value = 95.0
             filtration.do_repeat_standby_normal().get()
+            assert filtration.is_standby_normal().get()
+
+
+class TestFiltrationAutoStandby:
+    def __enter_overflow_normal(self, filtration):
+        filtration.eco().get()
+        filtration.overflow().get()
+        filtration.opened().get()
+        filtration.overflow().get()
+        assert filtration.is_overflow_normal().get()
+
+    def __advance_stable(self, frozen_time, filtration, minutes: float, step_seconds: int = 30) -> None:
+        steps = int(minutes * 60 // step_seconds)
+        for _ in range(steps):
+            frozen_time.tick(delta=timedelta(seconds=step_seconds))
+            filtration.do_repeat_overflow_normal().get()
+
+    def test_switches_to_standby_when_tank_level_stable_for_delay(self, filtration):
+        with freeze_time("2026-06-01 12:00:00") as frozen_time:
+            self.__enter_overflow_normal(filtration)
+
+            self.__advance_stable(frozen_time, filtration, minutes=29.5)
+            assert filtration.is_overflow_normal().get()
+
+            frozen_time.tick(delta=timedelta(seconds=30))
+            filtration.do_repeat_overflow_normal().get()
+            assert filtration.is_standby_normal().get()
+
+    def test_resets_countdown_on_tank_disturbance(self, filtration, mocked_actors):
+        tank = mocked_actors["Tank"]
+        with freeze_time("2026-06-01 12:00:00") as frozen_time:
+            self.__enter_overflow_normal(filtration)
+
+            self.__advance_stable(frozen_time, filtration, minutes=20)
+            assert filtration.is_overflow_normal().get()
+
+            frozen_time.tick(delta=timedelta(seconds=30))
+            tank.get_height.return_value.get.return_value = 53.0
+            filtration.do_repeat_overflow_normal().get()
+            assert filtration.is_overflow_normal().get()
+
+            self.__advance_stable(frozen_time, filtration, minutes=29.5)
+            assert filtration.is_overflow_normal().get()
+
+            frozen_time.tick(delta=timedelta(seconds=30))
+            filtration.do_repeat_overflow_normal().get()
+            assert filtration.is_standby_normal().get()
+
+    def test_stays_in_overflow_when_auto_standby_disabled(self, filtration):
+        with freeze_time("2026-06-01 12:00:00") as frozen_time:
+            self.__enter_overflow_normal(filtration)
+            filtration.auto_standby(False).get()
+
+            self.__advance_stable(frozen_time, filtration, minutes=35)
+            assert filtration.is_overflow_normal().get()
+
+    def test_reenabling_auto_standby_restarts_countdown(self, filtration):
+        with freeze_time("2026-06-01 12:00:00") as frozen_time:
+            self.__enter_overflow_normal(filtration)
+            filtration.auto_standby(False).get()
+
+            self.__advance_stable(frozen_time, filtration, minutes=35)
+            assert filtration.is_overflow_normal().get()
+
+            filtration.auto_standby(True).get()
+            # First tick after reset seeds the new stability timer
+            frozen_time.tick(delta=timedelta(seconds=30))
+            filtration.do_repeat_overflow_normal().get()
+
+            self.__advance_stable(frozen_time, filtration, minutes=29.5)
+            assert filtration.is_overflow_normal().get()
+
+            frozen_time.tick(delta=timedelta(seconds=30))
+            filtration.do_repeat_overflow_normal().get()
+            assert filtration.is_standby_normal().get()
+
+    def test_stays_in_overflow_while_swim_pump_active(self, filtration, mocked_actors):
+        swim = mocked_actors["Swim"]
+        swim.is_halt.return_value.get.return_value = False
+        with freeze_time("2026-06-01 12:00:00") as frozen_time:
+            self.__enter_overflow_normal(filtration)
+
+            self.__advance_stable(frozen_time, filtration, minutes=35)
+            assert filtration.is_overflow_normal().get()
+
+            swim.is_halt.return_value.get.return_value = True
+            # First tick after swim halts seeds the stability timer
+            frozen_time.tick(delta=timedelta(seconds=30))
+            filtration.do_repeat_overflow_normal().get()
+
+            self.__advance_stable(frozen_time, filtration, minutes=29.5)
+            assert filtration.is_overflow_normal().get()
+
+            frozen_time.tick(delta=timedelta(seconds=30))
+            filtration.do_repeat_overflow_normal().get()
+            assert filtration.is_standby_normal().get()
+
+    def test_stays_in_overflow_when_swim_query_times_out(self, filtration, mocked_actors):
+        swim = mocked_actors["Swim"]
+        swim.is_halt.return_value.get.side_effect = pykka.Timeout("timeout")
+        with freeze_time("2026-06-01 12:00:00") as frozen_time:
+            self.__enter_overflow_normal(filtration)
+
+            self.__advance_stable(frozen_time, filtration, minutes=35)
+            assert filtration.is_overflow_normal().get()
+
+    def test_stays_in_overflow_when_tank_at_auto_overflow_max_level(self, filtration, mocked_actors):
+        tank = mocked_actors["Tank"]
+        tank.get_height.return_value.get.return_value = 90.0
+        with freeze_time("2026-06-01 12:00:00") as frozen_time:
+            self.__enter_overflow_normal(filtration)
+
+            self.__advance_stable(frozen_time, filtration, minutes=35)
+            assert filtration.is_overflow_normal().get()
+
+            filtration.auto_overflow(False).get()
+            # First tick after auto_overflow is disabled seeds the stability timer
+            frozen_time.tick(delta=timedelta(seconds=30))
+            filtration.do_repeat_overflow_normal().get()
+
+            self.__advance_stable(frozen_time, filtration, minutes=29.5)
+            assert filtration.is_overflow_normal().get()
+
+            frozen_time.tick(delta=timedelta(seconds=30))
+            filtration.do_repeat_overflow_normal().get()
             assert filtration.is_standby_normal().get()
