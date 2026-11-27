@@ -15,8 +15,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from unittest.mock import call
+
 import pytest
 from serial.serialutil import SerialException
+
+from controller.lcd import Lcd
 
 
 @pytest.fixture
@@ -103,3 +107,34 @@ Next event  00:00:00"""
     def test_state_width_limit(self, lcd):
         lcd.update("filtration_state", "this is waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay too long!!!")
         assert len(lcd.get_string()) == 80
+
+    def test_on_stop(self, lcd, lcdbackpack):
+        lcd.on_stop()
+        lcdbackpack.assert_has_calls(
+            [
+                call.clear(),
+                call.set_brightness(16),
+                call.set_cursor_home(),
+                call.write(" " * 20),
+                call.write("       POUPOOL      "),
+                call.write("     NOT RUNNING"),
+                call.disconnect(),
+            ]
+        )
+
+    def test_none_lcdbackpack_ignored(self):
+        lcd_none = Lcd(None)
+        lcd_none.do_start()
+        lcd_none.do_update()
+        lcd_none.on_stop()
+
+    def test_invalid_ph_orp_fallback(self, lcd):
+        lcd.update("disinfection_ph_value", "invalid")
+        lcd.update("disinfection_orp_value", "654")
+        assert (
+            lcd.get_printable_string()
+            == """Mode              --
+Water  0.0 Air   0.0
+pH     -.- ORP   ---
+Next event  00:00:00"""
+        )
