@@ -24,12 +24,14 @@ flowchart TD
 
 ### Motor safety, coast-down, and EEPROM protection
 
-When switching direction, the firmware waits `100` ms before energizing the active relay so open and close circuits cannot fight each other. While the motor runs, an interrupt on Arduino pin `2` counts motor encoder pulses (`50` pulses per second) to track position from `0%` (closed) to `100%` (open).
+Before energizing a motor relay, the firmware enforces a short break-before-make dead-time with both relays off so open and close circuits cannot fight each other. When reversing direction, the firmware waits for the `3`-second coast-down to finish before entering the dead-time and energizing the opposite relay. While the motor runs, an interrupt on Arduino pin `2` counts motor encoder pulses (`50` pulses per second) to track position from `0%` (closed) to `100%` (open).
 
 Three safeguards protect every move:
 - If fewer than 10 pulses arrive in a 500 ms window (for example, an obstacle jams the slats or a belt slips), the firmware triggers an emergency stop.
-- If the pulse counter crosses beyond the saved open or close limits plus a short coasting margin, the firmware also stops immediately.
+- If the pulse counter moves further beyond the saved open or close limits past a short coasting margin, the firmware also stops immediately; moving back toward the calibrated range remains allowed so the cover does not deadlock if it coasts slightly past an endpoint.
 - A 1-second hardware watchdog resets the microcontroller automatically if the main loop ever hangs.
+
+Emergency stops cut both relays immediately and latch a fault state that refuses further motion until cleared by a `stop` command or releasing a wall button.
 
 Because a heavy pool cover coasts for a couple of seconds after cutting power, the Arduino waits `3` seconds after issuing `STOP` before stopping pulse counting and writing the updated position to EEPROM. Writing only after coast-down finishes both prevents position drift and keeps EEPROM writes to a minimum.
 

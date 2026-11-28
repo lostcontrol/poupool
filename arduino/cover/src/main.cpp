@@ -28,12 +28,19 @@ static void cover_isr();
 
 class InterruptGuard {
   public:
-    InterruptGuard() {
+    InterruptGuard() : m_sreg{SREG} {
       noInterrupts();
+      asm volatile("" ::: "memory");
     }
     ~InterruptGuard() {
-      interrupts();
+      asm volatile("" ::: "memory");
+      SREG = m_sreg;
     }
+    InterruptGuard(const InterruptGuard&) = delete;
+    InterruptGuard& operator=(const InterruptGuard&) = delete;
+
+  private:
+    const uint8_t m_sreg;
 };
 
 class Cover {
@@ -45,6 +52,11 @@ class Cover {
     static constexpr unsigned long PULSES_PER_SECOND = 50;
     // This is the maximum amount of steps the motor is allowed to go past the end points.
     static constexpr long MAX_PULSE_MARGIN = PULSES_PER_SECOND * MAX_RUNNING_MARGIN_IN_MS / 1000;
+    // Break-before-make dead-time before energizing a motor relay.
+    static constexpr unsigned long DEAD_TIME_MS = 100;
+    // Stall detection window and minimum expected pulses per window.
+    static constexpr unsigned long STALL_CHECK_INTERVAL_MS = 500;
+    static constexpr long MIN_PULSES_PER_CHECK = 10;
 
     static constexpr struct Pins {
       static constexpr byte cover_interrupt = 2;
@@ -62,124 +74,49 @@ class Cover {
       OPEN, CLOSE, STOP,
     };
 
-    Cover() {
-      load_position();
-    }
-
     void reset() {
-      InterruptGuard _{};
-      m_position.position = 0;
-      m_position.close = 0;
-      m_position.open = 0;
+      stop_relays();
+      m_target_direction = Direction::STOP;
+      m_active_direction = Direction::STOP;
+      m_state = State::IDLE;
+      {
+        InterruptGuard _{};
+        m_running_direction = Direction::STOP;
+        m_limit_reached = false;
+        m_position.position = 0;
+        m_position.close = 0;
+        m_position.open = 0;
+      }
     }
 
     void setup() {
       pinMode(pins.cover_interrupt, INPUT_PULLUP);
 
-      pinMode(pins.cover_close, OUTPUT);
       digitalWrite(pins.cover_close, LOW);
-      pinMode(pins.cover_open, OUTPUT);
+      pinMode(pins.cover_close, OUTPUT);
       digitalWrite(pins.cover_open, LOW);
-    }
+      pinMode(pins.cover_open, OUTPUT);
 
-    void process_direction(unsigned long now) {
-      if (m_direction != m_previous_direction) {
-        switch (m_direction) {
-          case Direction::OPEN:
-            m_running_direction = Direction::OPEN;
-            digitalWrite(pins.cover_close, HIGH);
-            delay(100);
-            digitalWrite(pins.cover_open, LOW);
-            // Update the time/position for consistency check when the cover starts moving
-            m_previous_position = get_position();
-            m_previous_time = now;
-            // Cancel a potential stop event
-            m_do_stop_time = 0;
-            break;
-          case Direction::CLOSE:
-            m_running_direction = Direction::CLOSE;
-            digitalWrite(pins.cover_open, HIGH);
-            delay(100);
-            digitalWrite(pins.cover_close, LOW);
-            // Update the time/position for consistency check when the cover starts moving
-            m_previous_position = get_position();
-            m_previous_time = now;
-            // Cancel a potential stop event
-            m_do_stop_time = 0;
-            break;
-          case Direction::STOP:
-            digitalWrite(pins.cover_close, LOW);
-            digitalWrite(pins.cover_open, LOW);
-            // Trigger delayed stop event. The cover might run for up to 3 seconds after we
-            // stopped the motor so we cannot save the position directly to the EEPROM. We
-            // trigger an event here and will write the position 3 seconds later.
-            m_do_stop_time = now;
-            break;
-        }
-        m_previous_direction = m_direction;
-      }
-    }
-
-    void process_stop(unsigned long now) {
-      if (m_do_stop_time) {
-        if (now - m_do_stop_time > MAX_RUNNING_MARGIN_IN_MS) {
-          m_do_stop_time = 0;
-          // Also stop counting pulses
-          m_running_direction = Direction::STOP;
-          // Save the positions to EEPROM. Disable interrupts to ensure the values get not
-          // updated by ISR during the process
-          InterruptGuard _{};
-          save_position();
-        }
-      }
-    }
-
-    void ensure_consistency(unsigned long now) {
-      if (m_direction != Direction::STOP) {
-        // Rotation/pulse check
-        if (now - m_previous_time > 500) {
-          const auto position = get_position();
-          // The motor is supposed to generate 3000 pulses/min so we should get around 25 pulses
-          // during 500 ms. At startup, we have seen ~18 pulses for 500 ms and then 25 pulses.
-          if (abs(position - m_previous_position) < 10) {
-            // Emergency stop
-            emergency_stop();
-          }
-          m_previous_position = position;
-          m_previous_time = now;
-        }
-        // Position consistency
-        if (m_set_limits == SetLimit::NONE) {
-          const auto position = get_position();
-          if (position < (m_position.close - MAX_PULSE_MARGIN) || position > (m_position.open + MAX_PULSE_MARGIN)) {
-            // Emergency stop
-            emergency_stop();
-          }
-        }
-      }
+      load_position();
     }
 
     void set_direction(Direction direction) {
-      const auto position = get_position();
-      switch (direction) {
-        case Direction::OPEN:
-          if (m_set_limits != SetLimit::NONE || position < m_position.open) {
-            m_direction = Direction::OPEN;
-          }
-          break;
-        case Direction::CLOSE:
-          if (m_set_limits != SetLimit::NONE || position > m_position.close) {
-            m_direction = Direction::CLOSE;
-          }
-          break;
-        case Direction::STOP:
-          m_direction = Direction::STOP;
-          break;
+      if (direction == Direction::STOP) {
+        m_target_direction = Direction::STOP;
+        if (m_state == State::FAULT) {
+          m_state = (m_running_direction != Direction::STOP) ? State::COASTING : State::IDLE;
+        }
+        return;
+      }
+      if (m_state == State::FAULT) {
+        return;
+      }
+      if (can_move(direction)) {
+        m_target_direction = direction;
       }
     }
 
     void set_limit(Direction direction) {
-      const auto position = get_position();
       switch (direction) {
         case Direction::OPEN:
           m_set_limits = SetLimit::OPEN;
@@ -188,23 +125,46 @@ class Cover {
           m_set_limits = SetLimit::CLOSE;
           break;
         case Direction::STOP:
+          if (m_set_limits == SetLimit::NONE) {
+            return;
+          }
           {
             InterruptGuard _{};
             switch (m_set_limits) {
               case SetLimit::OPEN:
-                m_position.open = position;
+                m_position.open = m_position.position;
                 break;
               case SetLimit::CLOSE:
-                m_position.close = position;
+                m_position.close = m_position.position;
                 break;
               case SetLimit::NONE:
                 break;
             }
             m_set_limits = SetLimit::NONE;
-            // Save settings to EEPROM. Update will not touch the EEPROM if the data is the same so
-            // it's safe to put it here.
-            save_position();
           }
+          // Save settings to EEPROM outside the critical section. Put will not touch the EEPROM
+          // if the data is the same so it's safe to put it here.
+          save_position();
+          break;
+      }
+    }
+
+    void process(unsigned long now) {
+      switch (m_state) {
+        case State::IDLE:
+          process_idle(now);
+          break;
+        case State::DEAD_TIME:
+          process_dead_time(now);
+          break;
+        case State::RUNNING:
+          process_running(now);
+          break;
+        case State::COASTING:
+          process_coasting(now);
+          break;
+        case State::FAULT:
+          process_fault(now);
           break;
       }
     }
@@ -212,8 +172,11 @@ class Cover {
     byte get_position_percentage() const {
       const auto position = get_position();
       const auto diff = m_position.open - m_position.close;
-      if (diff == 0) return 0;
-      return constrain(100 * (position - m_position.close) / diff, 0, 100);
+      if (diff <= 0) return 0;
+      const long percent = 100L * (position - m_position.close) / diff;
+      if (percent < 0) return 0;
+      if (percent > 100) return 100;
+      return static_cast<byte>(percent);
     }
 
     void step() {
@@ -221,13 +184,13 @@ class Cover {
         case Direction::OPEN:
           ++m_position.position;
           if (m_set_limits == SetLimit::NONE && m_position.position >= m_position.open) {
-            m_direction = Direction::STOP;
+            m_limit_reached = true;
           }
           break;
         case Direction::CLOSE:
           --m_position.position;
           if (m_set_limits == SetLimit::NONE && m_position.position <= m_position.close) {
-            m_direction = Direction::STOP;
+            m_limit_reached = true;
           }
           break;
         case Direction::STOP:
@@ -242,19 +205,192 @@ class Cover {
       Serial.println(m_position.open);
       Serial.print(F("close="));
       Serial.println(m_position.close);
+      Serial.print(F("state="));
+      Serial.println(state_name(m_state));
     }
 
   private:
+    enum class State : byte {
+      IDLE, DEAD_TIME, RUNNING, COASTING, FAULT,
+    };
+
     enum class SetLimit : byte {
       OPEN, CLOSE, NONE,
     };
 
-  private:
-    void emergency_stop() {
-      // Emergency stop
-      m_direction = Direction::STOP;
+    void process_idle(unsigned long now) {
+      if (m_target_direction == Direction::STOP) {
+        return;
+      }
+      if (can_move(m_target_direction)) {
+        m_active_direction = m_target_direction;
+        m_state_time = now;
+        m_state = State::DEAD_TIME;
+      } else {
+        m_target_direction = Direction::STOP;
+      }
+    }
+
+    void process_dead_time(unsigned long now) {
+      if (m_target_direction != m_active_direction) {
+        if (m_running_direction != Direction::STOP) {
+          m_state = State::COASTING;
+        } else {
+          m_active_direction = Direction::STOP;
+          m_state = State::IDLE;
+        }
+        return;
+      }
+      if (now - m_state_time < DEAD_TIME_MS) {
+        return;
+      }
+      if (!can_move(m_active_direction)) {
+        m_target_direction = Direction::STOP;
+        if (m_running_direction != Direction::STOP) {
+          m_state = State::COASTING;
+        } else {
+          m_active_direction = Direction::STOP;
+          m_state = State::IDLE;
+        }
+        return;
+      }
+      m_limit_reached = false;
+      m_running_direction = m_active_direction;
+      m_previous_position = get_position();
+      m_previous_time = now;
+      energize_relay(m_active_direction);
+      m_state = State::RUNNING;
+    }
+
+    void process_running(unsigned long now) {
+      const bool limit_hit = m_limit_reached || (m_set_limits == SetLimit::NONE && at_limit(m_active_direction));
+      if (limit_hit) {
+        m_target_direction = Direction::STOP;
+      }
+      if (limit_hit || m_target_direction != m_active_direction) {
+        stop_relays();
+        m_limit_reached = false;
+        m_coast_start_time = now;
+        m_state = State::COASTING;
+        return;
+      }
+      ensure_consistency(now);
+    }
+
+    void process_coasting(unsigned long now) {
+      if (m_target_direction == m_active_direction && can_move(m_active_direction)) {
+        m_state_time = now;
+        m_state = State::DEAD_TIME;
+        return;
+      }
+      if (now - m_coast_start_time >= MAX_RUNNING_MARGIN_IN_MS) {
+        finish_coasting();
+        m_state = State::IDLE;
+      }
+    }
+
+    void process_fault(unsigned long now) {
+      if (m_running_direction != Direction::STOP && (now - m_coast_start_time >= MAX_RUNNING_MARGIN_IN_MS)) {
+        finish_coasting();
+      }
+    }
+
+    void ensure_consistency(unsigned long now) {
+      const auto position = get_position();
+      // Rotation/pulse check
+      if (now - m_previous_time >= STALL_CHECK_INTERVAL_MS) {
+        // The motor is supposed to generate 3000 pulses/min so we should get around 25 pulses
+        // during 500 ms. At startup, we have seen ~18 pulses for 500 ms and then 25 pulses.
+        const long delta = (m_active_direction == Direction::OPEN)
+          ? (position - m_previous_position)
+          : (m_previous_position - position);
+        m_previous_position = position;
+        m_previous_time = now;
+        if (delta < MIN_PULSES_PER_CHECK) {
+          emergency_stop(now);
+          return;
+        }
+      }
+      // Position consistency: only fault when moving further beyond a calibrated limit so the
+      // cover can still return into range if it coasted slightly past.
+      if (m_set_limits == SetLimit::NONE) {
+        const bool over_open = m_active_direction == Direction::OPEN && position > (m_position.open + MAX_PULSE_MARGIN);
+        const bool over_close = m_active_direction == Direction::CLOSE && position < (m_position.close - MAX_PULSE_MARGIN);
+        if (over_open || over_close) {
+          emergency_stop(now);
+        }
+      }
+    }
+
+    void finish_coasting() {
+      m_running_direction = Direction::STOP;
+      m_active_direction = Direction::STOP;
+      save_position();
+    }
+
+    void emergency_stop(unsigned long now) {
+      stop_relays();
+      m_limit_reached = false;
+      m_target_direction = Direction::STOP;
+      m_coast_start_time = now;
+      m_state = State::FAULT;
       Serial.println(F("emergency stop"));
       Serial.println(F("***"));
+    }
+
+    bool can_move(Direction direction) const {
+      if (m_set_limits != SetLimit::NONE) {
+        return direction == Direction::OPEN || direction == Direction::CLOSE;
+      }
+      if (m_position.open <= m_position.close) {
+        return false;
+      }
+      const auto position = get_position();
+      switch (direction) {
+        case Direction::OPEN:
+          return position < m_position.open;
+        case Direction::CLOSE:
+          return position > m_position.close;
+        case Direction::STOP:
+          return false;
+      }
+      return false;
+    }
+
+    bool at_limit(Direction direction) const {
+      const auto position = get_position();
+      switch (direction) {
+        case Direction::OPEN:
+          return position >= m_position.open;
+        case Direction::CLOSE:
+          return position <= m_position.close;
+        case Direction::STOP:
+          return false;
+      }
+      return false;
+    }
+
+    void stop_relays() const {
+      digitalWrite(pins.cover_close, LOW);
+      digitalWrite(pins.cover_open, LOW);
+    }
+
+    void energize_relay(Direction direction) const {
+      // Relays are active-HIGH and hardware pin wiring is inverted relative to pin names
+      // (pin 5 cover_close drives OPEN; pin 4 cover_open drives CLOSE).
+      switch (direction) {
+        case Direction::OPEN:
+          digitalWrite(pins.cover_open, LOW);
+          digitalWrite(pins.cover_close, HIGH);
+          break;
+        case Direction::CLOSE:
+          digitalWrite(pins.cover_close, LOW);
+          digitalWrite(pins.cover_open, HIGH);
+          break;
+        case Direction::STOP:
+          stop_relays();
+          break;
+      }
     }
 
     long get_position() const {
@@ -265,10 +401,26 @@ class Cover {
       return m_position.position;
     }
 
+    static const __FlashStringHelper* state_name(State state) {
+      switch (state) {
+        case State::IDLE:
+          return F("idle");
+        case State::DEAD_TIME:
+          return F("dead_time");
+        case State::RUNNING:
+          return F("running");
+        case State::COASTING:
+          return F("coasting");
+        case State::FAULT:
+          return F("fault");
+      }
+      return F("unknown");
+    }
+
   private:
     // EEPROM.get/put cannot be used directly on the volatile m_position. Go through a
-    // non-volatile local copy. The caller must ensure the ISR cannot modify m_position
-    // meanwhile (interrupts disabled or not yet attached).
+    // non-volatile local copy. Only the copy runs inside InterruptGuard; EEPROM.put() takes
+    // several milliseconds per modified byte and must run with interrupts enabled.
     void load_position() {
       Position p;
       EEPROM.get(0, p);
@@ -279,21 +431,27 @@ class Cover {
 
     void save_position() const {
       Position p;
-      p.position = m_position.position;
-      p.close = m_position.close;
-      p.open = m_position.open;
+      {
+        InterruptGuard _{};
+        p.position = m_position.position;
+        p.close = m_position.close;
+        p.open = m_position.open;
+      }
       EEPROM.put(0, p);
     }
 
     volatile Position m_position;
-    volatile Direction m_direction = Direction::STOP;
     volatile Direction m_running_direction = Direction::STOP;
     volatile SetLimit m_set_limits = SetLimit::NONE;
+    volatile bool m_limit_reached = false;
 
+    State m_state = State::IDLE;
+    Direction m_target_direction = Direction::STOP;
+    Direction m_active_direction = Direction::STOP;
     long m_previous_position = 0;
     unsigned long m_previous_time = 0;
-    unsigned long m_do_stop_time = 0;
-    Direction m_previous_direction = Direction::STOP;
+    unsigned long m_state_time = 0;
+    unsigned long m_coast_start_time = 0;
 };
 
 class Button {
@@ -482,25 +640,27 @@ void setup()
 }
 
 static void cover_isr() {
+  static constexpr unsigned long DEBOUNCE_US = 10000UL;
   static unsigned long last_interrupt_time = 0;
-  auto interrupt_time = millis();
-  // Debounce
-  if (interrupt_time - last_interrupt_time > 10)
-  {
+  static bool initialized = false;
+  const auto interrupt_time = micros();
+  if (!initialized || interrupt_time - last_interrupt_time >= DEBOUNCE_US) {
+    initialized = true;
+    last_interrupt_time = interrupt_time;
     cover.step();
   }
-  last_interrupt_time = interrupt_time;
 }
 
 static void water_isr() {
+  static constexpr unsigned long DEBOUNCE_MS = 50UL;
   static unsigned long last_interrupt_time = 0;
-  auto interrupt_time = millis();
-  // Debounce
-  if (interrupt_time - last_interrupt_time > 50)
-  {
+  static bool initialized = false;
+  const auto interrupt_time = millis();
+  if (!initialized || interrupt_time - last_interrupt_time >= DEBOUNCE_MS) {
+    initialized = true;
+    last_interrupt_time = interrupt_time;
     water.step();
   }
-  last_interrupt_time = interrupt_time;
 }
 
 void loop()
@@ -550,7 +710,5 @@ void loop()
   button.process(now);
 
   // Action
-  cover.process_direction(now);
-  cover.ensure_consistency(now);
-  cover.process_stop(now);
+  cover.process(now);
 }
