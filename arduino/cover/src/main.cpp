@@ -492,25 +492,27 @@ void setup()
 }
 
 static void cover_isr() {
+  static constexpr unsigned long DEBOUNCE_US = 10000UL;
   static unsigned long last_interrupt_time = 0;
-  auto interrupt_time = millis();
-  // Debounce
-  if (interrupt_time - last_interrupt_time > 10)
-  {
+  static bool initialized = false;
+  const auto interrupt_time = micros();
+  if (!initialized || interrupt_time - last_interrupt_time >= DEBOUNCE_US) {
+    initialized = true;
+    last_interrupt_time = interrupt_time;
     cover.step();
   }
-  last_interrupt_time = interrupt_time;
 }
 
 static void water_isr() {
+  static constexpr unsigned long DEBOUNCE_MS = 50UL;
   static unsigned long last_interrupt_time = 0;
-  auto interrupt_time = millis();
-  // Debounce
-  if (interrupt_time - last_interrupt_time > 50)
-  {
+  static bool initialized = false;
+  const auto interrupt_time = millis();
+  if (!initialized || interrupt_time - last_interrupt_time >= DEBOUNCE_MS) {
+    initialized = true;
+    last_interrupt_time = interrupt_time;
     water.step();
   }
-  last_interrupt_time = interrupt_time;
 }
 
 void loop()
