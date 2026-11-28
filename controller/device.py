@@ -91,8 +91,7 @@ class StoppableDevice(ABC, Device):
         super().__init__(name)
 
     @abstractmethod
-    def stop(self):
-        pass
+    def stop(self): ...
 
 
 class SwitchDevice(Device):
@@ -178,8 +177,7 @@ class SensorDevice(ABC, Device):
 
     @property
     @abstractmethod
-    def value(self):
-        pass
+    def value(self): ...
 
 
 class TempSensorDevice(SensorDevice):
@@ -329,7 +327,6 @@ class ArduinoDevice(StoppableDevice):
 
     @property
     def water_counter(self):
-        # self.__send_debug()
         value = self.__send("water")
         return int(value.replace("water ", "")) if value else None
 
@@ -369,32 +366,6 @@ class ArduinoDevice(StoppableDevice):
             logger.exception(f"Serial sensor {self.name} had an error. Reconnecting...")
             self.__reconnect()
         return None
-
-    def __send_debug(self):
-        try:
-            # flush buffer (should be empty but we can receive an "emergency stop")
-            logger.debug("Flushing read buffer")
-            read = self.__sio.readline()
-            while read.strip() != "":
-                logger.error(f"Unexpected buffer content: {read.strip()}")
-                read = self.__sio.readline()
-            # send
-            logger.debug("Writing 'debug' to serial port")
-            self.__sio.write("debug\n")
-            self.__sio.flush()
-            # receive
-            logger.debug("Reading response")
-            counter = 0
-            read = self.__sio.readline()
-            while not read.startswith("***") and counter < 20:
-                logger.info(read.strip())
-                read = self.__sio.readline()
-                counter += 1
-            logger.debug("Received response")
-        except Exception:
-            # We catch everything in the hope that we recover with a reconnect.
-            logger.exception(f"Serial sensor {self.name} had an error. Reconnecting...")
-            self.__reconnect()
 
 
 class LcdDevice(StoppableDevice):

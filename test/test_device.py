@@ -106,6 +106,15 @@ class TestSwimPumpDevice:
         gpio.output.assert_has_calls([call(PIN, True), call(PIN, False)])
         normalized_value.assert_called_once_with(0.5)
 
+    def test_change_nonzero_speed(self, gpio, dac, swim_pump_device):
+        normalized_value = PropertyMock()
+        type(dac).normalized_value = normalized_value
+        swim_pump_device.speed(50)
+        swim_pump_device.speed(75)
+        gpio.output.assert_has_calls([call(PIN, True), call(PIN, False)])
+        assert gpio.output.call_count == 2
+        normalized_value.assert_has_calls([call(0.5), call(0.75)])
+
     def test_dac_throws_always(self, mocker, gpio, dac, swim_pump_device):
         mocker.patch("controller.device.time.sleep")
         normalized_value = PropertyMock()
