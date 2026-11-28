@@ -28,12 +28,19 @@ static void cover_isr();
 
 class InterruptGuard {
   public:
-    InterruptGuard() {
+    InterruptGuard() : m_sreg{SREG} {
       noInterrupts();
+      asm volatile("" ::: "memory");
     }
     ~InterruptGuard() {
-      interrupts();
+      asm volatile("" ::: "memory");
+      SREG = m_sreg;
     }
+    InterruptGuard(const InterruptGuard&) = delete;
+    InterruptGuard& operator=(const InterruptGuard&) = delete;
+
+  private:
+    const uint8_t m_sreg;
 };
 
 class Cover {
@@ -126,9 +133,7 @@ class Cover {
           m_do_stop_time = 0;
           // Also stop counting pulses
           m_running_direction = Direction::STOP;
-          // Save the positions to EEPROM. Disable interrupts to ensure the values get not
-          // updated by ISR during the process
-          InterruptGuard _{};
+          // Save the positions to EEPROM.
           save_position();
         }
       }
@@ -179,7 +184,6 @@ class Cover {
     }
 
     void set_limit(Direction direction) {
-      const auto position = get_position();
       switch (direction) {
         case Direction::OPEN:
           m_set_limits = SetLimit::OPEN;
@@ -188,23 +192,26 @@ class Cover {
           m_set_limits = SetLimit::CLOSE;
           break;
         case Direction::STOP:
+          if (m_set_limits == SetLimit::NONE) {
+            return;
+          }
           {
             InterruptGuard _{};
             switch (m_set_limits) {
               case SetLimit::OPEN:
-                m_position.open = position;
+                m_position.open = m_position.position;
                 break;
               case SetLimit::CLOSE:
-                m_position.close = position;
+                m_position.close = m_position.position;
                 break;
               case SetLimit::NONE:
                 break;
             }
             m_set_limits = SetLimit::NONE;
-            // Save settings to EEPROM. Update will not touch the EEPROM if the data is the same so
-            // it's safe to put it here.
-            save_position();
           }
+          // Save settings to EEPROM outside the critical section. Put will not touch the EEPROM
+          // if the data is the same so it's safe to put it here.
+          save_position();
           break;
       }
     }
@@ -267,8 +274,8 @@ class Cover {
 
   private:
     // EEPROM.get/put cannot be used directly on the volatile m_position. Go through a
-    // non-volatile local copy. The caller must ensure the ISR cannot modify m_position
-    // meanwhile (interrupts disabled or not yet attached).
+    // non-volatile local copy. Only the copy runs inside InterruptGuard; EEPROM.put() takes
+    // several milliseconds per modified byte and must run with interrupts enabled.
     void load_position() {
       Position p;
       EEPROM.get(0, p);
@@ -279,9 +286,12 @@ class Cover {
 
     void save_position() const {
       Position p;
-      p.position = m_position.position;
-      p.close = m_position.close;
-      p.open = m_position.open;
+      {
+        InterruptGuard _{};
+        p.position = m_position.position;
+        p.close = m_position.close;
+        p.open = m_position.open;
+      }
       EEPROM.put(0, p);
     }
 
