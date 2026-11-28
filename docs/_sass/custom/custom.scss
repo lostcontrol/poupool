@@ -89,16 +89,23 @@ code.language-mermaid {
   }
 }
 
-// Readable monospace sizing (Just the Docs defaults to 0.75em, which is tiny in tables)
+// Modern monospace typography (JetBrains Mono, sized to match body x-height)
 code {
-  font-size: 0.9em;
+  font-family: $mono-font-family;
+  font-size: 0.875em;
+  font-feature-settings: "liga" 0;
 }
 
 :not(pre, figure) > code {
-  padding: 0.12em 0.35em;
+  padding: 0.14em 0.38em;
+  background-color: #edf4f7;
+  color: #0f3a4a;
+  border: 0;
+  border-radius: 4px;
 }
 
 div.highlighter-rouge code,
 figure.highlight code {
-  font-size: 0.9em;
+  font-size: 0.875em;
+  line-height: 1.55;
 }
