@@ -1,4 +1,4 @@
-# 🏊 Poupool - The swimming pool controller
+# <img src="docs/images/favicon.svg" alt="" width="32" height="32" align="absmiddle"> Poupool - The swimming pool controller
 
 [![Poupool](https://github.com/lostcontrol/poupool/actions/workflows/poupool.yml/badge.svg)](https://github.com/lostcontrol/poupool/actions/workflows/poupool.yml)
 [![Documentation](https://img.shields.io/badge/docs-User%20Manual-blue.svg)](https://lostcontrol.github.io/poupool/)
