@@ -88,3 +88,17 @@ code.language-mermaid {
     font-weight: 600;
   }
 }
+
+// Readable monospace sizing (Just the Docs defaults to 0.75em, which is tiny in tables)
+code {
+  font-size: 0.9em;
+}
+
+:not(pre, figure) > code {
+  padding: 0.12em 0.35em;
+}
+
+div.highlighter-rouge code,
+figure.highlight code {
+  font-size: 0.9em;
+}
